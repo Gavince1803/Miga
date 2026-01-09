@@ -1,25 +1,54 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { Colors } from '@/constants/Colors';
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from 'expo-router';
 
+// Auth
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { Stack, useRouter, useSegments } from 'expo-router';
+
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Custom theme based on our bakery colors
+const BakeryLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: Colors.light.primary,
+    background: Colors.light.background,
+    card: Colors.light.surface,
+    text: Colors.light.text,
+    border: Colors.light.border,
+  },
+};
+
+const BakeryDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: Colors.dark.primary,
+    background: Colors.dark.background,
+    card: Colors.dark.surface,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+  },
+};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -42,18 +71,44 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { session, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    // Cast segments to bypass strict type checking for now
+    const inAuthGroup = (segments[0] as string) === 'auth';
+
+    if (!session && !inAuthGroup) {
+      // Redirect to the sign-in page.
+      router.replace('/auth/login' as any);
+    } else if (session && inAuthGroup) {
+      // Redirect away from the sign-in page.
+      router.replace('/(tabs)');
+    }
+  }, [session, loading, segments]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'dark' ? BakeryDarkTheme : BakeryLightTheme}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="orders" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );
 }
+
