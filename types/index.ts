@@ -12,11 +12,15 @@ export interface UserProfile {
     updatedAt: string;
 }
 
-// Order status enum
-export type OrderStatus = 'pendiente' | 'en_proceso' | 'completado' | 'cancelado';
+// Payment status enum based on client request
+export type PaymentStatus = 'pendiente' | 'abonado' | 'pagado';
 
-// Payment method enum
-export type PaymentMethod = 'efectivo' | 'transferencia' | 'pendiente';
+// Dictionary Option for Fillings, Covers, etc.
+export interface DictionaryOption {
+    id: string;
+    category: string;
+    value: string;
+}
 
 // Main order type
 export interface Order {
@@ -45,10 +49,15 @@ export interface Order {
 
     // Payment
     totalPrice: number;
+    depositAmount: number; // Abono
     paymentMethod: PaymentMethod;
+    paymentStatus: PaymentStatus;
 
     // Status
     status: OrderStatus;
+
+    // Notifications
+    reminderDays: number; // 0 means no reminder
 
     // Timestamps
     createdAt: string;
@@ -70,7 +79,10 @@ export interface OrderFormData {
     occasion?: string;
     description?: string;
     totalPrice: number;
+    depositAmount: number;
     paymentMethod: PaymentMethod;
+    paymentStatus: PaymentStatus;
+    reminderDays: number;
 }
 
 // Inventory item

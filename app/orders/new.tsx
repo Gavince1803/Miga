@@ -100,6 +100,8 @@ function ChipSelector({
 
 import { useOrders } from '@/hooks/useOrders';
 
+import { EditableDropdown } from '@/components/EditableDropdown';
+
 export default function NewOrderScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
@@ -116,28 +118,43 @@ export default function NewOrderScreen() {
     const [cover, setCover] = useState('');
     const [occasion, setOccasion] = useState('');
     const [description, setDescription] = useState('');
+
+    // Payment State
     const [totalPrice, setTotalPrice] = useState('');
+    const [depositAmount, setDepositAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pendiente');
+
+    // Notifications State
+    const [reminderDays, setReminderDays] = useState('0'); // 0 = Sin recordatorio
 
     const { createOrder } = useOrders();
     const [submitting, setSubmitting] = useState(false);
 
+    // Derived payment calculations
+    const total = parseFloat(totalPrice) || 0;
+    const deposit = parseFloat(depositAmount) || 0;
+    const remaining = Math.max(0, total - deposit);
+
+    // Auto-set Status based on payment
+    const paymentStatus = (total > 0 && deposit >= total) ? 'pagado' :
+        (deposit > 0) ? 'abonado' : 'pendiente';
+
+    // Defaults for dropdowns
+    const DEFAULT_FILLINGS = ['Chocolate', 'Vainilla', 'Arequipe', 'Frutos Rojos'];
+    const DEFAULT_COVERS = ['Buttercream', 'Fondant', 'Merengue', 'Ganache'];
+    const DEFAULT_OCCASIONS = ['Cumpleaños', 'Boda', 'Aniversario', 'Baby Shower'];
+    const REMINDER_OPTIONS = [
+        { label: 'Sin recordatorio', value: '0' },
+        { label: '1 día antes', value: '1' },
+        { label: '2 días antes', value: '2' },
+        { label: '3 días antes', value: '3' },
+        { label: '1 semana antes', value: '7' },
+    ];
+
     const handleSave = async () => {
         // Validate required fields
-        if (!clientName.trim()) {
-            Alert.alert('Error', 'El nombre del cliente es requerido');
-            return;
-        }
-        if (!clientPhone.trim()) {
-            Alert.alert('Error', 'El teléfono es requerido');
-            return;
-        }
-        if (!deliveryDate.trim()) {
-            Alert.alert('Error', 'La fecha de entrega es requerida');
-            return;
-        }
-        if (!deliveryTime.trim()) {
-            Alert.alert('Error', 'La hora de entrega es requerida');
+        if (!clientName.trim() || !clientPhone.trim() || !deliveryDate.trim() || !deliveryTime.trim()) {
+            Alert.alert('Error', 'Por favor completa todos los campos marcados con *');
             return;
         }
 
@@ -146,18 +163,10 @@ export default function NewOrderScreen() {
         try {
             // Parse partial date
             const [day, month, year] = deliveryDate.split('/').map(Number);
-            // Simple date parsing assuming DD/MM/YYYY or similar inputs
-            // For production, a DatePicker is better. Here we try to construct a valid date.
-            // If year is missing or short, assume current/next year logic or full year input.
-            // For this MVP, let's assume user enters Valid ISO or readable format handled by new Date() 
-            // OR strictly DD/MM/YYYY. Let's try to be robust.
-
-            // Actually, let's just use string parsing if it's DD/MM/YYYY
             let parsedDeliveryDate = new Date();
             if (day && month && year) {
                 parsedDeliveryDate = new Date(year, month - 1, day);
             } else {
-                // Fallback try
                 parsedDeliveryDate = new Date(deliveryDate);
             }
 
@@ -180,17 +189,20 @@ export default function NewOrderScreen() {
                 cover,
                 occasion,
                 description,
-                totalPrice: totalPrice ? parseFloat(totalPrice) : 0,
+
+                totalPrice: total,
+                depositAmount: deposit,
                 paymentMethod,
+                paymentStatus,
+
+                reminderDays: parseInt(reminderDays),
             });
 
             if (newOrder) {
                 Alert.alert(
                     '¡Pedido Guardado!',
-                    `Pedido para ${clientName} creado exitosamente.`,
-                    [
-                        { text: 'OK', onPress: () => router.back() }
-                    ]
+                    'El pedido se ha creado exitosamente.',
+                    [{ text: 'OK', onPress: () => router.back() }]
                 );
             }
         } catch (error) {
@@ -248,26 +260,58 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Delivery Information */}
-                <FormSection title="ENTREGA" colors={colors}>
-                    <FormField label="Fecha de Entrega" required colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="DD/MM/AAAA"
-                            placeholderTextColor={colors.textMuted}
-                            value={deliveryDate}
-                            onChangeText={setDeliveryDate}
-                            keyboardType="numbers-and-punctuation"
-                        />
-                    </FormField>
+                <FormSection title="ENTREGA Y RECORDATORIOS" colors={colors}>
+                    <View style={styles.row}>
+                        <View style={{ flex: 1, marginRight: Spacing.sm }}>
+                            <FormField label="Fecha (DD/MM/AAAA)" required colors={colors}>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text }]}
+                                    placeholder="25/12/2024"
+                                    placeholderTextColor={colors.textMuted}
+                                    value={deliveryDate}
+                                    onChangeText={setDeliveryDate}
+                                    keyboardType="numbers-and-punctuation"
+                                />
+                            </FormField>
+                        </View>
+                        <View style={{ flex: 1, marginLeft: Spacing.sm }}>
+                            <FormField label="Hora" required colors={colors}>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text }]}
+                                    placeholder="14:00"
+                                    placeholderTextColor={colors.textMuted}
+                                    value={deliveryTime}
+                                    onChangeText={setDeliveryTime}
+                                />
+                            </FormField>
+                        </View>
+                    </View>
 
-                    <FormField label="Hora de Entrega" required colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="Ej: 14:00"
-                            placeholderTextColor={colors.textMuted}
-                            value={deliveryTime}
-                            onChangeText={setDeliveryTime}
-                        />
+                    <FormField label="Notificaciones de Recordatorio" colors={colors}>
+                        <View style={styles.chipContainer}>
+                            {REMINDER_OPTIONS.map((opt) => (
+                                <TouchableOpacity
+                                    key={opt.value}
+                                    onPress={() => setReminderDays(opt.value)}
+                                    style={[
+                                        styles.chip,
+                                        {
+                                            backgroundColor: reminderDays === opt.value ? colors.primary : colors.surfaceSecondary,
+                                            borderColor: reminderDays === opt.value ? colors.primary : colors.border,
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.chipText, { color: reminderDays === opt.value ? '#FFFFFF' : colors.text }]}>
+                                        {opt.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+                            {reminderDays === '0'
+                                ? 'No recibirás notificaciones.'
+                                : `Se enviarán recordatorios diarios desde ${reminderDays} día(s) antes.`}
+                        </Text>
                     </FormField>
                 </FormSection>
 
@@ -293,83 +337,99 @@ export default function NewOrderScreen() {
                         />
                     </FormField>
 
-                    <FormField label="Relleno" colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="Ej: Arequipe, Frutos Rojos, Chocolate"
-                            placeholderTextColor={colors.textMuted}
-                            value={filling}
-                            onChangeText={setFilling}
-                        />
-                    </FormField>
+                    <EditableDropdown
+                        label="Relleno"
+                        value={filling}
+                        onValueChange={setFilling}
+                        category="filling"
+                        defaultOptions={DEFAULT_FILLINGS}
+                    />
 
-                    <FormField label="Cubierta" colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="Ej: Buttercream, Fondant, Crema"
-                            placeholderTextColor={colors.textMuted}
-                            value={cover}
-                            onChangeText={setCover}
-                        />
-                    </FormField>
+                    <EditableDropdown
+                        label="Cubierta"
+                        value={cover}
+                        onValueChange={setCover}
+                        category="cover"
+                        defaultOptions={DEFAULT_COVERS}
+                    />
 
-                    <FormField label="Motivo / Ocasión" colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="Ej: Cumpleaños, Boda, Baby Shower"
-                            placeholderTextColor={colors.textMuted}
-                            value={occasion}
-                            onChangeText={setOccasion}
-                        />
-                    </FormField>
+                    <EditableDropdown
+                        label="Motivo / Ocasión"
+                        value={occasion}
+                        onValueChange={setOccasion}
+                        category="occasion"
+                        defaultOptions={DEFAULT_OCCASIONS}
+                    />
 
-                    <FormField label="Descripción" colors={colors}>
+                    <FormField label="Descripción Adicional" colors={colors}>
                         <TextInput
                             style={[styles.textArea, { color: colors.text, borderColor: colors.border }]}
-                            placeholder="Describe los detalles del pedido, decoración, colores, etc."
+                            placeholder="Detalles extra..."
                             placeholderTextColor={colors.textMuted}
                             value={description}
                             onChangeText={setDescription}
                             multiline
-                            numberOfLines={4}
+                            numberOfLines={3}
                             textAlignVertical="top"
                         />
                     </FormField>
                 </FormSection>
 
-                {/* Decoration Sketch */}
-                <FormSection title="DECORACIÓN" colors={colors}>
-                    <TouchableOpacity
-                        style={[styles.imageUpload, { borderColor: colors.border }]}
-                        onPress={() => Alert.alert('Próximamente', 'Podrás agregar fotos o bocetos de la decoración')}
-                    >
-                        <FontAwesome name="camera" size={32} color={colors.textMuted} />
-                        <Text style={[styles.imageUploadText, { color: colors.textMuted }]}>
-                            Agregar foto o boceto
-                        </Text>
-                        <Text style={[styles.imageUploadHint, { color: colors.textMuted }]}>
-                            Toca para subir imagen
-                        </Text>
-                    </TouchableOpacity>
-                </FormSection>
-
                 {/* Payment */}
                 <FormSection title="PAGO" colors={colors}>
-                    <FormField label="Precio Total" colors={colors}>
-                        <View style={styles.priceInput}>
-                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
-                            <TextInput
-                                style={[styles.input, styles.priceField, { color: colors.text }]}
-                                placeholder="0.00"
-                                placeholderTextColor={colors.textMuted}
-                                value={totalPrice}
-                                onChangeText={setTotalPrice}
-                                keyboardType="decimal-pad"
-                            />
+                    <View style={styles.row}>
+                        <View style={{ flex: 1, marginRight: Spacing.sm }}>
+                            <FormField label="Precio Total" colors={colors}>
+                                <View style={styles.priceInput}>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                                    <TextInput
+                                        style={[styles.input, styles.priceField, { color: colors.text }]}
+                                        placeholder="0"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={totalPrice}
+                                        onChangeText={setTotalPrice}
+                                        keyboardType="decimal-pad"
+                                    />
+                                </View>
+                            </FormField>
                         </View>
-                    </FormField>
+                        <View style={{ flex: 1, marginLeft: Spacing.sm }}>
+                            <FormField label="Abono (50%)" colors={colors}>
+                                <View style={styles.priceInput}>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                                    <TextInput
+                                        style={[styles.input, styles.priceField, { color: colors.primary }]}
+                                        placeholder="0"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={depositAmount}
+                                        onChangeText={setDepositAmount}
+                                        keyboardType="decimal-pad"
+                                    />
+                                </View>
+                            </FormField>
+                        </View>
+                    </View>
 
-                    <FormField label="Forma de Pago" colors={colors}>
+                    {/* Balance Info */}
+                    <View style={[styles.balanceContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+                        <View style={styles.balanceRow}>
+                            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Restante a Pagar:</Text>
+                            <Text style={[styles.balanceValue, { color: remaining > 0 ? colors.error : colors.success }]}>
+                                ${remaining.toFixed(2)}
+                            </Text>
+                        </View>
+                        <View style={styles.balanceRow}>
+                            <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Estado:</Text>
+                            <View style={[
+                                styles.statusBadge,
+                                { backgroundColor: paymentStatus === 'pagado' ? '#A8D5BA' : paymentStatus === 'abonado' ? '#FFB74D' : '#E0E0E0' }
+                            ]}>
+                                <Text style={styles.statusText}>{paymentStatus.toUpperCase()}</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    <FormField label="Forma de Pago (del abono)" colors={colors}>
                         <View style={styles.paymentOptions}>
                             {PAYMENT_METHOD_OPTIONS.map((option) => (
                                 <TouchableOpacity
@@ -383,17 +443,7 @@ export default function NewOrderScreen() {
                                         },
                                     ]}
                                 >
-                                    <FontAwesome
-                                        name={option.value === 'efectivo' ? 'money' : option.value === 'transferencia' ? 'exchange' : 'clock-o'}
-                                        size={16}
-                                        color={paymentMethod === option.value ? '#FFFFFF' : colors.text}
-                                    />
-                                    <Text
-                                        style={[
-                                            styles.paymentOptionText,
-                                            { color: paymentMethod === option.value ? '#FFFFFF' : colors.text },
-                                        ]}
-                                    >
+                                    <Text style={[styles.paymentOptionText, { color: paymentMethod === option.value ? '#FFFFFF' : colors.text }]}>
                                         {option.label}
                                     </Text>
                                 </TouchableOpacity>
@@ -445,6 +495,7 @@ const styles = StyleSheet.create({
     sectionCard: {
         marginHorizontal: Spacing.md,
         borderRadius: BorderRadius.md,
+        padding: Spacing.xs, // Reduced padding for cleaner look
         overflow: 'hidden',
     },
     field: {
@@ -466,7 +517,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: BorderRadius.sm,
         padding: Spacing.sm,
-        minHeight: 100,
+        minHeight: 80,
+    },
+    row: {
+        flexDirection: 'row',
+        paddingHorizontal: Spacing.md,
     },
     chipContainer: {
         flexDirection: 'row',
@@ -484,22 +539,10 @@ const styles = StyleSheet.create({
         ...Typography.caption,
         fontWeight: '500',
     },
-    imageUpload: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-        margin: Spacing.md,
-        borderWidth: 2,
-        borderStyle: 'dashed',
-        borderRadius: BorderRadius.md,
-    },
-    imageUploadText: {
-        ...Typography.body,
-        marginTop: Spacing.sm,
-    },
-    imageUploadHint: {
-        ...Typography.small,
-        marginTop: 4,
+    helperText: {
+        fontSize: 12,
+        marginTop: 8,
+        fontStyle: 'italic',
     },
     priceInput: {
         flexDirection: 'row',
@@ -507,12 +550,44 @@ const styles = StyleSheet.create({
     },
     currencySymbol: {
         ...Typography.subtitle,
-        marginRight: Spacing.sm,
+        marginRight: Spacing.xs,
+        fontSize: 18,
     },
     priceField: {
         flex: 1,
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: '600',
+    },
+    balanceContainer: {
+        margin: Spacing.md,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+    },
+    balanceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    balanceLabel: {
+        ...Typography.body,
+        fontWeight: '600',
+    },
+    balanceValue: {
+        ...Typography.title,
+        fontSize: 18,
+    },
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    statusText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#333',
     },
     paymentOptions: {
         flexDirection: 'row',
@@ -528,13 +603,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.xs,
         borderRadius: BorderRadius.md,
         borderWidth: 1,
-        gap: 4,
-        minHeight: 44,
+        minHeight: 40,
     },
     paymentOptionText: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '600',
-        flexShrink: 1,
     },
     saveButton: {
         flexDirection: 'row',
@@ -544,6 +617,7 @@ const styles = StyleSheet.create({
         paddingVertical: Spacing.md,
         borderRadius: BorderRadius.lg,
         gap: Spacing.sm,
+        marginBottom: Spacing.xl,
     },
     saveButtonText: {
         color: '#FFFFFF',

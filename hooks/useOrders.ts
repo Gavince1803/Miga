@@ -44,8 +44,11 @@ export function useOrders() {
                     occasion: item.occasion,
                     description: item.description,
                     totalPrice: item.total_price,
+                    depositAmount: item.deposit_amount || 0,
                     paymentMethod: item.payment_method,
+                    paymentStatus: item.payment_status || 'pendiente',
                     status: item.status,
+                    reminderDays: item.reminder_days || 0,
                     createdAt: item.created_at,
                     updatedAt: item.updated_at,
                 }));
@@ -60,6 +63,26 @@ export function useOrders() {
         }
     };
 
+    // Helper to save new options to dictionary
+    const saveToDictionary = async (category: string, value: string) => {
+        if (!value) return;
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            // Upsert (ignore duplicate errors)
+            await supabase
+                .from('options_dictionary')
+                .upsert(
+                    { user_id: session.user.id, category, value },
+                    { onConflict: 'user_id, category, value' }
+                );
+        } catch (error) {
+            // Silently fail, not critical
+            console.log('Error saving dictionary option:', error);
+        }
+    };
+
     const createOrder = async (orderData: OrderFormData) => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -67,6 +90,11 @@ export function useOrders() {
                 Alert.alert('Error', 'Debes iniciar sesión para guardar pedidos');
                 return null;
             }
+
+            // Save new options to dictionary in background
+            if (orderData.filling) saveToDictionary('filling', orderData.filling);
+            if (orderData.cover) saveToDictionary('cover', orderData.cover);
+            if (orderData.occasion) saveToDictionary('occasion', orderData.occasion);
 
             const { data, error } = await supabase
                 .from('orders')
@@ -84,9 +112,14 @@ export function useOrders() {
                         cover: orderData.cover,
                         occasion: orderData.occasion,
                         description: orderData.description,
+
                         total_price: orderData.totalPrice,
+                        deposit_amount: orderData.depositAmount,
                         payment_method: orderData.paymentMethod,
+                        payment_status: orderData.paymentStatus,
+
                         status: 'pendiente',
+                        reminder_days: orderData.reminderDays,
                     }
                 ])
                 .select()
@@ -132,8 +165,18 @@ export function useOrders() {
             if (orderData.cover) updates.cover = orderData.cover;
             if (orderData.occasion) updates.occasion = orderData.occasion;
             if (orderData.description) updates.description = orderData.description;
+
             if (orderData.totalPrice !== undefined) updates.total_price = orderData.totalPrice;
+            if (orderData.depositAmount !== undefined) updates.deposit_amount = orderData.depositAmount;
             if (orderData.paymentMethod) updates.payment_method = orderData.paymentMethod;
+            if (orderData.paymentStatus) updates.payment_status = orderData.paymentStatus;
+
+            if (orderData.reminderDays !== undefined) updates.reminder_days = orderData.reminderDays;
+
+            // Save new options to dictionary in background
+            if (orderData.filling) saveToDictionary('filling', orderData.filling);
+            if (orderData.cover) saveToDictionary('cover', orderData.cover);
+            if (orderData.occasion) saveToDictionary('occasion', orderData.occasion);
 
             const { data, error } = await supabase
                 .from('orders')
