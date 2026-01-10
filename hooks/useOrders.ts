@@ -1,4 +1,5 @@
 import { deductInventoryForOrder, showDeductionSummary } from '@/lib/inventoryDeduction';
+import { cancelOrderNotification, scheduleOrderNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { Order, OrderFormData } from '@/types';
 import { useEffect, useState } from 'react';
@@ -224,12 +225,38 @@ export function useOrders() {
 
             if (error) throw error;
 
+            // Update Notification Schedule
+            // We need full order data for scheduling (clientName, deliveryDate, etc.)
+            // Since 'data' has updated fields, let's use it.
+            if (data) {
+                await scheduleOrderNotification(data as any);
+            }
+
             await fetchOrders();
             return data;
         } catch (error) {
             console.error('Error updating order:', error);
             Alert.alert('Error', 'No se pudo actualizar el pedido');
             return null;
+        }
+    };
+
+    const deleteOrder = async (id: string) => {
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            // Cancel notification
+            await cancelOrderNotification(id);
+
+            setOrders(prev => prev.filter(o => o.id !== id));
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            Alert.alert('Error', 'No se pudo eliminar el pedido');
         }
     };
 

@@ -16,6 +16,7 @@ export {
 
 // Auth
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { requestNotificationPermissions } from '@/lib/notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 
 export const unstable_settings = {
@@ -96,6 +97,11 @@ function RootLayoutNav() {
     } else if (session && inAuthGroup) {
       // Redirect away from the sign-in page.
       router.replace('/(tabs)');
+    }
+
+    // Request notification permissions if logged in
+    if (session) {
+      requestNotificationPermissions();
     }
   }, [session, loading, segments]);
 
