@@ -88,7 +88,7 @@ export default function EditOrderScreen() {
     const [occasion, setOccasion] = useState('');
     const [description, setDescription] = useState('');
     const [totalPrice, setTotalPrice] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pendiente');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -421,7 +421,9 @@ const styles = StyleSheet.create({
     },
     input: {
         ...Typography.body,
-        paddingVertical: 4,
+        height: 44,
+        textAlignVertical: 'center',
+        paddingVertical: 0,
     },
     textArea: {
         ...Typography.body,

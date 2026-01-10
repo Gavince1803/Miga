@@ -1,8 +1,14 @@
+import BackButton from '@/components/BackButton';
+import { DateTimePickerField } from '@/components/DateTimePickerField';
+import { EditableDropdown } from '@/components/EditableDropdown';
+import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useOrderItems } from '@/hooks/useOrderItems';
+import { useOrders } from '@/hooks/useOrders';
 import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -15,6 +21,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+
+
+
 
 function FormSection({
     title,
@@ -98,10 +107,6 @@ function ChipSelector({
     );
 }
 
-import { useOrders } from '@/hooks/useOrders';
-
-import { EditableDropdown } from '@/components/EditableDropdown';
-
 export default function NewOrderScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
@@ -110,9 +115,16 @@ export default function NewOrderScreen() {
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
     const [address, setAddress] = useState('');
-    const [deliveryDate, setDeliveryDate] = useState('');
-    const [deliveryTime, setDeliveryTime] = useState('');
+
+    // Date Objects for Picker
+    const [deliveryDateObj, setDeliveryDateObj] = useState(new Date());
+    const [deliveryTimeObj, setDeliveryTimeObj] = useState(new Date());
+
+    // Size Helper
     const [size, setSize] = useState('20 cm');
+    const [customSize, setCustomSize] = useState('');
+    const [showCustomSize, setShowCustomSize] = useState(false);
+
     const [servings, setServings] = useState('');
     const [filling, setFilling] = useState('');
     const [cover, setCover] = useState('');
@@ -122,15 +134,31 @@ export default function NewOrderScreen() {
     // Payment State
     const [totalPrice, setTotalPrice] = useState('');
     const [depositAmount, setDepositAmount] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pendiente');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 
     // Notifications State
     const [reminderDays, setReminderDays] = useState('0'); // 0 = Sin recordatorio
+    const [customReminderDays, setCustomReminderDays] = useState('');
+    const [showCustomReminder, setShowCustomReminder] = useState(false);
 
-    const { createOrder } = useOrders();
+    const { createOrder, getDictionaryOptions } = useOrders();
+    const { setItemsForOrder } = useOrderItems();
     const [submitting, setSubmitting] = useState(false);
+    const [dynamicSizes, setDynamicSizes] = useState<string[]>([]);
 
-    // Derived payment calculations
+    // Products with recipes
+    const [orderProducts, setOrderProducts] = useState<SelectedProduct[]>([]);
+
+    // Load dynamic sizes
+    React.useEffect(() => {
+        const loadSizes = async () => {
+            const savedSizes = await getDictionaryOptions('size');
+            // Filter out any default options from saved ones to avoid dupes
+            const cleanSaved = savedSizes.filter(s => !SIZE_OPTIONS.includes(s as any));
+            setDynamicSizes(cleanSaved);
+        };
+        loadSizes();
+    }, []);
     const total = parseFloat(totalPrice) || 0;
     const deposit = parseFloat(depositAmount) || 0;
     const remaining = Math.max(0, total - deposit);
@@ -143,47 +171,81 @@ export default function NewOrderScreen() {
     const DEFAULT_FILLINGS = ['Chocolate', 'Vainilla', 'Arequipe', 'Frutos Rojos'];
     const DEFAULT_COVERS = ['Buttercream', 'Fondant', 'Merengue', 'Ganache'];
     const DEFAULT_OCCASIONS = ['Cumpleaños', 'Boda', 'Aniversario', 'Baby Shower'];
+
+    // Size Options + Custom
+    // Use Set to strictly enforce uniqueness across default, dynamic, and 'Otro'
+    const uniqueHelper = new Set([...SIZE_OPTIONS, ...dynamicSizes]);
+    // Ensure 'Otro' is removed from the middle if present, so we can append it at the end
+    uniqueHelper.delete('Otro');
+
+    const SIZE_OPTIONS_DISPLAY = [...Array.from(uniqueHelper), 'Otro'];
+
     const REMINDER_OPTIONS = [
         { label: 'Sin recordatorio', value: '0' },
         { label: '1 día antes', value: '1' },
         { label: '2 días antes', value: '2' },
         { label: '3 días antes', value: '3' },
-        { label: '1 semana antes', value: '7' },
+        { label: '1 sem. antes', value: '7' },
+        { label: 'Otro', value: 'custom' },
     ];
+
+    const handleSizeSelect = (val: string) => {
+        if (val === 'Otro') {
+            setShowCustomSize(true);
+            setSize('Otro');
+        } else {
+            setShowCustomSize(false);
+            setSize(val);
+            setCustomSize('');
+        }
+    };
+
+    const handleReminderSelect = (val: string) => {
+        if (val === 'custom') {
+            setShowCustomReminder(true);
+            setReminderDays(val);
+        } else {
+            setShowCustomReminder(false);
+            setReminderDays(val);
+            setCustomReminderDays('');
+        }
+    };
 
     const handleSave = async () => {
         // Validate required fields
-        if (!clientName.trim() || !clientPhone.trim() || !deliveryDate.trim() || !deliveryTime.trim()) {
+        if (!clientName.trim() || !clientPhone.trim()) {
             Alert.alert('Error', 'Por favor completa todos los campos marcados con *');
             return;
         }
 
+        // Validate custom inputs
+        const finalSize = showCustomSize ? customSize.trim() : size;
+        if (!finalSize) {
+            Alert.alert('Error', 'Por favor ingresa el tamaño');
+            return;
+        }
+
+        const finalReminderDays = showCustomReminder ? customReminderDays.trim() : reminderDays;
+        if (showCustomReminder && !finalReminderDays) {
+            Alert.alert('Error', 'Por favor ingresa el número de días para el recordatorio');
+            return;
+        }
+
+
         setSubmitting(true);
 
         try {
-            // Parse partial date
-            const [day, month, year] = deliveryDate.split('/').map(Number);
-            let parsedDeliveryDate = new Date();
-            if (day && month && year) {
-                parsedDeliveryDate = new Date(year, month - 1, day);
-            } else {
-                parsedDeliveryDate = new Date(deliveryDate);
-            }
-
-            if (isNaN(parsedDeliveryDate.getTime())) {
-                Alert.alert('Error', 'Formato de fecha inválido. Use DD/MM/AAAA');
-                setSubmitting(false);
-                return;
-            }
+            // Format time string HH:MM 
+            const formattedTime = deliveryTimeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
             const newOrder = await createOrder({
                 clientName,
                 clientPhone,
                 address,
                 orderDate: new Date(),
-                deliveryDate: parsedDeliveryDate,
-                deliveryTime,
-                size,
+                deliveryDate: deliveryDateObj,
+                deliveryTime: formattedTime,
+                size: finalSize,
                 servings: servings ? parseInt(servings) : 0,
                 filling,
                 cover,
@@ -195,10 +257,20 @@ export default function NewOrderScreen() {
                 paymentMethod,
                 paymentStatus,
 
-                reminderDays: parseInt(reminderDays),
+                reminderDays: parseInt(finalReminderDays) || 0,
             });
 
             if (newOrder) {
+                // Save order products if any
+                if (orderProducts.length > 0) {
+                    await setItemsForOrder(newOrder.id, orderProducts.map(p => ({
+                        productName: p.productName,
+                        recipeId: p.recipeId,
+                        quantity: p.quantity,
+                        notes: p.notes
+                    })));
+                }
+
                 Alert.alert(
                     '¡Pedido Guardado!',
                     'El pedido se ha creado exitosamente.',
@@ -224,6 +296,16 @@ export default function NewOrderScreen() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
+                <Stack.Screen
+                    options={{
+                        title: 'Nuevo Pedido',
+                        presentation: 'card',
+                        headerTransparent: false,
+                        headerLeft: () => <BackButton />,
+                    }}
+                />
+
+
                 {/* Client Information */}
                 <FormSection title="INFORMACIÓN DEL CLIENTE" colors={colors}>
                     <FormField label="Nombre del Cliente" required colors={colors}>
@@ -261,29 +343,25 @@ export default function NewOrderScreen() {
 
                 {/* Delivery Information */}
                 <FormSection title="ENTREGA Y RECORDATORIOS" colors={colors}>
-                    <View style={styles.row}>
+                    <View style={[styles.row, { paddingTop: Spacing.sm }]}>
                         <View style={{ flex: 1, marginRight: Spacing.sm }}>
-                            <FormField label="Fecha (DD/MM/AAAA)" required colors={colors}>
-                                <TextInput
-                                    style={[styles.input, { color: colors.text }]}
-                                    placeholder="25/12/2024"
-                                    placeholderTextColor={colors.textMuted}
-                                    value={deliveryDate}
-                                    onChangeText={setDeliveryDate}
-                                    keyboardType="numbers-and-punctuation"
-                                />
-                            </FormField>
+                            {/* Label shortened to prevent wrapping/misalignment */}
+                            <DateTimePickerField
+                                label="Fecha"
+                                value={deliveryDateObj}
+                                onChange={setDeliveryDateObj}
+                                mode="date"
+                                required
+                            />
                         </View>
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
-                            <FormField label="Hora" required colors={colors}>
-                                <TextInput
-                                    style={[styles.input, { color: colors.text }]}
-                                    placeholder="14:00"
-                                    placeholderTextColor={colors.textMuted}
-                                    value={deliveryTime}
-                                    onChangeText={setDeliveryTime}
-                                />
-                            </FormField>
+                            <DateTimePickerField
+                                label="Hora"
+                                value={deliveryTimeObj}
+                                onChange={setDeliveryTimeObj}
+                                mode="time"
+                                required
+                            />
                         </View>
                     </View>
 
@@ -292,7 +370,7 @@ export default function NewOrderScreen() {
                             {REMINDER_OPTIONS.map((opt) => (
                                 <TouchableOpacity
                                     key={opt.value}
-                                    onPress={() => setReminderDays(opt.value)}
+                                    onPress={() => handleReminderSelect(opt.value)}
                                     style={[
                                         styles.chip,
                                         {
@@ -307,10 +385,25 @@ export default function NewOrderScreen() {
                                 </TouchableOpacity>
                             ))}
                         </View>
+
+                        {showCustomReminder && (
+                            <View style={{ marginTop: 10 }}>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, borderBottomWidth: 1, borderColor: colors.primary }]}
+                                    placeholder="Ingrese número de días antes..."
+                                    placeholderTextColor={colors.textMuted}
+                                    value={customReminderDays}
+                                    onChangeText={setCustomReminderDays}
+                                    keyboardType="number-pad"
+                                    autoFocus
+                                />
+                            </View>
+                        )}
+
                         <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                            {reminderDays === '0'
-                                ? 'No recibirás notificaciones.'
-                                : `Se enviarán recordatorios diarios desde ${reminderDays} día(s) antes.`}
+                            {(reminderDays !== '0' && (reminderDays !== 'custom' || customReminderDays))
+                                ? `Se enviarán recordatorios diarios desde ${showCustomReminder ? customReminderDays : reminderDays} día(s) antes.`
+                                : 'Selecciona cuándo quieres recibir alertas.'}
                         </Text>
                     </FormField>
                 </FormSection>
@@ -319,11 +412,23 @@ export default function NewOrderScreen() {
                 <FormSection title="DETALLES DEL PRODUCTO" colors={colors}>
                     <FormField label="Medida / Tamaño" colors={colors}>
                         <ChipSelector
-                            options={SIZE_OPTIONS}
+                            options={SIZE_OPTIONS_DISPLAY}
                             selected={size}
-                            onSelect={setSize}
+                            onSelect={handleSizeSelect}
                             colors={colors}
                         />
+                        {showCustomSize && (
+                            <View style={{ marginTop: 10 }}>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, borderBottomWidth: 1, borderColor: colors.primary }]}
+                                    placeholder="Escribe la medida personalizada..."
+                                    placeholderTextColor={colors.textMuted}
+                                    value={customSize}
+                                    onChangeText={setCustomSize}
+                                    autoFocus
+                                />
+                            </View>
+                        )}
                     </FormField>
 
                     <FormField label="Cantidad de Personas" colors={colors}>
@@ -337,13 +442,15 @@ export default function NewOrderScreen() {
                         />
                     </FormField>
 
-                    <EditableDropdown
-                        label="Relleno"
-                        value={filling}
-                        onValueChange={setFilling}
-                        category="filling"
-                        defaultOptions={DEFAULT_FILLINGS}
-                    />
+                    <View style={{ marginTop: Spacing.md }}>
+                        <EditableDropdown
+                            label="Relleno"
+                            value={filling}
+                            onValueChange={setFilling}
+                            category="filling"
+                            defaultOptions={DEFAULT_FILLINGS}
+                        />
+                    </View>
 
                     <EditableDropdown
                         label="Cubierta"
@@ -375,6 +482,19 @@ export default function NewOrderScreen() {
                     </FormField>
                 </FormSection>
 
+                {/* Products with Recipes */}
+                <FormSection title="PRODUCTOS DEL PEDIDO" colors={colors}>
+                    <View style={{ paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm }}>
+                        <Text style={[styles.helperText, { color: colors.textSecondary, marginBottom: Spacing.sm }]}>
+                            Agrega productos y vincula recetas para el descuento automático de inventario.
+                        </Text>
+                        <OrderProductsSelector
+                            products={orderProducts}
+                            onProductsChange={setOrderProducts}
+                        />
+                    </View>
+                </FormSection>
+
                 {/* Payment */}
                 <FormSection title="PAGO" colors={colors}>
                     <View style={styles.row}>
@@ -394,7 +514,7 @@ export default function NewOrderScreen() {
                             </FormField>
                         </View>
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
-                            <FormField label="Abono (50%)" colors={colors}>
+                            <FormField label="Abonado" colors={colors}>
                                 <View style={styles.priceInput}>
                                     <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
                                     <TextInput
@@ -470,7 +590,7 @@ export default function NewOrderScreen() {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView >
     );
 }
 
@@ -510,7 +630,9 @@ const styles = StyleSheet.create({
     },
     input: {
         ...Typography.body,
-        paddingVertical: 4,
+        height: 44,
+        textAlignVertical: 'center',
+        paddingVertical: 0,
     },
     textArea: {
         ...Typography.body,

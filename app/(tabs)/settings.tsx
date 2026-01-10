@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -88,6 +89,7 @@ function SettingToggle({
 export default function SettingsScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const router = useRouter();
 
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [dailyReminders, setDailyReminders] = useState(true);
@@ -178,18 +180,12 @@ export default function SettingsScreen() {
                         onPress={handleExportData}
                         colors={colors}
                     />
-                    <SettingRow
-                        icon="cloud-upload"
-                        label="Importar Inventario"
-                        value="Desde Excel"
-                        onPress={() => Alert.alert('Próximamente', 'Esta función estará disponible pronto.')}
-                        colors={colors}
-                    />
+
                     <SettingRow
                         icon="book"
                         label="Recetas"
                         value="Gestiona tus recetas"
-                        onPress={() => Alert.alert('Próximamente', 'Esta función estará disponible pronto.')}
+                        onPress={() => router.push('/recipes')}
                         colors={colors}
                     />
                 </View>

@@ -44,7 +44,7 @@ function StatCard({
 }: {
   icon: string;
   label: string;
-  value: number;
+  value: number | string;
   color: string;
   colors: typeof Colors.light;
 }) {
@@ -59,6 +59,23 @@ function StatCard({
   );
 }
 
+// Helper to determine urgency color
+const getUrgencyColor = (dateStr: string, colors: any) => {
+  const today = new Date();
+  const deliveryDate = new Date(dateStr);
+  today.setHours(0, 0, 0, 0);
+  deliveryDate.setHours(0, 0, 0, 0);
+
+  const diffTime = deliveryDate.getTime() - today.getTime();
+  const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (daysUntil < 0) return colors.textMuted; // Past
+  if (daysUntil === 0) return colors.urgentToday;
+  if (daysUntil <= 2) return colors.urgentSoon;
+  if (daysUntil <= 7) return colors.urgentWeek;
+  return colors.urgentFuture;
+};
+
 function UpcomingOrderCard({
   order,
   colors
@@ -66,19 +83,24 @@ function UpcomingOrderCard({
   order: Order;
   colors: typeof Colors.light;
 }) {
-  const isUrgent = isToday(order.deliveryDate);
-  const urgencyColor = isUrgent ? colors.urgentToday : colors.urgentFuture;
+  const urgencyColor = getUrgencyColor(order.deliveryDate, colors);
   const dateObj = new Date(order.deliveryDate);
   const formattedDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
   return (
     <Link href={`/orders/${order.id}`} asChild>
       <TouchableOpacity
-        style={[
-          styles.orderCard,
-          { backgroundColor: colors.surface, borderLeftColor: urgencyColor },
-          Shadows.sm
-        ]}
+        style={{
+          backgroundColor: colors.surface,
+          borderLeftWidth: 4,
+          borderLeftColor: urgencyColor,
+          marginBottom: 24, // Guaranteed separation
+          padding: 16,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: colors.border || '#E8DDD4',
+          ...Shadows.md
+        }}
       >
         <View style={styles.orderCardHeader}>
           <Text style={[styles.orderClientName, { color: colors.text }]}>
@@ -119,16 +141,44 @@ export default function HomeScreen() {
   const todayOrdersCount = orders.filter(o => isToday(o.deliveryDate)).length;
   // Simplified week calculation (last 7 days + next 7 days or just volume)
   // For now: active orders (pending/process)
-  const activeOrdersCount = orders.filter(o => o.status === 'pendiente' || o.status === 'en_proceso').length;
+  const activeOrdersCount = orders.filter(o => o.status === 'pendiente' || o.status === 'pagado').length; // 'pagado' orders might still be active in terms of production? Users call, sticking to status. Actually user said 'todo arreglado' regarding new statuses.
+  // Actually, 'active' usually means not completed/cancelled. But now we only have Pendiente/Pagado/Cancelado.
+  // Assuming 'Pendiente' = Active/Open. 'Pagado' = Completed/Closed? 
+  // User said: "Cuando marcas un pedido como Pagado... Se descuenta automáticamente el inventario". 
+  // So 'Pagado' likely means done/delivered/closed for financial tracking, but maybe not production?
+  // Let's assume 'Pendiente' + 'En Proceso' (removed) -> 'Pendiente'.
+  // Use just 'Pendiente' for active? Or maybe all non-cancelled?
+  // Let's stick with 'Pendiente' as Active for now.
+  const activeCount = orders.filter(o => o.status === 'pendiente').length;
 
-  const pendingPaymentsCount = orders.filter(o => o.paymentMethod === 'pendiente').length;
-  const lowStockCount = inventory.filter(i => i.minStock && i.quantity < i.minStock).length;
+  // Monetary Stats
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const monthlyRevenue = orders
+    .filter(o => {
+      const d = new Date(o.deliveryDate);
+      return o.status !== 'cancelado' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, o) => sum + (o.depositAmount || 0), 0);
+
+  const pendingCollection = orders
+    .filter(o => o.status === 'pendiente')
+    .reduce((sum, o) => sum + ((o.totalPrice || 0) - (o.depositAmount || 0)), 0);
+
+  // Format currency
+  const formatMoney = (amount: number) => `$${amount.toLocaleString('es-ES')}`;
 
   // Recent/Upcoming - Sort by date and take first 3
-  // Assuming useOrders returns sorted, but let's filter relevant ones (today onwards)
+  // Show ALL future orders in upcoming list for now if the list is short, or keep top 3 but make it clear
+  // To avoid confusion, let's keep top 3 but maybe the label "Ver todos" handles the rest.
   const upcomingOrders = orders
     .filter(o => new Date(o.deliveryDate) >= new Date(new Date().setHours(0, 0, 0, 0)))
     .slice(0, 3);
+
+  // Note: 'activeOrdersCount' includes all pending statuses versus 'upcomingOrders' which limits to 3.
+  // This is expected behavior. The user might want to see count of UPCOMING specifically vs ACTIVE work.
+  // We'll keep logic but fixing the UI separation next.
 
   return (
     <ScrollView
@@ -158,22 +208,22 @@ export default function HomeScreen() {
         <StatCard
           icon="calendar-check-o"
           label="Activos"
-          value={activeOrdersCount}
+          value={activeCount}
           color={colors.primary}
           colors={colors}
         />
         <StatCard
           icon="money"
           label="Por cobrar"
-          value={pendingPaymentsCount}
+          value={formatMoney(pendingCollection)}
           color={colors.warning}
           colors={colors}
         />
         <StatCard
-          icon="exclamation-triangle"
-          label="Stock bajo"
-          value={lowStockCount}
-          color={colors.error}
+          icon="line-chart"
+          label="Ingresos Mes"
+          value={formatMoney(monthlyRevenue)}
+          color={colors.success}
           colors={colors}
         />
       </View>
@@ -186,7 +236,7 @@ export default function HomeScreen() {
         >
           <View style={styles.newOrderContent}>
             <View style={styles.iconCircle}>
-              <FontAwesome name="plus" size={18} color={colors.primary} />
+              <FontAwesome name="plus" size={16} color="#FFFFFF" />
             </View>
             <Text style={styles.newOrderButtonText}>Nuevo Pedido</Text>
           </View>
@@ -241,7 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md, // Reduced from lg to bring button closer
   },
   statCard: {
     width: (width - Spacing.md * 2 - Spacing.sm) / 2,
@@ -268,33 +318,36 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   newOrderButton: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.xl,
-    marginBottom: Spacing.xxl, // Increased margin for separation
+    paddingVertical: 20, // Taller, more premium feel
+    paddingHorizontal: 24,
+    borderRadius: 18, // Smooth Apple-like curvature
+    marginBottom: 60, // Increased separation (more premium whitespace)
     backgroundColor: '#D4A574',
+    width: '100%', // Full width for "Card" feel
+    flexDirection: 'row', // Ensure layout container
+    alignItems: 'center',
+    justifyContent: 'flex-start', // Left align
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   newOrderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.md,
+    gap: 16, // More breathing room between icon and text
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    width: 36, // Slightly larger
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)', // translucent instead of solid white for better blend
     alignItems: 'center',
     justifyContent: 'center',
   },
   newOrderButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
+    fontWeight: '700', // Stronger weight
+    letterSpacing: 0.3,
   },
   section: {
     marginBottom: Spacing.lg,
@@ -313,10 +366,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   orderCard: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    padding: 16, // Explicit 16px padding
+    borderRadius: 12, // Explicit 12px radius
+    marginBottom: 24, // Explicit 24px margin
     borderLeftWidth: 4,
+    borderWidth: 1, // Visual separation
   },
   orderCardHeader: {
     flexDirection: 'row',

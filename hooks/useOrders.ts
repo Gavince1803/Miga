@@ -1,3 +1,4 @@
+import { deductInventoryForOrder, showDeductionSummary } from '@/lib/inventoryDeduction';
 import { supabase } from '@/lib/supabase';
 import { Order, OrderFormData } from '@/types';
 import { useEffect, useState } from 'react';
@@ -95,6 +96,8 @@ export function useOrders() {
             if (orderData.filling) saveToDictionary('filling', orderData.filling);
             if (orderData.cover) saveToDictionary('cover', orderData.cover);
             if (orderData.occasion) saveToDictionary('occasion', orderData.occasion);
+            // Save custom size
+            if (orderData.size) saveToDictionary('size', orderData.size);
 
             const { data, error } = await supabase
                 .from('orders')
@@ -138,12 +141,46 @@ export function useOrders() {
 
     const updateOrderStatus = async (id: string, status: string) => {
         try {
-            const { error } = await supabase
-                .from('orders')
-                .update({ status })
-                .eq('id', id);
+            // If marking as 'pagado', also update the deposit to equal total (payment complete)
+            if (status === 'pagado') {
+                // First get the order to know the total
+                const { data: orderData } = await supabase
+                    .from('orders')
+                    .select('total_price')
+                    .eq('id', id)
+                    .single();
 
-            if (error) throw error;
+                const updates: any = {
+                    status,
+                    payment_status: 'pagado'
+                };
+
+                // Set deposit to total (fully paid)
+                if (orderData?.total_price) {
+                    updates.deposit_amount = orderData.total_price;
+                }
+
+                const { error } = await supabase
+                    .from('orders')
+                    .update(updates)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                // Auto-deduct inventory when order is paid
+                const { deductedItems, errors } = await deductInventoryForOrder(id);
+                if (deductedItems.length > 0 || errors.length > 0) {
+                    showDeductionSummary(deductedItems, errors);
+                }
+            } else {
+                const { error } = await supabase
+                    .from('orders')
+                    .update({ status })
+                    .eq('id', id);
+
+                if (error) throw error;
+            }
+
             await fetchOrders();
         } catch (error) {
             console.error('Error updating order:', error);
@@ -196,6 +233,26 @@ export function useOrders() {
         }
     };
 
+    // Helper to fetch options from dictionary
+    const getDictionaryOptions = async (category: string) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return [];
+
+            const { data, error } = await supabase
+                .from('options_dictionary')
+                .select('value')
+                .eq('user_id', session.user.id)
+                .eq('category', category);
+
+            if (error) throw error;
+            return data.map(item => item.value);
+        } catch (error) {
+            console.error(`Error fetching ${category} options:`, error);
+            return [];
+        }
+    };
+
     useEffect(() => {
         fetchOrders();
     }, []);
@@ -213,5 +270,6 @@ export function useOrders() {
         createOrder,
         updateOrderStatus,
         updateOrder,
+        getDictionaryOptions,
     };
 }

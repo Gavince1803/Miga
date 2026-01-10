@@ -88,7 +88,7 @@ export default function LoginScreen() {
                             onChangeText={setPassword}
                             value={password}
                             secureTextEntry={true}
-                            placeholder="********"
+                            placeholder="Ingresa tu contraseña"
                             placeholderTextColor={colors.textMuted}
                             autoCapitalize="none"
                         />
@@ -97,14 +97,21 @@ export default function LoginScreen() {
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            { backgroundColor: isRegistering ? colors.secondary : colors.primary }, // Different color for register
-                            Shadows.md
+                            {
+                                backgroundColor: isRegistering ? colors.secondary : colors.primary,
+                                // Add shadow/elevation distinction
+                                shadowColor: isRegistering ? colors.secondary : colors.primary,
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.3,
+                                shadowRadius: 5,
+                                elevation: 5,
+                            }
                         ]}
                         onPress={isRegistering ? signUpWithEmail : signInWithEmail}
                         disabled={loading}
                     >
                         <Text style={styles.buttonText}>
-                            {loading ? 'Cargando...' : (isRegistering ? 'Registrarse' : 'Iniciar Sesión')}
+                            {loading ? 'Procesando...' : (isRegistering ? 'REGISTRARME' : 'INICIAR SESIÓN')}
                         </Text>
                     </TouchableOpacity>
 
@@ -119,7 +126,9 @@ export default function LoginScreen() {
                         onPress={() => setIsRegistering(!isRegistering)}
                     >
                         <Text style={[styles.switchText, { color: colors.primary }]}>
-                            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : 'Crear una cuenta nueva'}
+                            {isRegistering
+                                ? '¿Ya tienes cuenta? Volver al inicio'
+                                : '¿No tienes cuenta? Regístrate aquí'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -187,6 +196,7 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         paddingHorizontal: Spacing.md,
         fontSize: 16,
+        textAlignVertical: 'center',
     },
     button: {
         height: 52,

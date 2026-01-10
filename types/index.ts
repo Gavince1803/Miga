@@ -15,10 +15,15 @@ export interface UserProfile {
 // Payment status enum based on client request
 export type PaymentStatus = 'pendiente' | 'abonado' | 'pagado';
 
+// Payment method
+export type PaymentMethod = 'efectivo' | 'pago_movil' | 'zelle';
+
+// Order status
+export type OrderStatus = 'pendiente' | 'pagado' | 'cancelado';
+
 // Dictionary Option for Fillings, Covers, etc.
 export interface DictionaryOption {
-    id: string;
-    category: string;
+    label: string;
     value: string;
 }
 
@@ -52,6 +57,9 @@ export interface Order {
     depositAmount: number; // Abono
     paymentMethod: PaymentMethod;
     paymentStatus: PaymentStatus;
+
+    // Notifications
+    customReminderDays?: number;
 
     // Status
     status: OrderStatus;
@@ -171,13 +179,12 @@ export const SIZE_OPTIONS = [
 export const PAYMENT_METHOD_OPTIONS = [
     { label: 'Efectivo', value: 'efectivo' as PaymentMethod },
     { label: 'Transferencia', value: 'transferencia' as PaymentMethod },
-    { label: 'Pendiente', value: 'pendiente' as PaymentMethod },
+    { label: 'Zelle', value: 'zelle' as PaymentMethod },
 ] as const;
 
 // Order status options
 export const ORDER_STATUS_OPTIONS = [
     { label: 'Pendiente', value: 'pendiente' as OrderStatus, color: '#FFB74D' },
-    { label: 'En Proceso', value: 'en_proceso' as OrderStatus, color: '#64B5F6' },
-    { label: 'Completado', value: 'completado' as OrderStatus, color: '#A8D5BA' },
+    { label: 'Pagado', value: 'pagado' as OrderStatus, color: '#A8D5BA' },
     { label: 'Cancelado', value: 'cancelado' as OrderStatus, color: '#E57373' },
 ] as const;

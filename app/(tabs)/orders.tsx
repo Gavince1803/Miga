@@ -16,7 +16,7 @@ import {
 
 import { useOrders } from '@/hooks/useOrders';
 
-type FilterType = 'todos' | 'pendiente' | 'en_proceso' | 'completado';
+type FilterType = 'todos' | 'pendiente' | 'pagado' | 'cancelado';
 
 function OrderCard({
     order,
@@ -53,11 +53,17 @@ function OrderCard({
     return (
         <Link href={`/orders/${order.id}`} asChild>
             <TouchableOpacity
-                style={[
-                    styles.orderCard,
-                    { backgroundColor: colors.surface, borderLeftColor: urgencyColor },
-                    Shadows.sm
-                ]}
+                style={{
+                    backgroundColor: colors.surface,
+                    borderLeftWidth: 4,
+                    borderLeftColor: urgencyColor,
+                    marginBottom: 24, // Guaranteed separation
+                    padding: 16,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border || '#E8DDD4',
+                    ...Shadows.md
+                }}
             >
                 <View style={styles.orderCardHeader}>
                     <View style={styles.orderNumberBadge}>
@@ -92,7 +98,7 @@ function OrderCard({
                     </Text>
                 </View>
             </TouchableOpacity>
-        </Link>
+        </Link >
     );
 }
 
@@ -106,8 +112,8 @@ export default function OrdersScreen() {
     const filters: { key: FilterType; label: string }[] = [
         { key: 'todos', label: 'Todos' },
         { key: 'pendiente', label: 'Pendientes' },
-        { key: 'en_proceso', label: 'En Proceso' },
-        { key: 'completado', label: 'Completados' },
+        { key: 'pagado', label: 'Pagados' },
+        { key: 'cancelado', label: 'Cancelados' },
     ];
 
     const filteredOrders = orders.filter(order => {

@@ -2,9 +2,10 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     ScrollView,
     StyleSheet,
@@ -13,10 +14,9 @@ import {
     View,
 } from 'react-native';
 
+import BackButton from '@/components/BackButton';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/types';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
 
 function DetailRow({
     icon,
@@ -90,6 +90,11 @@ export default function OrderDetailScreen() {
                     status: data.status,
                     createdAt: data.created_at,
                     updatedAt: data.updated_at,
+                    // @ts-ignore: handling potential missing fields safely
+                    depositAmount: data.deposit_amount,
+                    paymentStatus: data.payment_status,
+                    reminderDays: data.reminder_days || 0,
+                    customReminderDays: data.custom_reminder_days || 0,
                 });
             }
         } catch (error) {
@@ -164,21 +169,14 @@ export default function OrderDetailScreen() {
         ]);
     };
 
-    const handleWhatsApp = () => {
-        Alert.alert('WhatsApp', `¿Enviar mensaje a ${order.clientName}?`, [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Abrir WhatsApp', onPress: () => { } },
-        ]);
-    };
-
-    const handleEdit = () => {
-        router.push(`/orders/edit?id=${order.id}`);
-    };
+    // Placeholder actions
+    const handleWhatsApp = () => { };
+    const handleEdit = () => router.push(`/orders/edit?id=${order.id}`);
 
     const handleDelete = () => {
         Alert.alert(
             'Eliminar Pedido',
-            '¿Estás segura de que quieres eliminar este pedido? Esta acción no se puede deshacer.',
+            '¿Estás segura de que quieres eliminar este pedido?',
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -186,17 +184,12 @@ export default function OrderDetailScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const { error } = await supabase
-                                .from('orders')
-                                .delete()
-                                .eq('id', order.id);
-
+                            const { error } = await supabase.from('orders').delete().eq('id', order.id);
                             if (error) throw error;
-
-                            Alert.alert('Eliminado', 'El pedido ha sido eliminado');
+                            Alert.alert('Eliminado', 'Pedido eliminado correctamente');
                             router.back();
                         } catch (error) {
-                            Alert.alert('Error', 'No se pudo eliminar el pedido');
+                            Alert.alert('Error', 'No se pudo eliminar');
                         }
                     }
                 },
@@ -205,175 +198,185 @@ export default function OrderDetailScreen() {
     };
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: colors.background }]}
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* Header Card */}
-            <View style={[styles.headerCard, { backgroundColor: colors.surface }, Shadows.md]}>
-                <View style={styles.headerTop}>
-                    <View style={styles.orderBadge}>
-                        <Text style={[styles.orderNumber, { color: colors.primary }]}>
-                            Pedido #{order.orderNumber}
-                        </Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <Stack.Screen
+                options={{
+                    headerShown: true,
+                    title: 'Detalle del Pedido',
+                    headerLeft: () => <BackButton />,
+                    headerTitleStyle: { fontWeight: 'bold' },
+                    headerStyle: { backgroundColor: colors.background },
+                    headerTintColor: colors.tint,
+                    headerShadowVisible: false,
+                }}
+            />
+
+            <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+                {/* Header Card */}
+                <View style={[styles.headerCard, { backgroundColor: colors.surface }, Shadows.md]}>
+                    <View style={styles.headerTop}>
+                        <View style={styles.orderBadge}>
+                            <Text style={[styles.orderNumber, { color: colors.primary }]}>
+                                Pedido #{order.orderNumber}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.statusBadge, { backgroundColor: statusOption?.color + '20' }]}
+                            onPress={handleStatusChange}
+                        >
+                            <Text style={[styles.statusText, { color: statusOption?.color }]}>
+                                {statusOption?.label}
+                            </Text>
+                            <FontAwesome name="chevron-down" size={10} color={statusOption?.color} />
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                        style={[styles.statusBadge, { backgroundColor: statusOption?.color + '20' }]}
-                        onPress={handleStatusChange}
-                    >
-                        <Text style={[styles.statusText, { color: statusOption?.color }]}>
-                            {statusOption?.label}
-                        </Text>
-                        <FontAwesome name="chevron-down" size={10} color={statusOption?.color} />
-                    </TouchableOpacity>
+
+                    <Text style={[styles.clientName, { color: colors.text }]}>
+                        {order.clientName}
+                    </Text>
+
+                    {/* Quick Actions */}
+                    <View style={styles.quickActions}>
+                        <TouchableOpacity
+                            style={[styles.quickAction, { backgroundColor: colors.success + '15' }]}
+                            onPress={handleCall}
+                        >
+                            <FontAwesome name="phone" size={18} color={colors.success} />
+                            <Text style={[styles.quickActionText, { color: colors.success }]}>Llamar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.quickAction, { backgroundColor: '#25D366' + '15' }]}
+                            onPress={handleWhatsApp}
+                        >
+                            <FontAwesome name="whatsapp" size={18} color="#25D366" />
+                            <Text style={[styles.quickActionText, { color: '#25D366' }]}>WhatsApp</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.quickAction, { backgroundColor: colors.primary + '15' }]}
+                            onPress={handleEdit}
+                        >
+                            <FontAwesome name="edit" size={18} color={colors.primary} />
+                            <Text style={[styles.quickActionText, { color: colors.primary }]}>Editar</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
-                <Text style={[styles.clientName, { color: colors.text }]}>
-                    {order.clientName}
-                </Text>
-
-                {/* Quick Actions */}
-                <View style={styles.quickActions}>
-                    <TouchableOpacity
-                        style={[styles.quickAction, { backgroundColor: colors.success + '15' }]}
-                        onPress={handleCall}
-                    >
-                        <FontAwesome name="phone" size={18} color={colors.success} />
-                        <Text style={[styles.quickActionText, { color: colors.success }]}>Llamar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.quickAction, { backgroundColor: '#25D366' + '15' }]}
-                        onPress={handleWhatsApp}
-                    >
-                        <FontAwesome name="whatsapp" size={18} color="#25D366" />
-                        <Text style={[styles.quickActionText, { color: '#25D366' }]}>WhatsApp</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.quickAction, { backgroundColor: colors.primary + '15' }]}
-                        onPress={handleEdit}
-                    >
-                        <FontAwesome name="edit" size={18} color={colors.primary} />
-                        <Text style={[styles.quickActionText, { color: colors.primary }]}>Editar</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Delivery Section */}
-            <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    <FontAwesome name="truck" size={16} /> Entrega
-                </Text>
-                <DetailRow
-                    icon="calendar"
-                    label="Fecha de entrega"
-                    value={formatDate(order.deliveryDate)}
-                    colors={colors}
-                    highlight
-                />
-                <DetailRow
-                    icon="clock-o"
-                    label="Hora"
-                    value={order.deliveryTime}
-                    colors={colors}
-                />
-                {order.address && (
-                    <DetailRow
-                        icon="map-marker"
-                        label="Dirección"
-                        value={order.address}
-                        colors={colors}
-                    />
-                )}
-                <DetailRow
-                    icon="phone"
-                    label="Teléfono"
-                    value={order.clientPhone}
-                    colors={colors}
-                />
-            </View>
-
-            {/* Product Details Section */}
-            <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    <FontAwesome name="birthday-cake" size={16} /> Detalles del Producto
-                </Text>
-                <DetailRow
-                    icon="arrows-alt"
-                    label="Medida"
-                    value={order.size || '-'}
-                    colors={colors}
-                />
-                <DetailRow
-                    icon="users"
-                    label="Personas"
-                    value={order.servings ? `${order.servings} personas` : '-'}
-                    colors={colors}
-                />
-                <DetailRow
-                    icon="circle"
-                    label="Relleno"
-                    value={order.filling || '-'}
-                    colors={colors}
-                />
-                <DetailRow
-                    icon="circle-o"
-                    label="Cubierta"
-                    value={order.cover || '-'}
-                    colors={colors}
-                />
-                <DetailRow
-                    icon="gift"
-                    label="Motivo"
-                    value={order.occasion || '-'}
-                    colors={colors}
-                />
-            </View>
-
-            {/* Description Section */}
-            {order.description && (
+                {/* Delivery Section */}
                 <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        <FontAwesome name="file-text-o" size={16} /> Descripción
+                        <FontAwesome name="truck" size={16} /> Entrega
                     </Text>
-                    <Text style={[styles.description, { color: colors.text }]}>
-                        {order.description}
-                    </Text>
+                    <DetailRow
+                        icon="calendar"
+                        label="Fecha de entrega"
+                        value={formatDate(order.deliveryDate)}
+                        colors={colors}
+                        highlight
+                    />
+                    <DetailRow
+                        icon="clock-o"
+                        label="Hora"
+                        value={new Date(`2000-01-01T${order.deliveryTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        colors={colors}
+                    />
+                    {order.address && (
+                        <DetailRow
+                            icon="map-marker"
+                            label="Dirección"
+                            value={order.address}
+                            colors={colors}
+                        />
+                    )}
+                    <DetailRow
+                        icon="phone"
+                        label="Teléfono"
+                        value={order.clientPhone}
+                        colors={colors}
+                    />
                 </View>
-            )}
 
-            {/* Payment Section */}
-            <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    <FontAwesome name="credit-card" size={16} /> Pago
-                </Text>
-                <View style={styles.priceRow}>
-                    <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
-                    <Text style={[styles.priceValue, { color: colors.primary }]}>
-                        ${order.totalPrice.toFixed(2)}
+                {/* Product Details Section */}
+                <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        <FontAwesome name="birthday-cake" size={16} /> Detalles del Producto
                     </Text>
+                    <DetailRow
+                        icon="arrows-alt"
+                        label="Medida"
+                        value={order.size || '-'}
+                        colors={colors}
+                    />
+                    <DetailRow
+                        icon="users"
+                        label="Personas"
+                        value={order.servings ? `${order.servings} personas` : '-'}
+                        colors={colors}
+                    />
+                    <DetailRow
+                        icon="circle"
+                        label="Relleno"
+                        value={order.filling || '-'}
+                        colors={colors}
+                    />
+                    <DetailRow
+                        icon="circle-o"
+                        label="Cubierta"
+                        value={order.cover || '-'}
+                        colors={colors}
+                    />
+                    <DetailRow
+                        icon="gift"
+                        label="Motivo"
+                        value={order.occasion || '-'}
+                        colors={colors}
+                    />
                 </View>
-                <DetailRow
-                    icon={order.paymentMethod === 'efectivo' ? 'money' : order.paymentMethod === 'transferencia' ? 'exchange' : 'clock-o'}
-                    label="Forma de pago"
-                    value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'transferencia' ? 'Transferencia' : 'Pendiente'}
-                    colors={colors}
-                />
-            </View>
 
-            {/* Delete Button */}
-            <TouchableOpacity
-                style={[styles.deleteButton, { backgroundColor: colors.error + '10' }]}
-                onPress={handleDelete}
-            >
-                <FontAwesome name="trash-o" size={18} color={colors.error} />
-                <Text style={[styles.deleteButtonText, { color: colors.error }]}>
-                    Eliminar Pedido
-                </Text>
-            </TouchableOpacity>
+                {/* Description Section */}
+                {order.description && (
+                    <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                            <FontAwesome name="file-text-o" size={16} /> Descripción
+                        </Text>
+                        <Text style={[styles.description, { color: colors.text }]}>
+                            {order.description}
+                        </Text>
+                    </View>
+                )}
 
-            <View style={{ height: 40 }} />
-        </ScrollView>
+                {/* Payment Section */}
+                <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        <FontAwesome name="credit-card" size={16} /> Pago
+                    </Text>
+                    <View style={styles.priceRow}>
+                        <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
+                        <Text style={[styles.priceValue, { color: colors.primary }]}>
+                            ${order.totalPrice.toFixed(2)}
+                        </Text>
+                    </View>
+                    <DetailRow
+                        icon={order.paymentMethod === 'efectivo' ? 'money' : order.paymentMethod === 'pago_movil' ? 'mobile-phone' : 'bank'}
+                        label="Forma de pago"
+                        value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : 'Zelle'}
+                        colors={colors}
+                    />
+                </View>
+
+                {/* Delete Button */}
+                <TouchableOpacity
+                    style={[styles.deleteButton, { backgroundColor: colors.error + '10' }]}
+                    onPress={handleDelete}
+                >
+                    <FontAwesome name="trash-o" size={18} color={colors.error} />
+                    <Text style={[styles.deleteButtonText, { color: colors.error }]}>
+                        Eliminar Pedido
+                    </Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
+        </View>
     );
 }
 

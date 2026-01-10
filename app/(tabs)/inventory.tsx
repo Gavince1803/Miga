@@ -6,14 +6,21 @@ import React, { useState } from 'react';
 import {
     Alert,
     FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 import { useInventory } from '@/hooks/useInventory';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as XLSX from 'xlsx';
 
 // Mock inventory removed
 
@@ -21,10 +28,12 @@ function InventoryCard({
     item,
     colors,
     onQuickAdjust,
+    onEditQuantity,
 }: {
     item: InventoryItem;
     colors: typeof Colors.light;
     onQuickAdjust: (id: string, delta: number) => void;
+    onEditQuantity: (item: InventoryItem) => void;
 }) {
     const isLowStock = item.minStock && item.quantity < item.minStock;
     const stockPercentage = item.minStock ? (item.quantity / item.minStock) * 100 : 100;
@@ -64,14 +73,20 @@ function InventoryCard({
             </View>
 
             <View style={styles.itemBody}>
-                <View style={styles.quantitySection}>
-                    <Text style={[styles.quantity, { color: colors.text }]}>
+                {/* Tap to edit quantity */}
+                <TouchableOpacity
+                    style={styles.quantitySection}
+                    onPress={() => onEditQuantity(item)}
+                    activeOpacity={0.7}
+                >
+                    <Text style={[styles.quantity, { color: colors.primary }]}>
                         {item.quantity}
                     </Text>
                     <Text style={[styles.unit, { color: colors.textSecondary }]}>
                         {item.unit}
                     </Text>
-                </View>
+                    <FontAwesome name="pencil" size={12} color={colors.textMuted} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
 
                 <View style={styles.quickActions}>
                     <TouchableOpacity
@@ -115,8 +130,21 @@ function InventoryCard({
 export default function InventoryScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { inventory, loading, refreshing, onRefresh, updateStock } = useInventory();
+    const { inventory, loading, refreshing, onRefresh, updateStock, setStock, addItem, importInventory } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Add Item Modal State
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newItemName, setNewItemName] = useState('');
+    const [newItemQuantity, setNewItemQuantity] = useState('');
+    const [newItemUnit, setNewItemUnit] = useState('u');
+    const [newItemMinStock, setNewItemMinStock] = useState('');
+    const [newItemCategory, setNewItemCategory] = useState('');
+
+    // Edit Item Modal State (for quick quantity edit)
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+    const [editQuantity, setEditQuantity] = useState('');
 
     const filteredInventory = inventory.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,20 +159,126 @@ export default function InventoryScreen() {
         updateStock(id, delta);
     };
 
-    const handleImportExcel = () => {
-        Alert.alert(
-            'Importar Inventario',
-            'Selecciona un archivo Excel (.xlsx) o CSV para importar tu inventario.',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Seleccionar Archivo', onPress: () => {
-                        // TODO: Implement file picker and xlsx parsing
-                        Alert.alert('Próximamente', 'Esta función estará disponible pronto.');
+    const openEditModal = (item: InventoryItem) => {
+        setEditingItem(item);
+        setEditQuantity(String(item.quantity));
+        setShowEditModal(true);
+    };
+
+    const handleSaveQuantity = async () => {
+        if (!editingItem) return;
+        const newQty = parseInt(editQuantity);
+        if (isNaN(newQty) || newQty < 0) {
+            Alert.alert('Error', 'Ingresa una cantidad válida');
+            return;
+        }
+        const success = await setStock(editingItem.id, newQty);
+        if (success) {
+            setShowEditModal(false);
+            setEditingItem(null);
+        }
+    };
+
+    const resetAddForm = () => {
+        setNewItemName('');
+        setNewItemQuantity('');
+        setNewItemUnit('u');
+        setNewItemMinStock('');
+        setNewItemCategory('');
+    };
+
+    const handleAddItem = async () => {
+        if (!newItemName.trim()) {
+            Alert.alert('Error', 'El nombre es obligatorio');
+            return;
+        }
+
+        const success = await addItem({
+            name: newItemName.trim(),
+            quantity: parseInt(newItemQuantity) || 0,
+            unit: newItemUnit || 'u',
+            minStock: parseInt(newItemMinStock) || 5,
+            category: newItemCategory.trim() || 'General',
+        });
+
+        if (success) {
+            setShowAddModal(false);
+            resetAddForm();
+            Alert.alert('Éxito', `"${newItemName}" agregado al inventario`);
+        }
+    };
+
+    const handleImportExcel = async () => {
+        try {
+            console.log('Opening picker...');
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'],
+                copyToCacheDirectory: true
+            });
+
+            if (result.canceled) return;
+
+            const { uri } = result.assets[0];
+
+            // Read file
+            const b64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+            const workbook = XLSX.read(b64, { type: 'base64' });
+
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = XLSX.utils.sheet_to_json(sheet);
+
+            if (!data || data.length === 0) {
+                Alert.alert('Error', 'El archivo parece estar vacío o no es válido.');
+                return;
+            }
+
+            // Map columns loosely
+            const itemsToImport = data.map((row: any) => {
+                // Try to find keys
+                const name = row['nombre'] || row['Nombre'] || row['producto'] || row['Producto'] || row['item'] || row['Item'] || row['name'];
+                const quantity = row['cantidad'] || row['Cantidad'] || row['stock'] || row['Stock'] || row['qty'];
+                const unit = row['unidad'] || row['Unidad'] || row['medida'] || row['Medida'] || row['unit'];
+                const minStock = row['minimo'] || row['Minimo'] || row['stock_min'] || row['alerta'] || row['min'];
+                const category = row['categoria'] || row['Categoria'] || row['category'];
+
+                if (!name) return null;
+
+                return {
+                    name: String(name),
+                    quantity: quantity ? Number(quantity) : 0,
+                    unit: unit ? String(unit) : undefined,
+                    minStock: minStock ? Number(minStock) : undefined,
+                    category: category ? String(category) : undefined
+                };
+            }).filter(i => i !== null) as Partial<InventoryItem>[];
+
+            if (itemsToImport.length === 0) {
+                Alert.alert('Error', 'No se encontraron columnas válidas (Nombre, Cantidad).');
+                return;
+            }
+
+            Alert.alert(
+                'Confirmar Importación',
+                `Se encontraron ${itemsToImport.length} items. ¿Deseas importarlos?`,
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    {
+                        text: 'Importar',
+                        onPress: async () => {
+                            const result = await importInventory(itemsToImport);
+                            if (result) {
+                                Alert.alert('Éxito', `Inventario actualizado. Agregados: ${result.added}, Actualizados: ${result.updated}`);
+                            }
+                        }
                     }
-                },
-            ]
-        );
+                ]
+            );
+
+        } catch (error) {
+            console.error('Import error:', error);
+            Alert.alert('Error', 'Hubo un problema al leer el archivo Excel.');
+        }
     };
 
     return (
@@ -196,6 +330,7 @@ export default function InventoryScreen() {
                         item={item}
                         colors={colors}
                         onQuickAdjust={handleQuickAdjust}
+                        onEditQuantity={openEditModal}
                     />
                 )}
                 contentContainerStyle={styles.listContent}
@@ -216,10 +351,145 @@ export default function InventoryScreen() {
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: colors.primary }, Shadows.lg]}
                 activeOpacity={0.85}
-                onPress={() => Alert.alert('Agregar Ingrediente', 'Próximamente')}
+                onPress={() => setShowAddModal(true)}
             >
                 <FontAwesome name="plus" size={24} color="#FFFFFF" />
             </TouchableOpacity>
+
+            {/* Add Item Modal */}
+            <Modal
+                visible={showAddModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowAddModal(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.modalOverlay}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>
+                                Nuevo Ingrediente
+                            </Text>
+                            <TouchableOpacity onPress={() => { setShowAddModal(false); resetAddForm(); }}>
+                                <FontAwesome name="times" size={24} color={colors.textMuted} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre *</Text>
+                            <TextInput
+                                style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                placeholder="Ej: Harina de trigo"
+                                placeholderTextColor={colors.textMuted}
+                                value={newItemName}
+                                onChangeText={setNewItemName}
+                            />
+
+                            <View style={styles.inputRow}>
+                                <View style={styles.inputHalf}>
+                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cantidad</Text>
+                                    <TextInput
+                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                        placeholder="0"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={newItemQuantity}
+                                        onChangeText={setNewItemQuantity}
+                                        keyboardType="numeric"
+                                    />
+                                </View>
+                                <View style={styles.inputHalf}>
+                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Unidad</Text>
+                                    <TextInput
+                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                        placeholder="u, g, ml, kg..."
+                                        placeholderTextColor={colors.textMuted}
+                                        value={newItemUnit}
+                                        onChangeText={setNewItemUnit}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.inputRow}>
+                                <View style={styles.inputHalf}>
+                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Stock mínimo</Text>
+                                    <TextInput
+                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                        placeholder="5"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={newItemMinStock}
+                                        onChangeText={setNewItemMinStock}
+                                        keyboardType="numeric"
+                                    />
+                                </View>
+                                <View style={styles.inputHalf}>
+                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Categoría</Text>
+                                    <TextInput
+                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                        placeholder="General"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={newItemCategory}
+                                        onChangeText={setNewItemCategory}
+                                    />
+                                </View>
+                            </View>
+                        </ScrollView>
+
+                        <TouchableOpacity
+                            style={[styles.addButton, { backgroundColor: colors.primary }]}
+                            onPress={handleAddItem}
+                        >
+                            <FontAwesome name="check" size={18} color="#FFFFFF" />
+                            <Text style={styles.addButtonText}>Agregar Ingrediente</Text>
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
+
+            {/* Edit Quantity Modal */}
+            <Modal
+                visible={showEditModal}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setShowEditModal(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.modalOverlay}
+                >
+                    <View style={[styles.editModalContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text, marginBottom: Spacing.md }]}>
+                            {editingItem?.name}
+                        </Text>
+                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                            Nueva cantidad ({editingItem?.unit})
+                        </Text>
+                        <TextInput
+                            style={[styles.modalInput, styles.editQuantityInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                            value={editQuantity}
+                            onChangeText={setEditQuantity}
+                            keyboardType="numeric"
+                            autoFocus={true}
+                            selectTextOnFocus={true}
+                        />
+                        <View style={styles.editModalButtons}>
+                            <TouchableOpacity
+                                style={[styles.editModalButton, { backgroundColor: colors.border }]}
+                                onPress={() => { setShowEditModal(false); setEditingItem(null); }}
+                            >
+                                <Text style={[styles.addButtonText, { color: colors.text }]}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.editModalButton, { backgroundColor: colors.primary }]}
+                                onPress={handleSaveQuantity}
+                            >
+                                <Text style={styles.addButtonText}>Guardar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }
@@ -378,12 +648,86 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         zIndex: 100,
     },
-    fabLabel: {
-        display: 'none',
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
     },
-    fabLabel: {
+    modalContent: {
+        borderTopLeftRadius: BorderRadius.xl,
+        borderTopRightRadius: BorderRadius.xl,
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.lg,
+        paddingBottom: Spacing.xxl,
+        maxHeight: '85%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.lg,
+    },
+    modalTitle: {
+        ...Typography.title,
+    },
+    modalBody: {
+        marginBottom: Spacing.lg,
+    },
+    inputLabel: {
+        ...Typography.small,
+        marginBottom: Spacing.xs,
+        marginTop: Spacing.md,
+    },
+    modalInput: {
+        ...Typography.body,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        height: 44,
+        textAlignVertical: 'center',
+    },
+    inputRow: {
+        flexDirection: 'row',
+        gap: Spacing.md,
+    },
+    inputHalf: {
+        flex: 1,
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: Spacing.md,
+        borderRadius: BorderRadius.md,
+        gap: Spacing.sm,
+    },
+    addButtonText: {
         color: '#FFFFFF',
-        fontSize: 15,
-        fontWeight: '600',
+        ...Typography.bodyBold,
+    },
+    // Edit Quantity Modal
+    editModalContent: {
+        marginHorizontal: Spacing.lg,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.lg,
+    },
+    editQuantityInput: {
+        fontSize: 32,
+        textAlign: 'center',
+        textAlignVertical: 'center',
+        paddingVertical: Spacing.md,
+        height: 60,
+    },
+    editModalButtons: {
+        flexDirection: 'row',
+        gap: Spacing.md,
+        marginTop: Spacing.lg,
+    },
+    editModalButton: {
+        flex: 1,
+        paddingVertical: Spacing.md,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
     },
 });
