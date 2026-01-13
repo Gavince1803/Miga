@@ -11,6 +11,7 @@ import {
     Dimensions,
     Image,
     ScrollView,
+    Share,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -48,6 +49,37 @@ export default function RecipeDetailScreen() {
         setLinkedIngredients(ingredients);
 
         setLoading(false);
+    };
+
+    const handleShare = async () => {
+        if (!recipe) return;
+        try {
+            let message = `🧁 ${recipe.title.toUpperCase()}\n`;
+            if (recipe.category) message += `${recipe.category}\n`;
+
+            message += `\n📋 INGREDIENTES:\n`;
+
+            if (linkedIngredients.length > 0) {
+                linkedIngredients.forEach(ing => {
+                    message += `• ${ing.quantity} ${ing.unit} ${ing.inventoryItem?.name || 'Ingrediente'}\n`;
+                });
+            }
+
+            if (recipe.ingredients) {
+                if (linkedIngredients.length > 0) message += `\nNotas:\n`;
+                message += `${recipe.ingredients}\n`;
+            }
+
+            message += `\n👨‍🍳 PREPARACIÓN:\n`;
+            message += recipe.steps ? recipe.steps : 'Sin instrucciones';
+
+            await Share.share({
+                message,
+                title: `Receta: ${recipe.title}`
+            });
+        } catch (error: any) {
+            Alert.alert('Error', error.message);
+        }
     };
 
     const handleDelete = () => {
@@ -95,6 +127,9 @@ export default function RecipeDetailScreen() {
                     headerTintColor: recipe.imageUrl ? '#FFF' : colors.tint,
                     headerRight: () => (
                         <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
+                                <FontAwesome name="share-alt" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
+                            </TouchableOpacity>
                             <TouchableOpacity onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)} style={styles.headerBtn}>
                                 <FontAwesome name="pencil" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>

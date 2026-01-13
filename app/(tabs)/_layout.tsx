@@ -1,10 +1,10 @@
-import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { Link, Tabs } from 'expo-router';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { Colors, BorderRadius } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Colors } from '@/constants/Colors';
 
 // Custom tab bar icon with consistent sizing
 function TabBarIcon(props: {
@@ -94,6 +94,32 @@ export default function TabLayout() {
           headerTitle: 'Mi Inventario',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="cubes" color={color} focused={focused} />
+          ),
+        }}
+      />
+
+      {/* Recetario - Recipes */}
+      <Tabs.Screen
+        name="recipes"
+        options={{
+          title: 'Recetario',
+          headerTitle: 'Mis Recetas',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="book" color={color} focused={focused} />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', gap: 12, marginRight: 15 }}>
+              <Link href="/recipes/scan" asChild>
+                <TouchableOpacity style={{ padding: 8 }}>
+                  <FontAwesome name="camera" size={20} color={Colors.light.primary} />
+                </TouchableOpacity>
+              </Link>
+              <Link href="/recipes/new" asChild>
+                <TouchableOpacity style={{ padding: 8 }}>
+                  <FontAwesome name="plus" size={20} color={Colors.light.primary} />
+                </TouchableOpacity>
+              </Link>
+            </View>
           ),
         }}
       />

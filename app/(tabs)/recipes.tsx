@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Stack, useFocusEffect } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
     FlatList,
@@ -76,17 +76,18 @@ export default function RecipesScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Stack.Screen
-                options={{
-                    headerRight: () => (
-                        <Link href="/recipes/new" asChild>
-                            <TouchableOpacity style={{ padding: 8 }}>
-                                <FontAwesome name="plus" size={20} color={colors.primary} />
-                            </TouchableOpacity>
-                        </Link>
-                    )
-                }}
-            />
+            {/* Configure Header Buttons via Tabs.Screen options logic or Stack logic if nested.
+                Since this is a Tab Screen, we can use navigation.setOptions or similar, 
+                but keeping it simple (no headerRight here, moving to _layout for cleanliness 
+                or keeping it if it works).
+                
+                Actually, Stack.Screen works if the Tab Navigator is inside a Stack 
+                or if we use Tabs.Screen from inside? No.
+                
+                Simplest: Render buttons in the view if Header is not customized dynamically enough.
+                But let's try to set options on the parent navigator. 
+                Using <Tabs.Screen /> from expo-router is possible here too or just relying on _layout.
+            */}
 
             {/* Search Bar */}
             <View style={styles.searchContainer}>
@@ -120,12 +121,7 @@ export default function RecipesScreen() {
                 }
             />
 
-            {/* FAB */}
-            <Link href="/recipes/new" asChild>
-                <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }, Shadows.lg]}>
-                    <FontAwesome name="plus" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-            </Link>
+
         </View>
     );
 }

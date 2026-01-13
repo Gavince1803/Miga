@@ -1,3 +1,4 @@
+import { DateTimePickerField } from '@/components/DateTimePickerField';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useOrders } from '@/hooks/useOrders';
@@ -79,8 +80,10 @@ export default function EditOrderScreen() {
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
     const [address, setAddress] = useState('');
-    const [deliveryDate, setDeliveryDate] = useState('');
-    const [deliveryTime, setDeliveryTime] = useState('');
+    const [deliveryDateObj, setDeliveryDateObj] = useState(new Date());
+    const [deliveryTimeObj, setDeliveryTimeObj] = useState(new Date());
+
+    // Kept for other fields
     const [size, setSize] = useState('20 cm');
     const [servings, setServings] = useState('');
     const [filling, setFilling] = useState('');
@@ -104,68 +107,61 @@ export default function EditOrderScreen() {
 
                 if (data) {
                     setClientName(data.client_name);
-                    setClientPhone(data.client_phone);
+                    setClientPhone(data.client_phone || '');
                     setAddress(data.address || '');
-                    // Format date to DD/MM/YYYY for input
-                    const dateObj = new Date(data.delivery_date);
-                    // Adjust because data.delivery_date is YYYY-MM-DD string often
-                    // Actually, if it comes as string YYYY-MM-DD from DB:
-                    const parts = data.delivery_date.split('-');
-                    if (parts.length === 3) {
-                        setDeliveryDate(`${parts[2]}/${parts[1]}/${parts[0]}`);
+
+                    // Parse Date
+                    if (data.delivery_date) {
+                        setDeliveryDateObj(new Date(data.delivery_date));
                     }
 
-                    setDeliveryTime(data.delivery_time);
+                    // Parse Time (HH:MM:SS)
+                    if (data.delivery_time) {
+                        const [hours, minutes] = data.delivery_time.split(':').map(Number);
+                        const timeDate = new Date();
+                        timeDate.setHours(hours, minutes, 0, 0);
+                        setDeliveryTimeObj(timeDate);
+                    }
+
                     setSize(data.size || '20 cm');
                     setServings(data.servings ? data.servings.toString() : '');
                     setFilling(data.filling || '');
                     setCover(data.cover || '');
                     setOccasion(data.occasion || '');
                     setDescription(data.description || '');
-                    setTotalPrice(data.total_price.toString());
+                    setTotalPrice(data.total_price ? data.total_price.toString() : '');
                     setPaymentMethod(data.payment_method);
                 }
             } catch (error) {
+                console.error(error);
                 Alert.alert('Error', 'No se pudo cargar el pedido');
-                router.back();
             } finally {
                 setLoading(false);
             }
         };
+
         fetchOrder();
     }, [id]);
 
     const handleSave = async () => {
-        if (!clientName.trim() || !clientPhone.trim() || !deliveryDate.trim() || !deliveryTime.trim()) {
-            Alert.alert('Error', 'Por favor completa los campos obligatorios');
+        // Validate required fields
+        if (!clientName.trim() || !clientPhone.trim()) {
+            Alert.alert('Error', 'Por favor completa todos los campos requeridos (*)');
             return;
         }
 
         setSubmitting(true);
 
         try {
-            // Parse partial date
-            const [day, month, year] = deliveryDate.split('/').map(Number);
-            let parsedDeliveryDate = new Date();
-            if (day && month && year) {
-                parsedDeliveryDate = new Date(year, month - 1, day);
-            } else {
-                // Fallback
-                parsedDeliveryDate = new Date();
-            }
-
-            if (isNaN(parsedDeliveryDate.getTime())) {
-                Alert.alert('Error', 'Formato de fecha inválido. Use DD/MM/AAAA');
-                setSubmitting(false);
-                return;
-            }
+            // Format time string HH:MM
+            const formattedTime = deliveryTimeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
             const updated = await updateOrder(id as string, {
                 clientName,
                 clientPhone,
                 address,
-                deliveryDate: parsedDeliveryDate,
-                deliveryTime,
+                deliveryDate: deliveryDateObj,
+                deliveryTime: formattedTime,
                 size,
                 servings: servings ? parseInt(servings) : 0,
                 filling,
@@ -242,24 +238,21 @@ export default function EditOrderScreen() {
 
                 {/* Delivery Information */}
                 <FormSection title="ENTREGA" colors={colors}>
-                    <FormField label="Fecha de Entrega (DD/MM/AAAA)" required colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            value={deliveryDate}
-                            onChangeText={setDeliveryDate}
-                        />
-                    </FormField>
-
-                    <FormField label="Hora de Entrega" required colors={colors}>
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            value={deliveryTime}
-                            onChangeText={setDeliveryTime}
-                        />
-                    </FormField>
+                    <DateTimePickerField
+                        label="Fecha de Entrega"
+                        value={deliveryDateObj}
+                        onChange={setDeliveryDateObj}
+                        mode="date"
+                        required
+                    />
+                    <DateTimePickerField
+                        label="Hora de Entrega"
+                        value={deliveryTimeObj}
+                        onChange={setDeliveryTimeObj}
+                        mode="time"
+                        required
+                    />
                 </FormSection>
-
-                {/* Product Details */}
                 <FormSection title="DETALLES DEL PRODUCTO" colors={colors}>
                     <FormField label="Medida / Tamaño" colors={colors}>
                         <ChipSelector
@@ -420,8 +413,8 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.sm,
     },
     input: {
-        ...Typography.body,
-        height: 44,
+        fontSize: 16,
+        height: 48,
         textAlignVertical: 'center',
         paddingVertical: 0,
     },

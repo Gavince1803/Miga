@@ -19,7 +19,7 @@ export type PaymentStatus = 'pendiente' | 'abonado' | 'pagado';
 export type PaymentMethod = 'efectivo' | 'pago_movil' | 'zelle';
 
 // Order status
-export type OrderStatus = 'pendiente' | 'pagado' | 'cancelado';
+export type OrderStatus = 'pendiente' | 'en_proceso' | 'completado' | 'pagado' | 'cancelado';
 
 // Dictionary Option for Fillings, Covers, etc.
 export interface DictionaryOption {
@@ -100,9 +100,20 @@ export interface InventoryItem {
     name: string;
     quantity: number;
     unit: string; // kg, g, unidades, ml, L
-    minStock?: number;
+    minStock: number;
+    costPerUnit?: number; // New field for financial calc
     category?: string;
-    lastUpdated: string;
+    createdAt: string;
+}
+
+// Form data for creating/editing inventory items
+export interface InventoryFormData {
+    name: string;
+    quantity: number;
+    unit: string;
+    minStock: number;
+    costPerUnit?: number;
+    category?: string;
 }
 
 // Recipe template for automated inventory
@@ -176,9 +187,10 @@ export const SIZE_OPTIONS = [
 ] as const;
 
 // Payment method options
+// Payment method options
 export const PAYMENT_METHOD_OPTIONS = [
     { label: 'Efectivo', value: 'efectivo' as PaymentMethod },
-    { label: 'Transferencia', value: 'transferencia' as PaymentMethod },
+    { label: 'Pago Móvil', value: 'pago_movil' as PaymentMethod },
     { label: 'Zelle', value: 'zelle' as PaymentMethod },
 ] as const;
 

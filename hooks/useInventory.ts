@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { InventoryItem } from '@/types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 export function useInventory() {
@@ -32,8 +32,9 @@ export function useInventory() {
                     quantity: item.quantity,
                     unit: item.unit,
                     minStock: item.min_stock,
+                    costPerUnit: item.cost_per_unit, // Financials
                     category: item.category,
-                    lastUpdated: item.last_updated,
+                    createdAt: item.created_at,
                 }));
                 setInventory(mappedItems);
             }
@@ -74,6 +75,21 @@ export function useInventory() {
                 fetchInventory();
                 throw error;
             }
+
+            // Log Movement for Financials
+            if (delta !== 0) {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const { error: moveError } = await supabase.from('inventory_movements').insert({
+                        user_id: session.user.id,
+                        inventory_item_id: id,
+                        movement_type: delta > 0 ? 'agregado' : 'uso',
+                        quantity: Math.abs(delta),
+                        notes: delta > 0 ? 'Restock Rápido' : 'Uso Rápido'
+                    });
+                    if (moveError) console.error('Error logging movement (updateStock):', moveError);
+                }
+            }
         } catch (error) {
             console.error('Error updating stock:', error);
             Alert.alert('Error', 'No se pudo actualizar el stock');
@@ -99,6 +115,25 @@ export function useInventory() {
                 fetchInventory();
                 throw error;
             }
+
+            // Log Movement
+            const item = inventory.find(i => i.id === id);
+            if (item) {
+                const delta = newQuantity - item.quantity;
+                if (delta !== 0) {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session) {
+                        const { error: moveError } = await supabase.from('inventory_movements').insert({
+                            user_id: session.user.id,
+                            inventory_item_id: id,
+                            movement_type: delta > 0 ? 'agregado' : 'uso',
+                            quantity: Math.abs(delta),
+                            notes: 'Ajuste Manual'
+                        });
+                        if (moveError) console.error('Error logging movement (setStock):', moveError);
+                    }
+                }
+            }
             return true;
         } catch (error) {
             console.error('Error setting stock:', error);
@@ -111,17 +146,17 @@ export function useInventory() {
         fetchInventory();
     }, []);
 
-    const onRefresh = () => {
+    const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchInventory();
-    };
+    }, []);
 
-    const addItem = async (item: Omit<InventoryItem, 'id' | 'userId' | 'lastUpdated'>) => {
+    const addItem = async (item: Omit<InventoryItem, 'id' | 'userId' | 'createdAt'>) => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('No session');
 
-            const { error } = await supabase
+            const { data: newItem, error } = await supabase
                 .from('inventory_items')
                 .insert({
                     user_id: session.user.id,
@@ -129,16 +164,73 @@ export function useInventory() {
                     quantity: item.quantity,
                     unit: item.unit || 'u',
                     min_stock: item.minStock || 5,
+                    cost_per_unit: item.costPerUnit || 0,
                     category: item.category || 'General',
-                });
+                })
+                .select()
+                .single();
 
             if (error) throw error;
+
+            // Record initial movement for Expenses tracking
+            if (newItem && newItem.quantity > 0) {
+                const { error: moveError } = await supabase.from('inventory_movements').insert({
+                    user_id: session.user.id,
+                    inventory_item_id: newItem.id,
+                    movement_type: 'agregado',
+                    quantity: newItem.quantity,
+                    notes: 'Stock Inicial',
+                });
+                if (moveError) console.error('Error logging movement (addItem):', moveError);
+            }
 
             await fetchInventory();
             return true;
         } catch (error) {
             console.error('Error adding item:', error);
             Alert.alert('Error', 'No se pudo agregar el ingrediente');
+            return false;
+        }
+    };
+
+    const updateItemDetails = async (id: string, updates: Partial<Omit<InventoryItem, 'id' | 'userId' | 'createdAt'>>) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No session');
+
+            const dbUpdates: any = {};
+            if (updates.name) dbUpdates.name = updates.name;
+            if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
+            if (updates.unit) dbUpdates.unit = updates.unit;
+            if (updates.minStock !== undefined) dbUpdates.min_stock = updates.minStock;
+            if (updates.costPerUnit !== undefined) dbUpdates.cost_per_unit = updates.costPerUnit;
+            if (updates.category) dbUpdates.category = updates.category;
+
+            if (Object.keys(dbUpdates).length === 0) return true;
+
+            dbUpdates.last_updated = new Date().toISOString();
+
+            const { error } = await supabase
+                .from('inventory_items')
+                .update(dbUpdates)
+                .eq('id', id);
+
+            if (error) throw error;
+
+            setInventory(prev => prev.map(item => {
+                if (item.id === id) {
+                    // Force update local state
+                    // If updating quantity here, we are not logging movement. 
+                    // This function should be preferred for NON-quantity updates or corrections.
+                    return { ...item, ...updates };
+                }
+                return item;
+            }));
+
+            return true;
+        } catch (error) {
+            console.error('Error updating item:', error);
+            Alert.alert('Error', 'No se pudo actualizar el ingrediente');
             return false;
         }
     };
@@ -186,7 +278,7 @@ export function useInventory() {
                         toUpdate.push(
                             supabase.from('inventory_items')
                                 .update(updates)
-                                .eq('id', existing.id)
+                                .eq('id', existing.id) as unknown as Promise<any>
                         );
                     }
                 } else {
@@ -202,12 +294,30 @@ export function useInventory() {
                 }
             }
 
-            // Execute Inserts
+            // Execute Inserts with Movement Logging
             if (toInsert.length > 0) {
-                const { error: insertError } = await supabase
+                const { data: insertedData, error: insertError } = await supabase
                     .from('inventory_items')
-                    .insert(toInsert);
+                    .insert(toInsert)
+                    .select(); // Fetch IDs to log movements
+
                 if (insertError) throw insertError;
+
+                // Log movements for "importacion"
+                if (session && insertedData) {
+                    const movements = insertedData.map(item => ({
+                        user_id: session.user.id,
+                        inventory_item_id: item.id,
+                        movement_type: 'importacion',
+                        quantity: item.quantity,
+                        notes: 'Importación Excel'
+                    }));
+
+                    if (movements.length > 0) {
+                        const { error: moveError } = await supabase.from('inventory_movements').insert(movements);
+                        if (moveError) console.warn('Error logging import movements:', moveError);
+                    }
+                }
             }
 
             // Execute Updates
@@ -238,6 +348,7 @@ export function useInventory() {
         updateStock,
         setStock,
         addItem,
-        importInventory
+        importInventory,
+        updateItemDetails
     };
 }

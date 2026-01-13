@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useOrders } from '@/hooks/useOrders';
 import { ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -53,6 +54,7 @@ export default function OrderDetailScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
+    const { updateOrderStatus } = useOrders();
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
@@ -142,19 +144,14 @@ export default function OrderDetailScreen() {
             ...ORDER_STATUS_OPTIONS.map(option => ({
                 text: option.label,
                 onPress: async () => {
-                    try {
-                        const { error } = await supabase
-                            .from('orders')
-                            .update({ status: option.value })
-                            .eq('id', order.id);
-
-                        if (error) throw error;
-
-                        setOrder(prev => prev ? { ...prev, status: option.value } : null);
-                        Alert.alert('Estado Actualizado', `El pedido ahora está: ${option.label}`);
-                    } catch (error) {
-                        Alert.alert('Error', 'No se pudo actualizar el estado');
-                    }
+                    if (!order) return;
+                    await updateOrderStatus(order.id, option.value);
+                    // Refresh order locally or wait for hook? 
+                    // Hook calls fetchOrders but that updates list in hook, not this screen state necessarily.
+                    // But maybe we should refetch?
+                    // Let's just update local state for UI responsiveness, logic handled.
+                    setOrder(prev => prev ? { ...prev, status: option.value } : null);
+                    Alert.alert('Estado Actualizado', `El pedido ahora está: ${option.label}`);
                 },
             })),
             { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } }

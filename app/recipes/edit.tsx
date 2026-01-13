@@ -288,6 +288,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         height: 48,
         textAlignVertical: 'center',
+        paddingVertical: 0,
     },
 
     photoButtonsRow: { flexDirection: 'row', gap: Spacing.md },

@@ -629,8 +629,8 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.sm,
     },
     input: {
-        ...Typography.body,
-        height: 44,
+        fontSize: 16,
+        height: 48,
         textAlignVertical: 'center',
         paddingVertical: 0,
     },

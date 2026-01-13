@@ -1,31 +1,17 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, useFocusEffect } from 'expo-router';
-import React, { useCallback } from 'react';
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-
-const { width } = Dimensions.get('window');
-
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
+import { supabase } from '@/lib/supabase';
 import { Order } from '@/types';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { isToday } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// Helper to check if date is today
-const isToday = (dateString: string) => {
-  const date = new Date(dateString);
-  const today = new Date();
-  return date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
-};
+const { width } = Dimensions.get('window');
 
 const formatTime12hr = (time: string) => {
   if (!time) return '';
@@ -138,7 +124,7 @@ export default function HomeScreen() {
   );
 
   // Calculate stats
-  const todayOrdersCount = orders.filter(o => isToday(o.deliveryDate)).length;
+  const todayOrdersCount = orders.filter(o => isToday(new Date(o.deliveryDate))).length;
   // Simplified week calculation (last 7 days + next 7 days or just volume)
   // For now: active orders (pending/process)
   const activeOrdersCount = orders.filter(o => o.status === 'pendiente' || o.status === 'pagado').length; // 'pagado' orders might still be active in terms of production? Users call, sticking to status. Actually user said 'todo arreglado' regarding new statuses.
@@ -173,18 +159,93 @@ export default function HomeScreen() {
   // Show ALL future orders in upcoming list for now if the list is short, or keep top 3 but make it clear
   // To avoid confusion, let's keep top 3 but maybe the label "Ver todos" handles the rest.
   const upcomingOrders = orders
-    .filter(o => new Date(o.deliveryDate) >= new Date(new Date().setHours(0, 0, 0, 0)))
+    .filter(o => {
+      const isFuture = new Date(o.deliveryDate) >= new Date(new Date().setHours(0, 0, 0, 0));
+      const isActive = o.status !== 'cancelado' && o.status !== 'completado';
+      const isUnpaid = o.paymentStatus !== 'pagado'; // User request: Paid orders should hide
+      return isFuture && isActive && isUnpaid;
+    })
     .slice(0, 3);
 
   // Note: 'activeOrdersCount' includes all pending statuses versus 'upcomingOrders' which limits to 3.
   // This is expected behavior. The user might want to see count of UPCOMING specifically vs ACTIVE work.
   // We'll keep logic but fixing the UI separation next.
 
+  // Expenses Calculation
+  const [monthlyExpenses, setMonthlyExpenses] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchExpenses = useCallback(async () => {
+    try {
+      const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
+      const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
+
+      console.log('Fetching expenses for:', startOfMonth, 'to', endOfMonth);
+      const { data, error } = await supabase
+        .from('inventory_movements')
+        .select(`
+          quantity,
+          movement_type,
+          inventory_items (
+            cost_per_unit
+          )
+        `)
+        .in('movement_type', ['agregado', 'importacion'])
+        .gte('created_at', startOfMonth)
+        .lte('created_at', endOfMonth);
+
+      if (error) {
+        console.error('Error fetching expenses:', error);
+        return;
+      }
+
+      if (data) {
+        // console.log('Expenses Data Raw:', JSON.stringify(data, null, 2));
+        const expenses = data.reduce((sum, move: any) => {
+          const itemData = move.inventory_items || move.item;
+          const cost = itemData?.cost_per_unit || 0;
+          return sum + (move.quantity * cost);
+        }, 0);
+        console.log('Calculated Expenses:', expenses);
+        setMonthlyExpenses(expenses);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [currentMonth, currentYear]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      onRefresh();
+      onRefreshInventory();
+      fetchExpenses();
+    }, [fetchExpenses, onRefresh, onRefreshInventory])
+  );
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      onRefresh(),
+      onRefreshInventory(),
+      fetchExpenses()
+    ]);
+    setRefreshing(false);
+  };
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+      }
     >
       {/* Welcome Header */}
       <View style={styles.header}>
@@ -206,13 +267,6 @@ export default function HomeScreen() {
           colors={colors}
         />
         <StatCard
-          icon="calendar-check-o"
-          label="Activos"
-          value={activeCount}
-          color={colors.primary}
-          colors={colors}
-        />
-        <StatCard
           icon="money"
           label="Por cobrar"
           value={formatMoney(pendingCollection)}
@@ -221,25 +275,41 @@ export default function HomeScreen() {
         />
         <StatCard
           icon="line-chart"
-          label="Ingresos Mes"
+          label="Ingresos"
           value={formatMoney(monthlyRevenue)}
           color={colors.success}
           colors={colors}
         />
+        <StatCard
+          icon="shopping-cart"
+          label="Gastos"
+          value={formatMoney(monthlyExpenses)}
+          color={colors.error} // Red for expenses
+          colors={colors}
+        />
       </View>
 
-      {/* Quick Action Button - SIngle Line Design */}
+      {/* Quick Action Button - STRIKING GRADIENT DESIGN */}
       <Link href="/orders/new" asChild>
-        <TouchableOpacity
-          style={[styles.newOrderButton, Shadows.lg]}
-          activeOpacity={0.85}
-        >
-          <View style={styles.newOrderContent}>
-            <View style={styles.iconCircle}>
-              <FontAwesome name="plus" size={16} color="#FFFFFF" />
+        <TouchableOpacity style={{ marginBottom: 40 }} activeOpacity={0.8}>
+          <LinearGradient
+            // Gradient adjusted to match Bakery Aesthetic: Gold to Burnt Orange/Sienna
+            colors={['#D4A574', '#D35400']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.newOrderButton}
+          >
+            <View style={styles.newOrderContent}>
+              <View style={styles.iconContainer}>
+                <FontAwesome name="plus" size={24} color="#FFF" />
+              </View>
+              <View>
+                <Text style={styles.newOrderTitle}>Nuevo Pedido</Text>
+                <Text style={styles.newOrderSubtitle}>Registrar una nueva orden</Text>
+              </View>
             </View>
-            <Text style={styles.newOrderButtonText}>Nuevo Pedido</Text>
-          </View>
+            <FontAwesome name="chevron-right" size={16} color="rgba(255,255,255,0.6)" />
+          </LinearGradient>
         </TouchableOpacity>
       </Link>
 
@@ -318,36 +388,37 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   newOrderButton: {
-    paddingVertical: 20, // Taller, more premium feel
+    paddingVertical: 20,
     paddingHorizontal: 24,
-    borderRadius: 18, // Smooth Apple-like curvature
-    marginBottom: 60, // Increased separation (more premium whitespace)
-    backgroundColor: '#D4A574',
-    width: '100%', // Full width for "Card" feel
-    flexDirection: 'row', // Ensure layout container
+    borderRadius: 20,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start', // Left align
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'space-between',
   },
   newOrderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16, // More breathing room between icon and text
+    gap: 16,
   },
-  iconCircle: {
-    width: 36, // Slightly larger
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.2)', // translucent instead of solid white for better blend
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.25)', // Glassy effect
     alignItems: 'center',
     justifyContent: 'center',
   },
-  newOrderButtonText: {
+  newOrderTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700', // Stronger weight
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+  },
+  newOrderSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 2,
   },
   section: {
     marginBottom: Spacing.lg,
