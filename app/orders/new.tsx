@@ -351,6 +351,7 @@ export default function NewOrderScreen() {
                                 value={deliveryDateObj}
                                 onChange={setDeliveryDateObj}
                                 mode="date"
+                                minimumDate={new Date(new Date().getFullYear(), 0, 1)}
                                 required
                             />
                         </View>

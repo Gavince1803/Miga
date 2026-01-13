@@ -12,13 +12,13 @@ import {
     View,
 } from 'react-native';
 
-interface DateTimePickerFieldProps {
+type DateTimePickerFieldProps = Omit<Partial<React.ComponentProps<typeof DateTimePicker>>, 'onChange' | 'value'> & {
     label: string;
     value: Date;
     onChange: (date: Date) => void;
     mode: 'date' | 'time';
     required?: boolean;
-}
+};
 
 export function DateTimePickerField({
     label,
@@ -26,6 +26,7 @@ export function DateTimePickerField({
     onChange,
     mode,
     required,
+    ...rest
 }: DateTimePickerFieldProps) {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
@@ -85,6 +86,7 @@ export function DateTimePickerField({
                     is24Hour={false} // Force 12h
                     onChange={handleChange}
                     display="default" // Spinner or Calendar based on Android version preferences
+                    {...rest}
                 />
             )}
 
@@ -114,6 +116,7 @@ export function DateTimePickerField({
                                 style={{ height: 200, width: '100%', alignSelf: 'center' }}
                                 themeVariant={colorScheme ?? 'light'}
                                 locale="es-US"
+                                {...rest}
                             />
                         </View>
                     </View>
