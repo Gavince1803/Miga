@@ -1,12 +1,12 @@
 import { useColorScheme } from '@/components/useColorScheme';
-import { Colors, Spacing } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export function ExchangeRateTicker() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { bcv, parallel, loading, error, refreshRates } = useExchangeRates();
+    const { bcv, parallel, euro, loading, error, refreshRates } = useExchangeRates();
 
     if (error) {
         return (
@@ -26,19 +26,22 @@ export function ExchangeRateTicker() {
 
     return (
         <TouchableOpacity onPress={refreshRates} style={styles.container}>
-            <View style={styles.rateGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>BCV:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{bcv.toFixed(2)}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.rateGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Par:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{parallel.toFixed(2)}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.rateGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Eur:</Text>
-                <Text style={[styles.value, { color: colors.text }]}>{euro ? euro.toFixed(2) : '--'}</Text>
+            <View style={styles.rateColumn}>
+                <View style={styles.rateRow}>
+                    <Text style={[styles.currencyLabel, { color: colors.primary }]}>$</Text>
+                    <Text style={[styles.value, { color: colors.text }]}>{bcv.toFixed(2)}</Text>
+                    <Text style={[styles.subLabel, { color: colors.textSecondary }]}>BCV</Text>
+                </View>
+                <View style={styles.rateRow}>
+                    <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>$</Text>
+                    <Text style={[styles.value, { color: colors.text }]}>{parallel.toFixed(2)}</Text>
+                    <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Par</Text>
+                </View>
+                <View style={styles.rateRow}>
+                    <Text style={[styles.currencyLabel, { color: colors.textSecondary }]}>€</Text>
+                    <Text style={[styles.value, { color: colors.text }]}>{euro ? euro.toFixed(2) : '--'}</Text>
+                    <Text style={[styles.subLabel, { color: colors.textSecondary }]}>EUR</Text>
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -46,29 +49,32 @@ export function ExchangeRateTicker() {
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 4,
-        gap: Spacing.sm,
+        paddingVertical: 2,
+        paddingHorizontal: 8,
     },
-    rateGroup: {
+    rateColumn: {
         flexDirection: 'row',
+        gap: 12,
         alignItems: 'center',
-        gap: 4,
     },
-    label: {
+    rateRow: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 2,
+    },
+    currencyLabel: {
         fontSize: 10,
         fontWeight: '600',
     },
     value: {
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: '700',
+        fontVariant: ['tabular-nums'],
     },
-    divider: {
-        width: 1,
-        height: 10,
-        backgroundColor: '#ccc',
+    subLabel: {
+        fontSize: 8,
+        textTransform: 'uppercase',
+        marginLeft: 1,
     },
     errorContainer: {
         padding: 4,

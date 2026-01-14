@@ -73,7 +73,8 @@ export default function EditOrderScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
     const { updateOrder } = useOrders();
-    const { bcv } = useExchangeRates();
+    const { bcv, parallel, euro } = useExchangeRates();
+    const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -325,11 +326,40 @@ export default function EditOrderScreen() {
                                 keyboardType="decimal-pad"
                             />
                         </View>
-                        {totalPrice && bcv > 0 && (
-                            <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
-                                ≈ Bs. {(parseFloat(totalPrice) * bcv).toFixed(2)} (Tasa BCV)
-                            </Text>
-                        )}
+                        <View style={{ marginTop: 8 }}>
+                            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                                {[
+                                    { id: 'bcv', label: 'BCV' },
+                                    { id: 'parallel', label: 'Paralelo' },
+                                    { id: 'euro', label: 'Euro' }
+                                ].map((rate) => (
+                                    <TouchableOpacity
+                                        key={rate.id}
+                                        onPress={() => setSelectedRateType(rate.id as any)}
+                                        style={{
+                                            paddingHorizontal: 8,
+                                            paddingVertical: 4,
+                                            borderRadius: 12,
+                                            backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
+                                            borderWidth: 1,
+                                            borderColor: selectedRateType === rate.id ? colors.primary : colors.border
+                                        }}>
+                                        <Text style={{ fontSize: 10, color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
+                                            {rate.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                            {totalPrice ? (
+                                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                                    ≈ Bs. {(parseFloat(totalPrice) * (
+                                        selectedRateType === 'bcv' ? bcv :
+                                            selectedRateType === 'parallel' ? parallel :
+                                                (euro || 0)
+                                    )).toFixed(2)}
+                                </Text>
+                            ) : null}
+                        </View>
                     </FormField>
 
                     <FormField label="Abono" colors={colors}>

@@ -49,8 +49,8 @@ export default function TabLayout() {
           fontWeight: '600',
           fontSize: 18,
         },
+        headerTitleAlign: 'left',
         headerShadowVisible: false,
-        headerRight: () => <ExchangeRateTicker />,
       }}>
 
       {/* Inicio - Dashboard/Home */}
@@ -62,6 +62,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="home" color={color} focused={focused} />
           ),
+          headerRight: () => <ExchangeRateTicker />,
         }}
       />
 
@@ -112,8 +113,6 @@ export default function TabLayout() {
           ),
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 15 }}>
-              <ExchangeRateTicker />
-              <View style={{ width: 1, height: 20, backgroundColor: Colors.light.border }} />
               <Link href="/recipes/scan" asChild>
                 <TouchableOpacity style={{ padding: 8 }}>
                   <FontAwesome name="camera" size={20} color={Colors.light.primary} />

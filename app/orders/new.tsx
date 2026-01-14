@@ -4,6 +4,7 @@ import { EditableDropdown } from '@/components/EditableDropdown';
 import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrderItems } from '@/hooks/useOrderItems';
 import { useOrders } from '@/hooks/useOrders';
 import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
@@ -143,6 +144,8 @@ export default function NewOrderScreen() {
 
     const { createOrder, getDictionaryOptions } = useOrders();
     const { setItemsForOrder } = useOrderItems();
+    const { bcv, parallel, euro } = useExchangeRates();
+    const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const [submitting, setSubmitting] = useState(false);
     const [dynamicSizes, setDynamicSizes] = useState<string[]>([]);
 
@@ -512,11 +515,6 @@ export default function NewOrderScreen() {
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
-                                {totalPrice && bcv > 0 && (
-                                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
-                                        ≈ Bs. {(parseFloat(totalPrice) * bcv).toFixed(2)} (Tasa BCV)
-                                    </Text>
-                                )}
                             </FormField>
                         </View>
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
@@ -534,6 +532,43 @@ export default function NewOrderScreen() {
                                 </View>
                             </FormField>
                         </View>
+                    </View>
+
+                    {/* Rate Selector & Helper - Moved outside the row for better alignment */}
+                    <View style={{ marginTop: 8, marginBottom: 8 }}>
+                        <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                            {[
+                                { id: 'bcv', label: 'BCV' },
+                                { id: 'parallel', label: 'Paralelo' },
+                                { id: 'euro', label: 'Euro' }
+                            ].map((rate) => (
+                                <TouchableOpacity
+                                    key={rate.id}
+                                    onPress={() => setSelectedRateType(rate.id as any)}
+                                    style={{
+                                        paddingHorizontal: 12,
+                                        paddingVertical: 6,
+                                        borderRadius: 12,
+                                        backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
+                                        borderWidth: 1,
+                                        borderColor: selectedRateType === rate.id ? colors.primary : colors.border
+                                    }}>
+                                    <Text style={{ fontSize: 11, fontWeight: '500', color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
+                                        {rate.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {totalPrice ? (
+                            <Text style={{ fontSize: 13, color: colors.textSecondary, marginLeft: 2 }}>
+                                ≈ Bs. {(parseFloat(totalPrice) * (
+                                    selectedRateType === 'bcv' ? bcv :
+                                        selectedRateType === 'parallel' ? parallel :
+                                            (euro || 0)
+                                )).toFixed(2)}
+                            </Text>
+                        ) : null}
                     </View>
 
                     {/* Balance Info */}
@@ -595,7 +630,7 @@ export default function NewOrderScreen() {
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
-            </ScrollView>
+            </ScrollView >
         </KeyboardAvoidingView >
     );
 }
