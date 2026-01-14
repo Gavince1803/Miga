@@ -77,9 +77,9 @@ export function useRecipes() {
             }
 
             // Upload image to Supabase Storage if it's a local URI
-            let finalImageUrl = data.imageUrl;
+            let finalImageUrl: string | undefined = data.imageUrl;
             if (data.imageUrl && !data.imageUrl.includes('supabase.co')) {
-                finalImageUrl = await uploadImage(data.imageUrl, 'recipes');
+                finalImageUrl = (await uploadImage(data.imageUrl, 'recipes')) || undefined;
             }
 
             const { data: newRecipe, error } = await supabase

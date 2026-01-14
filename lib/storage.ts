@@ -37,7 +37,7 @@ export async function uploadImage(
 
         // Upload to Supabase Storage
         const { data, error } = await supabase.storage
-            .from('recipe-images')
+            .from('images')
             .upload(filePath, decode(base64), {
                 contentType: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
                 upsert: false,
@@ -50,7 +50,7 @@ export async function uploadImage(
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
-            .from('recipe-images')
+            .from('images')
             .getPublicUrl(data.path);
 
         return publicUrl;
@@ -72,13 +72,13 @@ export async function deleteImage(imageUrl: string): Promise<boolean> {
         }
 
         // Extract path from URL
-        const urlParts = imageUrl.split('/recipe-images/');
+        const urlParts = imageUrl.split('/images/');
         if (urlParts.length < 2) return false;
 
         const filePath = urlParts[1];
 
         const { error } = await supabase.storage
-            .from('recipe-images')
+            .from('images')
             .remove([filePath]);
 
         if (error) {
