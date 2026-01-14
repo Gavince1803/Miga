@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { extractTextFromImage } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
@@ -58,34 +59,31 @@ export default function ScanRecipeScreen() {
         if (!image) return;
         setProcessing(true);
 
-        // MOCK OCR PROCESS
-        // In a real app, send `image` to Google Cloud Vision API or use on-device ML
-        setTimeout(() => {
-            setProcessing(false);
+        try {
+            // Call real OCR via Supabase Edge Function
+            const extractedText = await extractTextFromImage(image);
 
-            // Simulated Result
-            const simulatedText = `Harina de Trigo 500g
-Azúcar 200g
-Huevos 3u
-Leche 250ml
-Mantequilla 100g
-
-1. Mezclar harina y azúcar.
-2. Batir huevos.
-3. Hornear a 180°C.`;
+            if (!extractedText) {
+                Alert.alert(
+                    'Error de Escaneo',
+                    'No se pudo extraer texto de la imagen. Intenta con una foto más clara.',
+                    [{ text: 'OK' }]
+                );
+                setProcessing(false);
+                return;
+            }
 
             Alert.alert(
                 'Escaneo Completado',
-                'Se ha extraído el texto de la receta con éxito (Simulado).',
+                'Se ha extraído el texto de la receta con éxito.',
                 [
                     {
                         text: 'Crear Receta',
                         onPress: () => {
-                            // Navigate to New Recipe with params
                             router.push({
                                 pathname: '/recipes/new',
                                 params: {
-                                    scannedText: simulatedText,
+                                    scannedText: extractedText,
                                     scannedImage: image
                                 }
                             });
@@ -93,7 +91,12 @@ Mantequilla 100g
                     }
                 ]
             );
-        }, 2000);
+        } catch (error) {
+            console.error('OCR error:', error);
+            Alert.alert('Error', 'Ocurrió un error al procesar la imagen.');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     return (

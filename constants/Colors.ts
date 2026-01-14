@@ -1,5 +1,5 @@
 /**
- * Agenda Repostera - Design System Colors
+ * Miga - Design System Colors
  * Warm, bakery-inspired palette with Steve Jobs-like elegance
  */
 

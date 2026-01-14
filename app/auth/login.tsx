@@ -52,7 +52,7 @@ export default function LoginScreen() {
                     <View style={styles.logoContainer}>
                         <FontAwesome name="birthday-cake" size={48} color={colors.primary} />
                     </View>
-                    <Text style={[styles.title, { color: colors.text }]}>Agenda Repostera</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Miga</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                         Gestiona tus pedidos e inventario
                     </Text>

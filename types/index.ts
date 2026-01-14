@@ -1,5 +1,5 @@
 /**
- * Agenda Repostera - TypeScript Types
+ * Miga - TypeScript Types
  */
 
 // User profile with reminder settings
