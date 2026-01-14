@@ -1,3 +1,4 @@
+import { uploadImage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -61,7 +62,6 @@ export function useRecipes() {
             }
         } catch (error) {
             console.error('Error fetching recipes:', error);
-            // Alert.alert('Error', 'No se pudieron cargar las recetas'); // Silent failure on refetch is better
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -76,12 +76,18 @@ export function useRecipes() {
                 return null;
             }
 
+            // Upload image to Supabase Storage if it's a local URI
+            let finalImageUrl = data.imageUrl;
+            if (data.imageUrl && !data.imageUrl.includes('supabase.co')) {
+                finalImageUrl = await uploadImage(data.imageUrl, 'recipes');
+            }
+
             const { data: newRecipe, error } = await supabase
                 .from('recipes')
                 .insert([{
                     user_id: session.user.id,
                     title: data.title,
-                    image_url: data.imageUrl,
+                    image_url: finalImageUrl,
                     ingredients: data.ingredients,
                     steps: data.steps,
                     category: data.category
@@ -102,11 +108,17 @@ export function useRecipes() {
 
     const updateRecipe = async (id: string, updates: Partial<RecipeFormData>) => {
         try {
+            // Upload image to Supabase Storage if it's a local URI
+            let finalImageUrl = updates.imageUrl;
+            if (updates.imageUrl && !updates.imageUrl.includes('supabase.co')) {
+                finalImageUrl = await uploadImage(updates.imageUrl, 'recipes') || undefined;
+            }
+
             const { error } = await supabase
                 .from('recipes')
                 .update({
                     title: updates.title,
-                    image_url: updates.imageUrl,
+                    image_url: finalImageUrl,
                     ingredients: updates.ingredients,
                     steps: updates.steps,
                     category: updates.category,
