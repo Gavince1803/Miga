@@ -6,6 +6,8 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
 
+import { ExchangeRateTicker } from '@/components/ExchangeRateTicker';
+
 // Custom tab bar icon with consistent sizing
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -48,6 +50,7 @@ export default function TabLayout() {
           fontSize: 18,
         },
         headerShadowVisible: false,
+        headerRight: () => <ExchangeRateTicker />,
       }}>
 
       {/* Inicio - Dashboard/Home */}
@@ -108,7 +111,9 @@ export default function TabLayout() {
             <TabBarIcon name="book" color={color} focused={focused} />
           ),
           headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 12, marginRight: 15 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 15 }}>
+              <ExchangeRateTicker />
+              <View style={{ width: 1, height: 20, backgroundColor: Colors.light.border }} />
               <Link href="/recipes/scan" asChild>
                 <TouchableOpacity style={{ padding: 8 }}>
                   <FontAwesome name="camera" size={20} color={Colors.light.primary} />

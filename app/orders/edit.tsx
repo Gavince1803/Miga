@@ -1,6 +1,7 @@
 import { DateTimePickerField } from '@/components/DateTimePickerField';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
 import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
@@ -72,6 +73,7 @@ export default function EditOrderScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
     const { updateOrder } = useOrders();
+    const { bcv } = useExchangeRates();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -91,6 +93,7 @@ export default function EditOrderScreen() {
     const [occasion, setOccasion] = useState('');
     const [description, setDescription] = useState('');
     const [totalPrice, setTotalPrice] = useState('');
+    const [deposit, setDeposit] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 
     useEffect(() => {
@@ -130,6 +133,7 @@ export default function EditOrderScreen() {
                     setOccasion(data.occasion || '');
                     setDescription(data.description || '');
                     setTotalPrice(data.total_price ? data.total_price.toString() : '');
+                    setDeposit(data.deposit_amount ? data.deposit_amount.toString() : '');
                     setPaymentMethod(data.payment_method);
                 }
             } catch (error) {
@@ -169,6 +173,7 @@ export default function EditOrderScreen() {
                 occasion,
                 description,
                 totalPrice: totalPrice ? parseFloat(totalPrice) : 0,
+                depositAmount: deposit ? parseFloat(deposit) : 0,
                 paymentMethod,
             });
 
@@ -318,6 +323,25 @@ export default function EditOrderScreen() {
                                 value={totalPrice}
                                 onChangeText={setTotalPrice}
                                 keyboardType="decimal-pad"
+                            />
+                        </View>
+                        {totalPrice && bcv > 0 && (
+                            <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
+                                ≈ Bs. {(parseFloat(totalPrice) * bcv).toFixed(2)} (Tasa BCV)
+                            </Text>
+                        )}
+                    </FormField>
+
+                    <FormField label="Abono" colors={colors}>
+                        <View style={styles.priceInput}>
+                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                            <TextInput
+                                style={[styles.input, styles.priceField, { color: colors.text }]}
+                                value={deposit}
+                                onChangeText={setDeposit}
+                                keyboardType="decimal-pad"
+                                placeholder="0.00"
+                                placeholderTextColor={colors.textMuted}
                             />
                         </View>
                     </FormField>

@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
     ScrollView,
     StyleSheet,
     Text,
@@ -167,7 +168,19 @@ export default function OrderDetailScreen() {
     };
 
     // Placeholder actions
-    const handleWhatsApp = () => { };
+    const handleWhatsApp = () => {
+        if (!order.clientPhone) {
+            Alert.alert('Error', 'Este pedido no tiene número de teléfono');
+            return;
+        }
+        // Clean phone number (remove spaces, dashes, etc.)
+        const cleanPhone = order.clientPhone.replace(/[\s\-\(\)]/g, '');
+        const message = `Hola! Te escribo sobre tu pedido de ${order.description || 'repostería'}.`;
+        const whatsappUrl = `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+        Linking.openURL(whatsappUrl).catch(() => {
+            Alert.alert('Error', 'No se pudo abrir WhatsApp');
+        });
+    };
     const handleEdit = () => router.push(`/orders/edit?id=${order.id}`);
 
     const handleDelete = () => {

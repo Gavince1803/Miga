@@ -114,7 +114,6 @@ function RootLayoutNav() {
         <Stack.Screen name="recipes" options={{ headerShown: false }} />
         <Stack.Screen name="premium" options={{ title: 'Miga Premium', presentation: 'modal' }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );

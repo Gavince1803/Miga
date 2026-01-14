@@ -226,44 +226,59 @@ export default function CalendarScreen() {
             {/* Selected Date Orders */}
             {selectedDate && (
                 <View style={[styles.selectedDateSection, { backgroundColor: colors.surface }]}>
+                    {/* Header with close button */}
                     <View style={styles.selectedDateHeader}>
-                        <Text style={[styles.selectedDateTitle, { color: colors.text }]}>
-                            {new Date(selectedDate).toLocaleDateString('es-ES', {
-                                weekday: 'long',
-                                day: 'numeric',
-                                month: 'long'
-                            })}
-                        </Text>
-                        <TouchableOpacity onPress={() => setSelectedDate(null)}>
-                            <FontAwesome name="close" size={20} color={colors.textSecondary} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.selectedDateTitle, { color: colors.text }]}>
+                                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'long'
+                                }).replace(/^\w/, (c) => c.toUpperCase())}
+                            </Text>
+                            <Text style={[styles.selectedDateCount, { color: colors.textSecondary }]}>
+                                {ordersByDate[selectedDate]?.length || 0} pedido(s)
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setSelectedDate(null)}
+                            style={[styles.closeButton, { backgroundColor: colors.surfaceSecondary }]}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <FontAwesome name="times" size={16} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
+                    {/* Orders List */}
                     {ordersByDate[selectedDate]?.length > 0 ? (
-                        ordersByDate[selectedDate].map(order => (
-                            <Link key={order.id} href={`/orders/${order.id}`} asChild>
-                                <TouchableOpacity style={[styles.miniOrderCard, { backgroundColor: colors.background }]}>
-                                    <View>
-                                        <Text style={[styles.miniOrderClient, { color: colors.text }]}>{order.clientName}</Text>
-                                        <Text style={[styles.miniOrderDesc, { color: colors.textSecondary }]}>{order.description || 'Sin descripción'}</Text>
-                                    </View>
-                                    <Text style={[styles.miniOrderPrice, { color: colors.primary }]}>${order.totalPrice}</Text>
-                                </TouchableOpacity>
-                            </Link>
-                        ))
+                        <View style={styles.ordersList}>
+                            {ordersByDate[selectedDate].map(order => (
+                                <Link key={order.id} href={`/orders/${order.id}`} asChild>
+                                    <TouchableOpacity style={[styles.miniOrderCard, { backgroundColor: colors.background }]}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.miniOrderClient, { color: colors.text }]}>{order.clientName}</Text>
+                                            <Text style={[styles.miniOrderDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+                                                {order.description || 'Sin descripción'}
+                                            </Text>
+                                        </View>
+                                        <Text style={[styles.miniOrderPrice, { color: colors.success }]}>${order.totalPrice}</Text>
+                                    </TouchableOpacity>
+                                </Link>
+                            ))}
+                        </View>
                     ) : (
                         <Text style={[styles.noOrdersText, { color: colors.textMuted }]}>
                             No hay pedidos para este día
                         </Text>
                     )}
 
-                    <View style={{ marginTop: Spacing.md }}>
-                        <Link href="/orders/new" asChild>
-                            <TouchableOpacity style={[styles.viewOrdersButton, { backgroundColor: colors.primary }]}>
-                                <Text style={styles.viewOrdersButtonText}>+ Agregar a este día</Text>
-                            </TouchableOpacity>
-                        </Link>
-                    </View>
+                    {/* Add Order Button */}
+                    <Link href="/orders/new" asChild>
+                        <TouchableOpacity style={[styles.addOrderButton, { backgroundColor: colors.primary }]}>
+                            <FontAwesome name="plus" size={14} color="#FFF" />
+                            <Text style={styles.addOrderButtonText}>Agregar a este día</Text>
+                        </TouchableOpacity>
+                    </Link>
                 </View>
             )}
 
@@ -428,6 +443,30 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
     },
     viewOrdersButtonText: {
+        color: '#FFFFFF',
+        ...Typography.bodyBold,
+    },
+    closeButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    ordersList: {
+        width: '100%',
+    },
+    addOrderButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.lg,
+        borderRadius: BorderRadius.md,
+        marginTop: Spacing.md,
+        gap: Spacing.sm,
+    },
+    addOrderButtonText: {
         color: '#FFFFFF',
         ...Typography.bodyBold,
     },

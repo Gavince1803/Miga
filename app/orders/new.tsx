@@ -512,6 +512,11 @@ export default function NewOrderScreen() {
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
+                                {totalPrice && bcv > 0 && (
+                                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4 }}>
+                                        ≈ Bs. {(parseFloat(totalPrice) * bcv).toFixed(2)} (Tasa BCV)
+                                    </Text>
+                                )}
                             </FormField>
                         </View>
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
