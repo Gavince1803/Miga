@@ -272,6 +272,7 @@ export function useInventory() {
                     if (item.unit) updates.unit = item.unit;
                     if (item.minStock !== undefined) updates.min_stock = item.minStock;
                     if (item.category) updates.category = item.category;
+                    if (item.costPerUnit !== undefined) updates.cost_per_unit = item.costPerUnit;
 
                     if (Object.keys(updates).length > 0) {
                         updates.last_updated = new Date().toISOString();
@@ -290,6 +291,7 @@ export function useInventory() {
                         unit: item.unit || 'u',
                         min_stock: item.minStock || 5, // Default
                         category: item.category || 'General',
+                        cost_per_unit: item.costPerUnit || 0,
                     });
                 }
             }
@@ -340,15 +342,29 @@ export function useInventory() {
         }
     };
 
+    // Export inventory to array for Excel generation
+    const exportInventory = (): { Nombre: string; Cantidad: number; Unidad: string; Costo: number; Minimo: number; Categoria: string }[] => {
+        return inventory.map(item => ({
+            Nombre: item.name,
+            Cantidad: item.quantity,
+            Unidad: item.unit,
+            Costo: item.costPerUnit || 0,
+            Minimo: item.minStock || 0,
+            Categoria: item.category || 'General'
+        }));
+    };
+
     return {
         inventory,
         loading,
         refreshing,
         onRefresh,
+        fetchInventory,
         updateStock,
         setStock,
         addItem,
         importInventory,
-        updateItemDetails
+        updateItemDetails,
+        exportInventory
     };
 }

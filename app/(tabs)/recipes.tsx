@@ -47,9 +47,51 @@ function RecipeCard({
                             {recipe.category}
                         </Text>
                     )}
+
+                    {/* Price Badges */}
+                    <View style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
+                        {recipe.suggestedPrice && recipe.suggestedPrice > 0 && (
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: colors.success + '20',
+                                paddingHorizontal: 6,
+                                paddingVertical: 2,
+                                borderRadius: 4,
+                                gap: 4
+                            }}>
+                                <FontAwesome name="tag" size={10} color={colors.success} />
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.success }}>
+                                    Venta: ${recipe.suggestedPrice.toFixed(2)}
+                                </Text>
+                            </View>
+                        )}
+                        {recipe.costPerPortion && recipe.costPerPortion > 0 && (
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: colors.warning + '20',
+                                paddingHorizontal: 6,
+                                paddingVertical: 2,
+                                borderRadius: 4,
+                                gap: 4
+                            }}>
+                                <FontAwesome name="pie-chart" size={10} color={colors.warning} />
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: colors.warning }}>
+                                    Costo: ${recipe.costPerPortion.toFixed(2)}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                     <Text style={[styles.cardSnippet, { color: colors.textSecondary }]} numberOfLines={2}>
-                        {(recipe.ingredients || recipe.steps || 'Sin contenido').substring(0, 100).replace(/\n/g, ', ')}
-                        {(recipe.ingredients || recipe.steps || '').length > 100 ? '...' : ''}
+                        {(() => {
+                            const textIngredients = recipe.ingredients;
+                            const linkedIngredients = recipe.recipeIngredients?.map(r => r.inventoryItem.name).join(', ');
+                            const content = textIngredients || linkedIngredients || recipe.steps || 'Sin contenido';
+                            return content.substring(0, 100).replace(/\n/g, ', ');
+                        })()}
+                        {/* Ellipsis handled by numberOfLines, but strict length check logic: */}
+                        {((recipe.ingredients || '').length + (recipe.recipeIngredients?.length || 0) * 10) > 100 ? '...' : ''}
                     </Text>
                 </View>
             </TouchableOpacity>

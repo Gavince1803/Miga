@@ -2,6 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { extractTextFromImage } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -26,28 +27,33 @@ export default function ScanRecipeScreen() {
 
     const pickImage = async (source: 'camera' | 'library') => {
         try {
-            let result;
+            let result: ImagePicker.ImagePickerResult;
+
+            const options: ImagePicker.ImagePickerOptions = {
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 1,
+            };
+
             if (source === 'camera') {
                 const { status } = await ImagePicker.requestCameraPermissionsAsync();
                 if (status !== 'granted') {
                     Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara para escanear.');
                     return;
                 }
-                result = await ImagePicker.launchCameraAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                    allowsEditing: true,
-                    quality: 0.8,
-                });
+                result = await ImagePicker.launchCameraAsync(options);
             } else {
-                result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                    allowsEditing: true,
-                    quality: 0.8,
-                });
+                result = await ImagePicker.launchImageLibraryAsync(options);
             }
 
-            if (!result.canceled && result.assets[0].uri) {
-                setImage(result.assets[0].uri);
+            if (!result.canceled && result.assets && result.assets[0].uri) {
+                // Resize image to max 600 width to be extremely safe with payload limits
+                const manipulatedResult = await ImageManipulator.manipulateAsync(
+                    result.assets[0].uri,
+                    [{ resize: { width: 600 } }],
+                    { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+                );
+                setImage(manipulatedResult.uri);
             }
         } catch (error) {
             console.error(error);

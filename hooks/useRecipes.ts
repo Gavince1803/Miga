@@ -13,6 +13,19 @@ export type Recipe = {
     category: string | null;
     createdAt: string;
     updatedAt: string;
+    // Pricing
+    suggestedPrice?: number;
+    costPerPortion?: number;
+    // Relations
+    recipeIngredients?: {
+        quantity: number;
+        unit: string;
+        inventoryItem: {
+            name: string;
+            costPerUnit: number;
+            unit: string;
+        }
+    }[];
 };
 
 export type RecipeFormData = {
@@ -41,7 +54,18 @@ export function useRecipes() {
 
             const { data, error } = await supabase
                 .from('recipes')
-                .select('*')
+                .select(`
+                    *,
+                    recipe_ingredients (
+                        quantity,
+                        unit,
+                        inventory_items (
+                            name,
+                            cost_per_unit,
+                            unit
+                        )
+                    )
+                `)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -57,7 +81,19 @@ export function useRecipes() {
                     category: item.category,
                     createdAt: item.created_at,
                     updatedAt: item.updated_at,
+                    suggestedPrice: item.suggested_price,
+                    costPerPortion: item.cost_per_portion,
+                    recipeIngredients: item.recipe_ingredients?.map((ri: any) => ({
+                        quantity: ri.quantity,
+                        unit: ri.unit, // Unit used in recipe
+                        inventoryItem: {
+                            name: ri.inventory_items?.name || 'Item',
+                            costPerUnit: ri.inventory_items?.cost_per_unit || 0,
+                            unit: ri.inventory_items?.unit || 'u'
+                        }
+                    })) || []
                 }));
+                // ...
                 setRecipes(mapped);
             }
         } catch (error) {
@@ -186,6 +222,33 @@ export function useRecipes() {
         fetchRecipes(false);
     };
 
+    // Update recipe pricing from calculator
+    const updateRecipePrice = async (id: string, suggestedPrice: number, costPerPortion: number) => {
+        try {
+            const { error } = await supabase
+                .from('recipes')
+                .update({
+                    suggested_price: suggestedPrice,
+                    cost_per_portion: costPerPortion,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            // Update local state
+            setRecipes(prev => prev.map(r =>
+                r.id === id ? { ...r, suggestedPrice, costPerPortion } : r
+            ));
+
+            return true;
+        } catch (error) {
+            console.error('Error updating recipe price:', error);
+            Alert.alert('Error', 'No se pudo guardar el precio');
+            return false;
+        }
+    };
+
     useEffect(() => {
         fetchRecipes(false);
     }, []);
@@ -201,6 +264,7 @@ export function useRecipes() {
         refreshSilent,
         createRecipe,
         updateRecipe,
+        updateRecipePrice,
         deleteRecipe,
         getRecipeById
     };

@@ -200,3 +200,22 @@ export const ORDER_STATUS_OPTIONS = [
     { label: 'Pagado', value: 'pagado' as OrderStatus, color: '#A8D5BA' },
     { label: 'Cancelado', value: 'cancelado' as OrderStatus, color: '#E57373' },
 ] as const;
+
+// Cost Calculator Types
+export interface RecipeCostConfig {
+    laborPercentage: number;
+    utilityCost: number;
+    packagingCost: number;
+    wastePercentage: number;
+    profitPercentage: number;
+    portions: number;
+}
+
+export interface CostIngredient {
+    id: string; // unique for list
+    name: string;
+    quantityUsed: number;
+    quantityBought: number;
+    priceBought: number;
+    unit: string;
+}

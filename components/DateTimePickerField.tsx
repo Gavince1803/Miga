@@ -85,8 +85,8 @@ export function DateTimePickerField({
                     mode={mode}
                     is24Hour={false} // Force 12h
                     onChange={handleChange}
-                    display="default" // Spinner or Calendar based on Android version preferences
-                    {...rest}
+                    display="default"
+                    {...(rest as any)}
                 />
             )}
 
@@ -116,7 +116,7 @@ export function DateTimePickerField({
                                 style={{ height: 200, width: '100%', alignSelf: 'center' }}
                                 themeVariant={colorScheme ?? 'light'}
                                 locale="es-US"
-                                {...rest}
+                                {...(rest as any)}
                             />
                         </View>
                     </View>

@@ -1,4 +1,6 @@
-import * as FileSystem from 'expo-file-system';
+// @ts-ignore
+// @ts-ignore
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from './supabase';
 
 /**
@@ -20,13 +22,36 @@ export async function extractTextFromImage(imageUri: string): Promise<string | n
             return null;
         }
 
+
+        // Force a session refresh to ensure token is valid
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) console.log('OCR Refresh Error:', refreshError.message);
+
+        const access_token = refreshData.session?.access_token;
+
+        console.log('OCR Session Check:', access_token ? 'Session active' : 'No active session');
+        if (!access_token) {
+            console.warn('OCR Warning: No valid session. Request will likely fail.');
+        } else {
+            console.log('OCR Token refreshed.');
+        }
+
+        console.log(`Sending OCR request to 'ocr-recipe'. Image size: ${base64Image.length} chars (~${Math.round(base64Image.length * 0.75 / 1024)} KB)`);
+
         // Call our Supabase Edge Function
+        // Explicitly passing Authorization header to ensure it's sent
         const { data, error } = await supabase.functions.invoke('ocr-recipe', {
             body: { imageBase64: base64Image },
+            headers: access_token ? { Authorization: `Bearer ${access_token}` } : undefined,
         });
 
         if (error) {
-            console.error('OCR function error:', error);
+            console.error('OCR function error object:', error);
+            console.error('OCR function error status:', (error as any).status);
+            console.error('OCR function error message:', (error as any).message);
+            // If the error is a FunctionsHttpError, it might have a context
+            if ((error as any).context) console.error('OCR Error Context:', JSON.stringify((error as any).context));
+
             return null;
         }
 
@@ -37,8 +62,9 @@ export async function extractTextFromImage(imageUri: string): Promise<string | n
         console.error('OCR returned no text:', data);
         return null;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error extracting text from image:', error);
+        if (error.context) console.error('Error Context:', JSON.stringify(error.context));
         return null;
     }
 }

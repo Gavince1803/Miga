@@ -49,37 +49,51 @@ export async function scheduleOrderNotification(order: {
         const hasPermission = await requestNotificationPermissions();
         if (!hasPermission) return;
 
-        const deliveryDate = new Date(order.deliveryDate);
-        const [hours, minutes] = order.deliveryTime.split(':').map(Number);
+        // Parse DATE as local time component (YYYY-MM-DD -> Local Year, Month, Day)
+        // new Date('2024-01-01') is UTC, which shifts to previous day in Western Hemisphere.
+        // We split and reconstruct to guarantee local context.
+        const [year, month, day] = order.deliveryDate.split('-').map(Number);
 
-        // Construct the exact delivery moment
-        const deliveryMoment = new Date(deliveryDate);
+        // Month is 0-indexed in JS Date constructor
+        const deliveryMoment = new Date(year, month - 1, day);
+
+        const [hours, minutes] = order.deliveryTime.split(':').map(Number);
         deliveryMoment.setHours(hours, minutes, 0, 0);
 
         // Calculate trigger time: X days before
-        const triggerDate = new Date(deliveryMoment);
-        triggerDate.setDate(triggerDate.getDate() - order.reminderDays);
+        // User requested: "4 notifs, at 2:30am evrdyay" implies daily reminders leading up to the date.
+        // We will schedule notifications for every day from 'reminderDays' ago up to 1 day ago.
 
-        // If time is in the past, don't schedule
-        if (triggerDate.getTime() <= Date.now()) {
-            console.log('Notification trigger is in the past, skipping.');
-            return;
+        // Loop from reminderDays down to 1
+        for (let i = 1; i <= order.reminderDays; i++) {
+            const triggerDate = new Date(deliveryMoment);
+            triggerDate.setDate(triggerDate.getDate() - i);
+
+            // If time is in the past, don't schedule
+            if (triggerDate.getTime() <= Date.now()) {
+                console.log(`Notification for ${i} days before is in the past, skipping.`);
+                continue;
+            }
+
+            // Unique ID per day: order_123_4 (4 days before), order_123_1 (1 day before)
+            const identifier = `order_${order.id}_${i}`;
+            // Also schedule the legacy ID for the "main" reminder (largest day count? or 1 day before?)
+            // To be safe and clean, we'll just use the suffixed IDs. 
+            // NOTE: We should probably ensure we clean up old non-suffixed ones too.
+
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: i === 1 ? '🎂 ¡Entrega Mañana!' : `🎂 Recordatorio de Entrega (${i} días)`,
+                    body: `Tu pedido para ${order.clientName} es el ${order.deliveryDate}.\n${order.description || order.size || ''}`,
+                    sound: true,
+                    data: { orderId: order.id },
+                },
+                trigger: triggerDate as unknown as Notifications.NotificationTriggerInput,
+                identifier,
+            });
+
+            console.log(`Scheduled notification ${identifier} at ${triggerDate.toISOString()}`);
         }
-
-        const identifier = `order_${order.id}`;
-
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: '🎂 Recordatorio de Entrega',
-                body: `Entrega para ${order.clientName} en ${order.reminderDays} día(s).\n${order.description || order.size || 'Ver detalles'}`,
-                sound: true,
-                data: { orderId: order.id },
-            },
-            trigger: triggerDate as unknown as Notifications.NotificationTriggerInput,
-            identifier, // This replaces any existing notification with same ID
-        });
-
-        console.log(`Scheduled notification for order ${order.id} at ${triggerDate.toISOString()}`);
 
     } catch (error) {
         console.error('Error scheduling notification:', error);
@@ -88,7 +102,13 @@ export async function scheduleOrderNotification(order: {
 
 export async function cancelOrderNotification(orderId: string) {
     try {
+        // Cancel legacy single notification
         await Notifications.cancelScheduledNotificationAsync(`order_${orderId}`);
+
+        // Cancel potential daily reminders (up to 30 days coverage)
+        for (let i = 1; i <= 30; i++) {
+            await Notifications.cancelScheduledNotificationAsync(`order_${orderId}_${i}`);
+        }
     } catch (error) {
         console.error('Error canceling notification:', error);
     }

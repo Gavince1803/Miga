@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Miga",
-    "slug": "miga-app",
+    "slug": "agenda-repostera",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.agendarepostera.app",
+      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -26,7 +27,8 @@
         "backgroundColor": "#FDF8F3"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.agendarepostera.app"
+      "package": "com.agendarepostera.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",

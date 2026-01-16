@@ -127,6 +127,71 @@ export default function RecipeDetailScreen() {
                     headerTintColor: recipe.imageUrl ? '#FFF' : colors.tint,
                     headerRight: () => (
                         <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    // Serialize ingredients for URL
+                                    const initialIngredients = linkedIngredients.map(ing => {
+                                        let quantityUsed = ing.quantity;
+                                        let recipeUnit = ing.unit;
+
+                                        const inventoryItem = ing.inventoryItem;
+                                        let costPerUnit = inventoryItem?.costPerUnit || 0;
+                                        let inventoryUnit = inventoryItem?.unit || 'u';
+
+                                        // Normalize Cost to match Recipe Unit logic
+                                        // Calculator: (priceBought / quantityBought) * quantityUsed
+                                        // We set quantityBought = 1.
+                                        // So we need priceBought to be "Price per 1 Recipe Unit".
+
+                                        let effectivePrice = costPerUnit;
+
+                                        // Basic Conversion KG <-> G, L <-> ML
+                                        if (recipeUnit !== inventoryUnit) {
+                                            if ((inventoryUnit === 'kg' && recipeUnit === 'g') || (inventoryUnit === 'l' && recipeUnit === 'ml')) {
+                                                // Cost is per kg. We need cost per g.
+                                                effectivePrice = costPerUnit / 1000;
+                                            } else if ((inventoryUnit === 'g' && recipeUnit === 'kg') || (inventoryUnit === 'ml' && recipeUnit === 'l')) {
+                                                // Cost is per g. We need cost per kg.
+                                                effectivePrice = costPerUnit * 1000;
+                                            }
+                                            // Other conversions ignored for MVP
+                                        }
+
+                                        // Smart Scaling for Small Units (g, ml)
+                                        // Instead of showing "1 g for $0.005", show "1000 g for $5.00"
+                                        // This solves the $0.00 display issue and is more intuitive (thinking in KG/L).
+                                        let displayQuantityBought = 1;
+                                        let displayPriceBought = effectivePrice;
+
+                                        if (recipeUnit === 'g' || recipeUnit === 'ml') {
+                                            displayQuantityBought = 1000;
+                                            displayPriceBought = effectivePrice * 1000;
+                                        }
+
+                                        return {
+                                            id: Date.now().toString() + Math.random(),
+                                            name: inventoryItem?.name || 'Ingrediente',
+                                            quantityUsed: quantityUsed,
+                                            quantityBought: displayQuantityBought,
+                                            priceBought: displayPriceBought,
+                                            unit: recipeUnit
+                                        };
+                                    });
+
+                                    router.push({
+                                        pathname: '/calculator',
+                                        params: {
+                                            recipeId: recipe.id,
+                                            recipeName: recipe.title,
+                                            initialIngredients: JSON.stringify(initialIngredients)
+                                        }
+                                    });
+                                }}
+                                style={styles.headerBtn}
+                            >
+                                <FontAwesome name="calculator" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
+                            </TouchableOpacity>
+
                             <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
                                 <FontAwesome name="share-alt" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
@@ -160,11 +225,30 @@ export default function RecipeDetailScreen() {
 
                     {/* Header Info */}
                     <View style={styles.headerSection}>
-                        {recipe.category && (
-                            <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
-                                <Text style={[styles.badgeText, { color: colors.primary }]}>{recipe.category.toUpperCase()}</Text>
-                            </View>
-                        )}
+                        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                            {recipe.category && (
+                                <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
+                                    <Text style={[styles.badgeText, { color: colors.primary }]}>{recipe.category.toUpperCase()}</Text>
+                                </View>
+                            )}
+                            {recipe.suggestedPrice && recipe.suggestedPrice > 0 && (
+                                <View style={[styles.badge, { backgroundColor: colors.success + '20' }]}>
+                                    <FontAwesome name="tag" size={10} color={colors.success} />
+                                    <Text style={[styles.badgeText, { color: colors.success, marginLeft: 4 }]}>
+                                        Venta: ${recipe.suggestedPrice.toFixed(2)}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {recipe.costPerPortion && recipe.costPerPortion > 0 && (
+                                <View style={[styles.badge, { backgroundColor: colors.warning + '20' }]}>
+                                    <FontAwesome name="pie-chart" size={10} color={colors.warning} />
+                                    <Text style={[styles.badgeText, { color: colors.warning, marginLeft: 4 }]}>
+                                        Costo: ${recipe.costPerPortion.toFixed(2)}/ud
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
                         <Text style={[styles.title, { color: colors.text }]}>{recipe.title}</Text>
 
                         <View style={styles.metaRow}>

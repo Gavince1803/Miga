@@ -1,8 +1,9 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import { InventoryItem, UNIT_OPTIONS } from '@/types';
+import { InventoryItem } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import React, { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
     Alert,
     FlatList,
@@ -22,8 +23,16 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as XLSX from 'xlsx';
 
-// Mock inventory removed
+// Unit Options for selection
+const UNIT_OPTIONS = [
+    { label: 'Kilogramo', value: 'kg' },
+    { label: 'Gramo', value: 'g' },
+    { label: 'Litro', value: 'l' },
+    { label: 'Mililitro', value: 'ml' },
+    { label: 'Unidad', value: 'u' },
+];
 
+// InventoryCard component
 function InventoryCard({
     item,
     colors,
@@ -79,13 +88,20 @@ function InventoryCard({
                     onPress={() => onEditQuantity(item)}
                     activeOpacity={0.7}
                 >
-                    <Text style={[styles.quantity, { color: colors.primary }]}>
-                        {item.quantity}
-                    </Text>
-                    <Text style={[styles.unit, { color: colors.textSecondary }]}>
-                        {item.unit}
-                    </Text>
-                    <FontAwesome name="pencil" size={12} color={colors.textMuted} style={{ marginLeft: 4 }} />
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                        <Text style={[styles.quantity, { color: colors.primary }]}>
+                            {item.quantity}
+                        </Text>
+                        <Text style={[styles.unit, { color: colors.textSecondary }]}>
+                            {item.unit}
+                        </Text>
+                        <FontAwesome name="pencil" size={12} color={colors.textMuted} style={{ marginLeft: 6 }} />
+                    </View>
+                    {(item.costPerUnit || 0) > 0 && (
+                        <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
+                            ${item.costPerUnit?.toFixed(2)}/{item.unit}
+                        </Text>
+                    )}
                 </TouchableOpacity>
 
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -117,32 +133,34 @@ function InventoryCard({
             </View>
 
             {/* Stock Level Indicator */}
-            {item.minStock && (
-                <View style={styles.stockIndicator}>
-                    <View style={[styles.stockBar, { backgroundColor: colors.border }]}>
-                        <View
-                            style={[
-                                styles.stockFill,
-                                {
-                                    width: `${Math.min(stockPercentage, 100)}%`,
-                                    backgroundColor: stockColor
-                                }
-                            ]}
-                        />
+            {
+                item.minStock && (
+                    <View style={styles.stockIndicator}>
+                        <View style={[styles.stockBar, { backgroundColor: colors.border }]}>
+                            <View
+                                style={[
+                                    styles.stockFill,
+                                    {
+                                        width: `${Math.min(stockPercentage, 100)}%`,
+                                        backgroundColor: stockColor
+                                    }
+                                ]}
+                            />
+                        </View>
+                        <Text style={[styles.stockText, { color: colors.textMuted }]}>
+                            Mín: {item.minStock} {item.unit}
+                        </Text>
                     </View>
-                    <Text style={[styles.stockText, { color: colors.textMuted }]}>
-                        Mín: {item.minStock} {item.unit}
-                    </Text>
-                </View>
-            )}
-        </View>
+                )
+            }
+        </View >
     );
 }
 
 export default function InventoryScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { inventory, loading, refreshing, onRefresh, updateStock, setStock, addItem, updateItemDetails, importInventory } = useInventory();
+    const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, addItem, updateItemDetails, importInventory, exportInventory } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
 
     // Add Item Modal State
@@ -154,13 +172,49 @@ export default function InventoryScreen() {
     const [newItemCost, setNewItemCost] = useState('');
     const [newItemTotalCost, setNewItemTotalCost] = useState(''); // Calculator helper
 
+    // Purchase Logic State (Decoupled from Stock)
+    const [buyingQty, setBuyingQty] = useState('');
+    const [buyingPrice, setBuyingPrice] = useState('');
+    const [buyingUnit, setBuyingUnit] = useState('kg'); // Default to larger unit
+
+    // Auto-calculate Unit Cost when purchase params change
+    const calculateUnitCost = (price: string, qty: string, bUnit: string, sUnit: string) => {
+        const p = parseFloat(price.replace(',', '.'));
+        const q = parseFloat(qty.replace(',', '.'));
+
+        if (!isNaN(p) && !isNaN(q) && q > 0) {
+            let conversion = 1;
+            // Kg -> g
+            if (bUnit === 'kg' && sUnit === 'g') conversion = 1000;
+            // L -> ml
+            else if (bUnit === 'l' && sUnit === 'ml') conversion = 1000;
+            // g -> kg
+            else if (bUnit === 'g' && sUnit === 'kg') conversion = 0.001;
+            // ml -> l
+            else if (bUnit === 'ml' && sUnit === 'l') conversion = 0.001;
+
+            // Cost Per Storage Unit = Total Price / (Attributes * Conversion)
+            const totalUnits = q * conversion;
+            const cost = p / totalUnits;
+            setNewItemCost(cost.toFixed(4));
+        }
+    };
+
+    const handleBuyingChange = (field: 'qty' | 'price' | 'unit', value: string) => {
+        let q = buyingQty;
+        let p = buyingPrice;
+        let b = buyingUnit;
+
+        if (field === 'qty') { setBuyingQty(value); q = value; }
+        if (field === 'price') { setBuyingPrice(value); p = value; }
+        if (field === 'unit') { setBuyingUnit(value); b = value; }
+
+        calculateUnitCost(p, q, b, newItemUnit);
+    };
+
+    // Keep this for compatibility if needed, but we rely on calculateUnitCost now
     const handleTotalCostChange = (text: string) => {
         setNewItemTotalCost(text);
-        const total = parseFloat(text.replace(',', '.'));
-        const qty = parseFloat(newItemQuantity.replace(',', '.'));
-        if (!isNaN(total) && !isNaN(qty) && qty > 0) {
-            setNewItemCost((total / qty).toFixed(2));
-        }
     };
 
     const handleQuantityChange = (text: string) => {
@@ -173,11 +227,20 @@ export default function InventoryScreen() {
     };
     const [newItemCategory, setNewItemCategory] = useState('');
 
-    // Edit Item Modal State (for quick quantity edit)
+    // Edit Item Modal State
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
     const [editQuantity, setEditQuantity] = useState('');
-    const [editCost, setEditCost] = useState('');
+    const [editUnit, setEditUnit] = useState('u');
+    const [editCategory, setEditCategory] = useState('');
+    const [editBoughtQty, setEditBoughtQty] = useState('');
+    const [editBoughtPrice, setEditBoughtPrice] = useState('');
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchInventory();
+        }, [])
+    );
 
     const filteredInventory = inventory.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -195,14 +258,16 @@ export default function InventoryScreen() {
     const openEditModal = (item: InventoryItem) => {
         setEditingItem(item);
         setEditQuantity(String(item.quantity));
-        setEditCost(String(item.costPerUnit || ''));
+        setEditUnit(item.unit || 'u');
+        setEditCategory(item.category || '');
+        setEditBoughtQty('');
+        setEditBoughtPrice('');
         setShowEditModal(true);
     };
 
     const handleSaveEdit = async () => {
         if (!editingItem) return;
         const newQty = parseInt(editQuantity);
-        const newCost = parseFloat(editCost.replace(',', '.'));
 
         if (isNaN(newQty) || newQty < 0) {
             Alert.alert('Error', 'Ingresa una cantidad válida');
@@ -210,17 +275,34 @@ export default function InventoryScreen() {
         }
 
         let success = true;
+        const updates: any = {};
 
-        // Update Quantity if changed
+        // Check for changes
         if (newQty !== editingItem.quantity) {
             const qtySuccess = await setStock(editingItem.id, newQty);
             if (!qtySuccess) success = false;
         }
 
-        // Update Cost if changed
-        if (!isNaN(newCost) && newCost !== editingItem.costPerUnit) {
-            const costSuccess = await updateItemDetails(editingItem.id, { costPerUnit: newCost });
-            if (!costSuccess) success = false;
+        if (editUnit !== editingItem.unit) {
+            updates.unit = editUnit;
+        }
+
+        if (editCategory !== (editingItem.category || '')) {
+            updates.category = editCategory;
+        }
+
+        // Calculate cost if purchase info was provided
+        const boughtQty = parseFloat(editBoughtQty.replace(',', '.'));
+        const boughtPrice = parseFloat(editBoughtPrice.replace(',', '.'));
+
+        if (!isNaN(boughtQty) && !isNaN(boughtPrice) && boughtQty > 0) {
+            updates.costPerUnit = boughtPrice / boughtQty;
+        }
+
+        // Save all updates together
+        if (Object.keys(updates).length > 0) {
+            const updateSuccess = await updateItemDetails(editingItem.id, updates);
+            if (!updateSuccess) success = false;
         }
 
         if (success) {
@@ -236,6 +318,9 @@ export default function InventoryScreen() {
         setNewItemMinStock('');
         setNewItemCost('');
         setNewItemCategory('');
+        setBuyingQty('');
+        setBuyingPrice('');
+        setBuyingUnit('kg');
     };
 
     const handleAddItem = async () => {
@@ -293,6 +378,7 @@ export default function InventoryScreen() {
                 const unit = row['unidad'] || row['Unidad'] || row['medida'] || row['Medida'] || row['unit'];
                 const minStock = row['minimo'] || row['Minimo'] || row['stock_min'] || row['alerta'] || row['min'];
                 const category = row['categoria'] || row['Categoria'] || row['category'];
+                const cost = row['costo'] || row['Costo'] || row['precio'] || row['Precio'] || row['cost'] || row['price'] || row['costo_unitario'] || row['Costo Unitario'];
 
                 if (!name) return null;
 
@@ -301,7 +387,8 @@ export default function InventoryScreen() {
                     quantity: quantity ? Number(quantity) : 0,
                     unit: unit ? String(unit) : undefined,
                     minStock: minStock ? Number(minStock) : undefined,
-                    category: category ? String(category) : undefined
+                    category: category ? String(category) : undefined,
+                    costPerUnit: cost ? Number(cost) : undefined
                 };
             }).filter(i => i !== null) as Partial<InventoryItem>[];
 
@@ -330,6 +417,29 @@ export default function InventoryScreen() {
         } catch (error) {
             console.error('Import error:', error);
             Alert.alert('Error', 'Hubo un problema al leer el archivo Excel.');
+        }
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            const data = exportInventory();
+            if (data.length === 0) {
+                Alert.alert('Info', 'No hay items para exportar.');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+
+            const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+            const uri = FileSystem.documentDirectory + 'inventario.xlsx';
+            await FileSystem.writeAsStringAsync(uri, wbout, { encoding: FileSystem.EncodingType.Base64 });
+
+            Alert.alert('Éxito', `Se exportaron ${data.length} items.\n\nArchivo: inventario.xlsx`);
+        } catch (error) {
+            console.error('Export error:', error);
+            Alert.alert('Error', 'Hubo un problema al exportar.');
         }
     };
 
@@ -365,6 +475,12 @@ export default function InventoryScreen() {
                         onChangeText={setSearchQuery}
                     />
                 </View>
+                <TouchableOpacity
+                    style={[styles.importButton, { backgroundColor: colors.success, marginRight: 8 }]}
+                    onPress={handleExportExcel}
+                >
+                    <FontAwesome name="download" size={18} color="#FFFFFF" />
+                </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.importButton, { backgroundColor: colors.primary }]}
                     onPress={handleImportExcel}
@@ -403,7 +519,7 @@ export default function InventoryScreen() {
             <TouchableOpacity
                 style={[styles.fab, { backgroundColor: colors.primary }, Shadows.lg]}
                 activeOpacity={0.85}
-                onPress={() => setShowAddModal(true)}
+                onPress={() => router.push('/inventory/add')}
             >
                 <FontAwesome name="plus" size={24} color="#FFFFFF" />
             </TouchableOpacity>
@@ -416,8 +532,9 @@ export default function InventoryScreen() {
                 onRequestClose={() => setShowAddModal(false)}
             >
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'position' : undefined}
                     style={styles.modalOverlay}
+                    keyboardVerticalOffset={-100}
                 >
                     <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
                         <View style={styles.modalHeader}>
@@ -429,67 +546,20 @@ export default function InventoryScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre *</Text>
-                            <TextInput
-                                style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                                placeholder="Ej: Harina de trigo"
-                                placeholderTextColor={colors.textMuted}
-                                value={newItemName}
-                                onChangeText={setNewItemName}
-                            />
-
+                        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                            {/* Name + Category Row */}
                             <View style={styles.inputRow}>
-                                <View style={styles.inputHalf}>
-                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cantidad</Text>
+                                <View style={{ flex: 2 }}>
+                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre *</Text>
                                     <TextInput
                                         style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                                        placeholder="0"
+                                        placeholder="Ej: Harina de trigo"
                                         placeholderTextColor={colors.textMuted}
-                                        value={newItemQuantity}
-                                        onChangeText={handleQuantityChange}
-                                        keyboardType="numeric"
+                                        value={newItemName}
+                                        onChangeText={setNewItemName}
                                     />
                                 </View>
-                            </View>
-
-                            <View style={{ marginBottom: 16 }}>
-                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Unidad</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                                    {UNIT_OPTIONS.map((opt) => (
-                                        <TouchableOpacity
-                                            key={opt.value}
-                                            onPress={() => setNewItemUnit(opt.value)}
-                                            style={[
-                                                styles.statChip,
-                                                {
-                                                    backgroundColor: newItemUnit === opt.value ? colors.primary : colors.surfaceSecondary,
-                                                    paddingVertical: 8,
-                                                    paddingHorizontal: 12
-                                                }
-                                            ]}
-                                        >
-                                            <Text style={{ color: newItemUnit === opt.value ? '#FFF' : colors.text, fontWeight: '600' }}>
-                                                {opt.value}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
-
-                            <View style={styles.inputRow}>
-                                <View style={styles.inputHalf}>
-                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Stock mínimo</Text>
-                                    <TextInput
-                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                                        placeholder="5"
-                                        placeholderTextColor={colors.textMuted}
-                                        value={newItemMinStock}
-                                        onChangeText={setNewItemMinStock}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                                <View style={styles.inputHalf}>
+                                <View style={{ flex: 1 }}>
                                     <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Categoría</Text>
                                     <TextInput
                                         style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
@@ -501,44 +571,111 @@ export default function InventoryScreen() {
                                 </View>
                             </View>
 
-                            <View style={[styles.inputRow, { alignItems: 'flex-end' }]}>
-                                <View style={styles.inputHalf}>
-                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Costo Total Compra ($)</Text>
-                                    <TextInput
-                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                                        placeholder="Ej: 5.00"
-                                        placeholderTextColor={colors.textMuted}
-                                        value={newItemTotalCost}
-                                        onChangeText={handleTotalCostChange}
-                                        keyboardType="numeric"
-                                    />
+                            {/* Purchase Section - THE MAIN INPUT */}
+                            <View style={{ marginTop: 12, padding: 16, backgroundColor: colors.surfaceSecondary, borderRadius: 12 }}>
+                                <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 16, marginBottom: 12 }}>
+                                    💰 Compré...
+                                </Text>
+
+                                {/* Quantity + Unit Row */}
+                                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 0, marginBottom: 6 }]}>Cantidad</Text>
+                                        <TextInput
+                                            style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                            placeholder="Ej: 1"
+                                            placeholderTextColor={colors.textMuted}
+                                            value={buyingQty}
+                                            onChangeText={(t) => {
+                                                setBuyingQty(t);
+                                                // Also set the actual inventory quantity
+                                                setNewItemQuantity(t);
+                                            }}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1.5 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 0, marginBottom: 6 }]}>Unidad</Text>
+                                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                            {['kg', 'g', 'l', 'ml', 'u'].map((u) => (
+                                                <TouchableOpacity
+                                                    key={u}
+                                                    onPress={() => {
+                                                        setBuyingUnit(u);
+                                                        setNewItemUnit(u);
+                                                    }}
+                                                    style={{
+                                                        backgroundColor: buyingUnit === u ? colors.primary : colors.background,
+                                                        paddingHorizontal: 14,
+                                                        paddingVertical: 10,
+                                                        borderRadius: 20,
+                                                        borderWidth: 1,
+                                                        borderColor: buyingUnit === u ? colors.primary : colors.border
+                                                    }}
+                                                >
+                                                    <Text style={{ color: buyingUnit === u ? '#FFF' : colors.text, fontSize: 14, fontWeight: '600' }}>{u.toUpperCase()}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    </View>
                                 </View>
-                                <View style={styles.inputHalf}>
-                                    <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Costo Unitario ($)</Text>
-                                    <TextInput
-                                        style={[styles.modalInput, { backgroundColor: colors.surfaceSecondary, color: colors.text, borderColor: colors.border }]}
-                                        placeholder="Calculado..."
-                                        placeholderTextColor={colors.textMuted}
-                                        value={newItemCost}
-                                        onChangeText={setNewItemCost}
-                                        keyboardType="numeric"
-                                    />
+
+                                {/* Price Row */}
+                                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 0, marginBottom: 6 }]}>Pagué ($)</Text>
+                                        <TextInput
+                                            style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                            placeholder="Ej: 5.00"
+                                            placeholderTextColor={colors.textMuted}
+                                            value={buyingPrice}
+                                            onChangeText={(t) => {
+                                                setBuyingPrice(t);
+                                                // Calculate cost per unit
+                                                const price = parseFloat(t.replace(',', '.'));
+                                                const qty = parseFloat(buyingQty.replace(',', '.'));
+                                                if (!isNaN(price) && !isNaN(qty) && qty > 0) {
+                                                    setNewItemCost((price / qty).toFixed(4));
+                                                }
+                                            }}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1, alignItems: 'center', paddingTop: 20 }}>
+                                        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Costo por {buyingUnit.toUpperCase()}</Text>
+                                        <Text style={{ color: colors.primary, fontSize: 22, fontWeight: 'bold' }}>
+                                            ${buyingQty && buyingPrice ? (parseFloat(buyingPrice.replace(',', '.')) / parseFloat(buyingQty.replace(',', '.'))).toFixed(2) : '0.00'}
+                                        </Text>
+                                    </View>
                                 </View>
+                            </View>
+
+                            {/* Optional: Min Stock */}
+                            <View style={{ marginTop: 12 }}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Stock mínimo (alerta)</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                    placeholder="5"
+                                    placeholderTextColor={colors.textMuted}
+                                    value={newItemMinStock}
+                                    onChangeText={setNewItemMinStock}
+                                    keyboardType="numeric"
+                                />
                             </View>
                         </ScrollView>
 
                         <TouchableOpacity
-                            style={[styles.addButton, { backgroundColor: colors.primary }]}
+                            style={[styles.addButton, { backgroundColor: colors.primary, flexDirection: 'row', gap: 8, marginTop: 12 }]}
                             onPress={handleAddItem}
                         >
                             <FontAwesome name="check" size={18} color="#FFFFFF" />
-                            <Text style={styles.addButtonText}>Agregar Ingrediente</Text>
+                            <Text style={styles.addButtonText}>Agregar</Text>
                         </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
 
-            {/* Edit Quantity Modal */}
+            {/* Edit Item Modal */}
             <Modal
                 visible={showEditModal}
                 animationType="fade"
@@ -550,32 +687,72 @@ export default function InventoryScreen() {
                     style={styles.modalOverlay}
                 >
                     <View style={[styles.editModalContent, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.modalTitle, { color: colors.text, marginBottom: Spacing.md }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 8 }]}>
                             {editingItem?.name}
                         </Text>
-                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-                            Nueva cantidad ({editingItem?.unit})
-                        </Text>
-                        <TextInput
-                            style={[styles.modalInput, styles.editQuantityInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                            value={editQuantity}
-                            onChangeText={setEditQuantity}
-                            keyboardType="numeric"
-                            autoFocus={true}
-                            selectTextOnFocus={true}
-                        />
 
-                        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: Spacing.md }]}>
-                            Costo Unitario ($)
-                        </Text>
+                        {/* Row 1: Cantidad + Unidad + Categoría */}
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                            <View style={{ width: 80 }}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cant.</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, textAlign: 'center', fontWeight: '600' }]}
+                                    value={editQuantity}
+                                    onChangeText={setEditQuantity}
+                                    keyboardType="numeric"
+                                    autoFocus={true}
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Unidad</Text>
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                                    {UNIT_OPTIONS.map(opt => (
+                                        <TouchableOpacity
+                                            key={opt.value}
+                                            style={[styles.unitPill, { backgroundColor: editUnit === opt.value ? colors.primary : colors.border }]}
+                                            onPress={() => setEditUnit(opt.value)}
+                                        >
+                                            <Text style={{ color: editUnit === opt.value ? '#FFF' : colors.text, fontSize: 12 }}>{opt.value}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Categoría */}
                         <TextInput
-                            style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                            value={editCost}
-                            onChangeText={setEditCost}
-                            keyboardType="numeric"
-                            placeholder="0.00"
+                            style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, marginBottom: 8 }]}
+                            value={editCategory}
+                            onChangeText={setEditCategory}
+                            placeholder="Categoría"
                             placeholderTextColor={colors.textMuted}
                         />
+
+                        {/* Actualizar costo - más compacto */}
+                        <View style={{ padding: 8, backgroundColor: colors.surfaceSecondary, borderRadius: 6, marginBottom: 8 }}>
+                            <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 12, marginBottom: 4 }}>
+                                💰 Costo: Compré ___ {editUnit} por $___
+                            </Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                <TextInput
+                                    style={[styles.modalInput, { flex: 1, backgroundColor: colors.background, color: colors.text, borderColor: colors.border, paddingVertical: 6 }]}
+                                    value={editBoughtQty}
+                                    onChangeText={setEditBoughtQty}
+                                    keyboardType="numeric"
+                                    placeholder="Cantidad"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                                <TextInput
+                                    style={[styles.modalInput, { flex: 1, backgroundColor: colors.background, color: colors.text, borderColor: colors.border, paddingVertical: 6 }]}
+                                    value={editBoughtPrice}
+                                    onChangeText={setEditBoughtPrice}
+                                    keyboardType="numeric"
+                                    placeholder="Precio $"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                            </View>
+                        </View>
+
                         <View style={styles.editModalButtons}>
                             <TouchableOpacity
                                 style={[styles.editModalButton, { backgroundColor: colors.border }]}
@@ -630,31 +807,30 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        borderRadius: BorderRadius.md,
+        borderRadius: BorderRadius.full,
         borderWidth: 1,
         gap: Spacing.sm,
     },
     searchInput: {
         flex: 1,
         ...Typography.body,
-        paddingVertical: 4,
+        paddingVertical: Spacing.sm,
     },
     importButton: {
-        width: 48,
-        height: 48,
-        borderRadius: BorderRadius.md,
+        width: 44,
+        height: 44,
+        borderRadius: BorderRadius.full,
         alignItems: 'center',
         justifyContent: 'center',
     },
     listContent: {
-        paddingHorizontal: Spacing.md,
-        paddingBottom: 100,
+        padding: Spacing.md,
+        paddingTop: Spacing.xs,
+        gap: Spacing.md,
     },
     itemCard: {
+        borderRadius: BorderRadius.lg,
         padding: Spacing.md,
-        borderRadius: BorderRadius.md,
-        marginBottom: Spacing.sm,
     },
     itemHeader: {
         flexDirection: 'row',
@@ -666,22 +842,23 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     itemName: {
-        ...Typography.bodyBold,
+        ...Typography.subtitle,
+        fontWeight: '600',
     },
     itemCategory: {
-        ...Typography.small,
+        ...Typography.caption,
         marginTop: 2,
     },
     lowStockBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 8,
+        paddingHorizontal: Spacing.sm,
         paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
+        borderRadius: BorderRadius.full,
         gap: 4,
     },
     lowStockText: {
-        ...Typography.small,
+        ...Typography.caption,
         fontWeight: '600',
     },
     itemBody: {
@@ -690,36 +867,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     quantitySection: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        gap: 4,
+        alignItems: 'flex-start',
     },
     quantity: {
         ...Typography.title,
-        fontSize: 28,
+        fontWeight: '700',
     },
     unit: {
         ...Typography.body,
+        marginLeft: 4,
     },
     quickActions: {
         flexDirection: 'row',
         gap: Spacing.sm,
     },
     quickButton: {
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         borderRadius: BorderRadius.full,
         alignItems: 'center',
         justifyContent: 'center',
     },
     stockIndicator: {
-        marginTop: Spacing.sm,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
+        marginTop: Spacing.md,
+        gap: 4,
     },
     stockBar: {
-        flex: 1,
         height: 4,
         borderRadius: 2,
         overflow: 'hidden',
@@ -729,97 +902,118 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     stockText: {
-        ...Typography.small,
-    },
-    emptyState: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: Spacing.xxl,
-    },
-    emptyText: {
-        ...Typography.body,
-        marginTop: Spacing.md,
+        ...Typography.caption,
     },
     fab: {
         position: 'absolute',
-        bottom: 24,
-        right: 24,
+        right: Spacing.lg,
+        bottom: Spacing.lg,
         width: 56,
         height: 56,
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 100,
     },
-    // Modal Styles
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: Spacing.lg,
     },
     modalContent: {
-        borderTopLeftRadius: BorderRadius.xl,
-        borderTopRightRadius: BorderRadius.xl,
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.lg,
-        paddingBottom: Spacing.xxl,
-        maxHeight: '85%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
+        width: '100%',
+        maxWidth: 400,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        paddingTop: Spacing.sm,
     },
     modalTitle: {
         ...Typography.title,
-    },
-    modalBody: {
+        textAlign: 'center',
         marginBottom: Spacing.lg,
     },
     inputLabel: {
-        ...Typography.small,
-        marginBottom: Spacing.xs,
-        marginTop: Spacing.md,
+        ...Typography.caption,
+        marginBottom: 6,
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        ...Typography.body,
     },
     modalInput: {
-        fontSize: 16, // Explicit font size, NO spread of Typography.body (avoids lineHeight conflict)
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.md,
         borderWidth: 1,
-        height: 48,
-        paddingVertical: 0,
-        textAlignVertical: 'center',
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        ...Typography.body,
     },
-    inputRow: {
+    unitPill: {
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 6,
+        borderRadius: BorderRadius.full,
+        minWidth: 36,
+        alignItems: 'center',
+    },
+    unitRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: Spacing.sm,
+        marginBottom: Spacing.md,
+    },
+    modalButtons: {
         flexDirection: 'row',
         gap: Spacing.md,
-    },
-    inputHalf: {
-        flex: 1,
+        marginTop: Spacing.xl,
     },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: 8,
         paddingVertical: Spacing.md,
         borderRadius: BorderRadius.md,
-        gap: Spacing.sm,
     },
     addButtonText: {
-        color: '#FFFFFF',
-        ...Typography.bodyBold,
+        color: '#FFF',
+        fontWeight: '600',
     },
-    // Edit Quantity Modal
-    editModalContent: {
-        marginHorizontal: Spacing.lg,
+    emptyState: {
+        padding: Spacing.xl,
+        alignItems: 'center',
         borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
+    },
+    emptyText: {
+        ...Typography.body,
+        textAlign: 'center',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
+    },
+    modalBody: {
+        maxHeight: 300,
+    },
+    inputRow: {
+        flexDirection: 'row',
+        gap: Spacing.md,
+        marginBottom: Spacing.md,
+    },
+    editModalContent: {
+        width: '90%',
+        maxWidth: 400,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
     },
     editQuantityInput: {
-        fontSize: 20,
-        paddingVertical: Spacing.sm,
-        height: 48,
+        fontSize: 24,
+        fontWeight: '700',
+        textAlign: 'center',
     },
     editModalButtons: {
         flexDirection: 'row',
@@ -828,8 +1022,8 @@ const styles = StyleSheet.create({
     },
     editModalButton: {
         flex: 1,
+        alignItems: 'center',
         paddingVertical: Spacing.md,
         borderRadius: BorderRadius.md,
-        alignItems: 'center',
     },
 });

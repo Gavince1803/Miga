@@ -128,6 +128,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Finances - Financial Dashboard */}
+      <Tabs.Screen
+        name="finances"
+        options={{
+          title: 'Finanzas',
+          headerTitle: 'Resumen Financiero',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="line-chart" color={color} focused={focused} />
+          ),
+        }}
+      />
+
       {/* Ajustes - Settings */}
       <Tabs.Screen
         name="settings"

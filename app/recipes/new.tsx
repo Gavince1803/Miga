@@ -39,7 +39,7 @@ export default function NewRecipeScreen() {
 
     // Linked ingredients from inventory
     const [linkedIngredients, setLinkedIngredients] = useState<SelectedIngredient[]>([]);
-    const { createAndAddIngredient, setIngredientsForRecipe } = useRecipeIngredients();
+    const { createAndAddIngredient, addIngredient } = useRecipeIngredients();
     const [stepsList, setStepsList] = useState<string[]>(['']);
 
     const params = useLocalSearchParams();
@@ -145,11 +145,12 @@ export default function NewRecipeScreen() {
                     await createAndAddIngredient(newRecipe.id, name, ing.quantity, ing.unit);
                 } else {
                     // Use existing inventory item
-                    await setIngredientsForRecipe(newRecipe.id, [{
+                    // Use addIngredient to APPEND, not setIngredientsForRecipe which wipes the list
+                    await addIngredient(newRecipe.id, {
                         inventoryItemId: ing.inventoryItemId,
                         quantity: ing.quantity,
                         unit: ing.unit
-                    }]);
+                    });
                 }
             }
         }

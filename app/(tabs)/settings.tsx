@@ -2,6 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useSubscription } from '@/hooks/useSubscription';
 import { requestNotificationPermissions } from '@/lib/notifications';
+import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
@@ -244,6 +245,28 @@ export default function SettingsScreen() {
                         onPress={handleNotificationPermission}
                         colors={colors}
                     />
+                    <SettingRow
+                        icon="paper-plane"
+                        label="Probar Notificaciones"
+                        value="Envia un mensaje de prueba"
+                        onPress={async () => {
+                            const hasPermission = await Notifications.requestPermissionsAsync();
+                            if (hasPermission.status === 'granted') {
+                                await Notifications.scheduleNotificationAsync({
+                                    content: {
+                                        title: '🔔 Notificación de Prueba',
+                                        body: 'Si ves esto, las notificaciones funcionan correctamente.',
+                                        sound: true,
+                                    },
+                                    trigger: null, // Immediate
+                                });
+                                Alert.alert('Enviado', 'Se ha enviado una notificación de prueba.');
+                            } else {
+                                Alert.alert('Permiso Denegado', 'No se tienen permisos para enviar notificaciones.');
+                            }
+                        }}
+                        colors={colors}
+                    />
                 </View>
             </View>
 
@@ -307,7 +330,18 @@ export default function SettingsScreen() {
                 style={[styles.logoutButton, { backgroundColor: colors.error + '10' }]}
                 onPress={() => Alert.alert('Cerrar Sesión', '¿Estás segura de que quieres cerrar sesión?', [
                     { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Cerrar Sesión', style: 'destructive', onPress: () => { } },
+                    {
+                        text: 'Cerrar Sesión', style: 'destructive', onPress: async () => {
+                            try {
+                                const { error } = await supabase.auth.signOut();
+                                if (error) throw error;
+                                router.replace('/auth/login');
+                            } catch (error) {
+                                Alert.alert('Error', 'No se pudo cerrar sesión. Intenta de nuevo.');
+                                console.error('Error logging out:', error);
+                            }
+                        }
+                    },
                 ])}
             >
                 <FontAwesome name="sign-out" size={18} color={colors.error} />

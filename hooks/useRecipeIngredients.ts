@@ -13,7 +13,9 @@ export type RecipeIngredient = {
         id: string;
         name: string;
         quantity: number;
+
         unit: string;
+        costPerUnit: number;
     };
 };
 
@@ -42,8 +44,10 @@ export function useRecipeIngredients() {
                     inventory_items (
                         id,
                         name,
+
                         quantity,
-                        unit
+                        unit,
+                        cost_per_unit
                     )
                 `)
                 .eq('recipe_id', recipeId);
@@ -60,7 +64,9 @@ export function useRecipeIngredients() {
                     id: (item.inventory_items as any).id,
                     name: (item.inventory_items as any).name,
                     quantity: (item.inventory_items as any).quantity,
+
                     unit: (item.inventory_items as any).unit,
+                    costPerUnit: (item.inventory_items as any).cost_per_unit || 0,
                 } : undefined
             }));
         } catch (error) {

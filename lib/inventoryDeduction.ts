@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { convertValue } from '@/lib/units';
 import { Alert } from 'react-native';
 
 /**
@@ -57,10 +58,21 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
 
             // 4. Deduct each ingredient * order item quantity
             for (const ingredient of recipeIngredients) {
-                const totalToDeduct = ingredient.quantity * item.quantity;
+                // Calculate total needed in Ingredient's unit
+                const totalNeeded = ingredient.quantity * item.quantity;
                 const inventoryItem = ingredient.inventory_items as any;
 
                 if (!inventoryItem) continue;
+
+                // Normalize: Convert totalNeeded (in ingredient.unit) -> (inventoryItem.unit)
+                const amountToDeduct = convertValue(totalNeeded, ingredient.unit, inventoryItem.unit);
+
+                if (amountToDeduct === null) {
+                    errors.push(`Unidades incompatibles para ${inventoryItem.name}: ${ingredient.unit} vs ${inventoryItem.unit}`);
+                    continue;
+                }
+
+                const totalToDeduct = amountToDeduct;
 
                 // Calculate new quantity (don't go below 0)
                 const newQuantity = Math.max(0, inventoryItem.quantity - totalToDeduct);

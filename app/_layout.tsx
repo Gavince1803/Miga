@@ -108,8 +108,9 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? BakeryDarkTheme : BakeryLightTheme}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerBackTitleVisible: false }}>
+      <Stack screenOptions={{ headerBackTitle: '' }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="inventory" options={{ headerShown: false }} />
         <Stack.Screen name="orders" options={{ headerShown: false }} />
         <Stack.Screen name="recipes" options={{ headerShown: false }} />
         <Stack.Screen name="premium" options={{ title: 'Miga Premium', presentation: 'modal' }} />
