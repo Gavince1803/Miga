@@ -17,7 +17,7 @@ export interface Transaction {
     category?: string;
 }
 
-export function useFinances() {
+export function useFinances(year?: number, month?: number) {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [summary, setSummary] = useState<FinanceSummary>({
@@ -36,12 +36,28 @@ export function useFinances() {
                 return;
             }
 
+            // Default to current date if not provided
+            const targetYear = year || new Date().getFullYear();
+            const targetMonth = month !== undefined ? month : new Date().getMonth(); // 0-indexed
+
+            // Calculate start and end dates for the MONTH (for summary mainly, but user might want history)
+            // Actually, for "Recent Transactions", usually we want the latest regardless of month filters, 
+            // OR strictly the filtered month. 
+            // Let's implement Strict Filtering as requested "Optimization". 
+            // So we only fetch data for the relevant period to save bandwidth.
+
+            const startDate = new Date(targetYear, targetMonth, 1).toISOString();
+            const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999).toISOString();
+
             // 1. Fetch Income (Orders Paid)
             // Filter by status 'pagado' OR payment_status 'pagado'
+            // AND within date range
             const { data: orders, error: ordersError } = await supabase
                 .from('orders')
                 .select('*')
                 .or('status.eq.pagado,payment_status.eq.pagado')
+                .gte('delivery_date', startDate)
+                .lte('delivery_date', endDate)
                 .order('delivery_date', { ascending: false });
 
             if (ordersError) throw ordersError;
@@ -58,6 +74,8 @@ export function useFinances() {
                     )
                 `)
                 .eq('movement_type', 'agregado')
+                .gte('created_at', startDate)
+                .lte('created_at', endDate)
                 .order('created_at', { ascending: false });
 
             if (movementsError) throw movementsError;
@@ -68,8 +86,7 @@ export function useFinances() {
 
             if (orders) {
                 orders.forEach((order: any) => {
-                    // Use total_price. If deposit_amount exists and is different, logic might vary, 
-                    // but usually 'pagado' means full price is income.
+                    // Use total_price. 
                     const amount = order.total_price || 0;
                     totalIncome += amount;
 
@@ -106,8 +123,10 @@ export function useFinances() {
 
             // Merge and Sort Transactions
             const allTransactions = [...incomeTransactions, ...expenseTransactions]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                .slice(0, 20); // Limit to recent 20
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            // No need to slice excessively if we are already filtering by month, 
+            // but for safety let's keep it reasonable or let it be full month history.
+            // Let's return full month history.
 
             setSummary({
                 totalIncome,
@@ -125,14 +144,15 @@ export function useFinances() {
         }
     };
 
+    // Re-fetch when month/year changes
     useEffect(() => {
         fetchFinances();
-    }, []);
+    }, [year, month]);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchFinances();
-    }, []);
+    }, [year, month]);
 
     return {
         summary,

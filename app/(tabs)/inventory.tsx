@@ -347,7 +347,7 @@ export default function InventoryScreen() {
 
     const handleImportExcel = async () => {
         try {
-            console.log('Opening picker...');
+
             const result = await DocumentPicker.getDocumentAsync({
                 type: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'],
                 copyToCacheDirectory: true

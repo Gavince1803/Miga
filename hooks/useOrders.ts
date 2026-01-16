@@ -131,6 +131,19 @@ export function useOrders() {
 
             if (error) throw error;
 
+            // Map snake_case data to camelCase for scheduleOrderNotification
+            if (data) {
+                await scheduleOrderNotification({
+                    id: data.id,
+                    clientName: data.client_name,
+                    description: data.description,
+                    size: data.size,
+                    deliveryDate: data.delivery_date,
+                    deliveryTime: data.delivery_time,
+                    reminderDays: data.reminder_days
+                });
+            }
+
             await fetchOrders(); // Refresh list
             return data;
         } catch (error) {
@@ -218,6 +231,9 @@ export function useOrders() {
 
             if (orderData.paymentStatus) updates.payment_status = orderData.paymentStatus;
 
+            // Check changes to reminderDays
+            if (orderData.reminderDays !== undefined) updates.reminder_days = orderData.reminderDays;
+
             // Auto-detect 'Pagado'
             // We need current values if only partial update
             // Skipping complex fetch for now to keep it fast, unless needed.
@@ -247,7 +263,16 @@ export function useOrders() {
 
             // Update Notification Schedule
             if (data) {
-                await scheduleOrderNotification(data as any);
+                // Correctly map for notification function
+                await scheduleOrderNotification({
+                    id: data.id,
+                    clientName: data.client_name,
+                    description: data.description,
+                    size: data.size,
+                    deliveryDate: data.delivery_date,
+                    deliveryTime: data.delivery_time,
+                    reminderDays: data.reminder_days
+                });
             }
 
             await fetchOrders();

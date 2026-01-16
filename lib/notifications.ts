@@ -51,13 +51,17 @@ export async function scheduleOrderNotification(order: {
 
         // Parse DATE as local time component (YYYY-MM-DD -> Local Year, Month, Day)
         // new Date('2024-01-01') is UTC, which shifts to previous day in Western Hemisphere.
-        // We split and reconstruct to guarantee local context.
-        const [year, month, day] = order.deliveryDate.split('-').map(Number);
+        const parts = order.deliveryDate.split('-').map(Number);
+        if (parts.length !== 3) {
+            console.log('Invalid delivery date format:', order.deliveryDate);
+            return;
+        }
+        const [year, month, day] = parts;
 
         // Month is 0-indexed in JS Date constructor
         const deliveryMoment = new Date(year, month - 1, day);
 
-        const [hours, minutes] = order.deliveryTime.split(':').map(Number);
+        const [hours, minutes] = order.deliveryTime ? order.deliveryTime.split(':').map(Number) : [12, 0];
         deliveryMoment.setHours(hours, minutes, 0, 0);
 
         // Calculate trigger time: X days before

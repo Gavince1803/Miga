@@ -3,24 +3,78 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useFinances } from '@/hooks/useFinances';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Stack } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     ActivityIndicator,
+    Dimensions,
     FlatList,
     RefreshControl,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View
 } from 'react-native';
+import { BarChart } from 'react-native-gifted-charts';
+
+const { width } = Dimensions.get('screen');
 
 export default function FinancesScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { summary, recentTransactions, loading, refreshing, onRefresh } = useFinances();
+    const [currentDate, setCurrentDate] = React.useState(new Date());
+    const { summary, recentTransactions, loading, refreshing, onRefresh } = useFinances(
+        currentDate.getFullYear(),
+        currentDate.getMonth()
+    );
 
     const formatCurrency = (amount: number) => {
         return `$${amount.toFixed(2)}`;
     };
+
+    const changeMonth = (increment: number) => {
+        const newDate = new Date(currentDate);
+        newDate.setMonth(newDate.getMonth() + increment);
+        setCurrentDate(newDate);
+    };
+
+    // Process data for charts: Daily Income vs Expense
+    // We aggregate by Day of Month
+    const chartData = useMemo(() => {
+        if (!recentTransactions || recentTransactions.length === 0) return [];
+
+        const daysMap = new Map<number, { income: number; expense: number }>();
+
+        // Init some days? No, let's just map present data
+        recentTransactions.forEach(t => {
+            const day = new Date(t.date).getDate();
+            const current = daysMap.get(day) || { income: 0, expense: 0 };
+
+            if (t.type === 'income') current.income += t.amount;
+            else current.expense += t.amount;
+
+            daysMap.set(day, current);
+        });
+
+        // Convert to array sorted by day
+        const sortedDays = Array.from(daysMap.keys()).sort((a, b) => a - b);
+
+        // Format for Gifted Charts: Stacked or simple? 
+        // Simple Bar: value = income - expense (Net) or just Income?
+        // Let's show Net Profit per day for simplicity, or Income (Green) vs Expense (Red) bars side by side?
+        // Gifted Charts supports "stacks" or "groups". Let's do simple Income (Green) for now to keep it clear.
+        // Better: Income Bars.
+
+        return sortedDays.map(day => ({
+            value: daysMap.get(day)?.income || 0,
+            label: `${day}`,
+            frontColor: colors.success,
+            topLabelComponent: () => (
+                <Text style={{ color: colors.success, fontSize: 9, marginBottom: 2 }}>
+                    {formatCurrency(daysMap.get(day)?.income || 0).split('.')[0]}
+                </Text>
+            ),
+        }));
+    }, [recentTransactions, colors]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -29,6 +83,11 @@ export default function FinancesScreen() {
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.text,
                 headerShadowVisible: false,
+                headerRight: () => (
+                    <TouchableOpacity onPress={() => setCurrentDate(new Date())} style={{ marginRight: 15 }}>
+                        <FontAwesome name="calendar-o" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+                )
             }} />
 
             <FlatList
@@ -40,6 +99,19 @@ export default function FinancesScreen() {
                 }
                 ListHeaderComponent={
                     <View style={styles.header}>
+                        {/* Month Selector */}
+                        <View style={[styles.monthSelector, { backgroundColor: colors.surface }]}>
+                            <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.monthNavBtn}>
+                                <FontAwesome name="chevron-left" size={16} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                            <Text style={[styles.monthTitle, { color: colors.text }]}>
+                                {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}
+                            </Text>
+                            <TouchableOpacity onPress={() => changeMonth(1)} style={styles.monthNavBtn}>
+                                <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+
                         {/* Summary Cards */}
                         <View style={styles.summaryGrid}>
                             <View style={[styles.summaryCard, { backgroundColor: colors.surface }, Shadows.sm]}>
@@ -62,6 +134,33 @@ export default function FinancesScreen() {
                                 </Text>
                             </View>
                         </View>
+
+                        {/* Chart Section */}
+                        {!loading && recentTransactions.length > 0 && (
+                            <View style={[styles.chartContainer, { backgroundColor: colors.surface }, Shadows.sm]}>
+                                <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 20 }]}>
+                                    Resumen Diario
+                                </Text>
+                                <BarChart
+                                    data={chartData}
+                                    barWidth={22}
+                                    spacing={14}
+                                    roundedTop
+                                    roundedBottom
+                                    hideRules
+                                    xAxisThickness={0}
+                                    yAxisThickness={0}
+                                    yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }}
+                                    noOfSections={3}
+                                    maxValue={100} // Dynamic? No, let auto calc
+                                    isAnimated
+                                    animationDuration={500}
+                                    width={width - 80} // screen padding
+                                    labelWidth={30}
+                                    xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
+                                />
+                            </View>
+                        )}
 
                         {/* Balance Main Card */}
                         <View style={[styles.balanceCard, { backgroundColor: colors.primary }, Shadows.md]}>
@@ -137,6 +236,27 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: Spacing.md,
         marginBottom: Spacing.md,
+    },
+    monthSelector: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+        marginBottom: Spacing.md,
+    },
+    chartContainer: {
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
+        marginBottom: Spacing.md,
+        alignItems: 'center',
+    },
+    monthNavBtn: {
+        padding: Spacing.sm,
+    },
+    monthTitle: {
+        ...Typography.bodyBold,
+        fontSize: 16,
     },
     summaryCard: {
         flex: 1,

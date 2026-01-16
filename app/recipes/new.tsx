@@ -2,6 +2,7 @@ import DynamicListInput from '@/components/DynamicListInput';
 import { IngredientSelector, SelectedIngredient } from '@/components/IngredientSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { useHaptics } from '@/hooks/useHaptics';
 import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -33,6 +34,8 @@ export default function NewRecipeScreen() {
     const [mode, setMode] = useState<InputMode>('manual');
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState('');
+
+    const haptics = useHaptics();
 
     // Changed to arrays for DynamicListInput
     const [ingredientsList, setIngredientsList] = useState<string[]>(['']);
@@ -91,6 +94,7 @@ export default function NewRecipeScreen() {
         });
 
         if (!result.canceled) {
+            haptics.selection();
             setImage(result.assets[0].uri);
         }
     };
@@ -98,6 +102,7 @@ export default function NewRecipeScreen() {
     const takePhoto = async () => {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (permission.status !== 'granted') {
+            haptics.warning();
             Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara para tomar fotos.');
             return;
         }
@@ -110,12 +115,14 @@ export default function NewRecipeScreen() {
         });
 
         if (!result.canceled) {
+            haptics.success();
             setImage(result.assets[0].uri);
         }
     };
 
     const handleSubmit = async () => {
         if (!title.trim()) {
+            haptics.error();
             Alert.alert('Error', 'Por favor ingresa un título para la receta.');
             return;
         }
@@ -155,6 +162,7 @@ export default function NewRecipeScreen() {
             }
         }
 
+        haptics.success();
         setIsSubmitting(false);
         router.back();
     };

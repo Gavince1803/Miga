@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useHaptics } from '@/hooks/useHaptics';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
@@ -43,17 +44,23 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
     const [notes, setNotes] = useState('');
     const [addingWithoutRecipe, setAddingWithoutRecipe] = useState(false);
 
+    const haptics = useHaptics();
+
     const filteredRecipes = searchQuery
         ? recipes.filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()))
         : recipes;
 
     const handleSelectRecipe = (recipe: Recipe) => {
+        haptics.selection();
         setSelectedRecipe(recipe);
         setProductName(recipe.title);
     };
 
     const handleAddProduct = () => {
-        if (!productName.trim()) return;
+        if (!productName.trim()) {
+            haptics.error();
+            return;
+        }
 
         const newProduct: SelectedProduct = {
             productName: productName.trim(),
@@ -64,6 +71,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
         };
 
         onProductsChange([...products, newProduct]);
+        haptics.success();
         resetForm();
         setShowModal(false);
     };
@@ -78,12 +86,14 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
     };
 
     const handleRemoveProduct = (index: number) => {
+        haptics.warning(); // or light impact
         const updated = [...products];
         updated.splice(index, 1);
         onProductsChange(updated);
     };
 
     const handleQuantityChange = (index: number, newQty: string) => {
+        haptics.light();
         const updated = [...products];
         updated[index].quantity = parseInt(newQty) || 1;
         onProductsChange(updated);
@@ -221,6 +231,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                     keyboardType="numeric"
                                     placeholder="1"
                                     placeholderTextColor={colors.textMuted}
+                                    autoFocus // Keep keyboard up by focusing this immediately
                                 />
 
                                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Notas (opcional)</Text>

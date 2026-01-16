@@ -5,6 +5,7 @@ import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProduc
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
 import { useOrders } from '@/hooks/useOrders';
 import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
@@ -214,9 +215,12 @@ export default function NewOrderScreen() {
         }
     };
 
+    const haptics = useHaptics();
+
     const handleSave = async () => {
         // Validate required fields
         if (!clientName.trim() || !clientPhone.trim()) {
+            haptics.error();
             Alert.alert('Error', 'Por favor completa todos los campos marcados con *');
             return;
         }
@@ -224,12 +228,14 @@ export default function NewOrderScreen() {
         // Validate custom inputs
         const finalSize = showCustomSize ? customSize.trim() : size;
         if (!finalSize) {
+            haptics.warning();
             Alert.alert('Error', 'Por favor ingresa el tamaño');
             return;
         }
 
         const finalReminderDays = showCustomReminder ? customReminderDays.trim() : reminderDays;
         if (showCustomReminder && !finalReminderDays) {
+            haptics.warning();
             Alert.alert('Error', 'Por favor ingresa el número de días para el recordatorio');
             return;
         }
@@ -274,6 +280,7 @@ export default function NewOrderScreen() {
                     })));
                 }
 
+                haptics.success();
                 Alert.alert(
                     '¡Pedido Guardado!',
                     'El pedido se ha creado exitosamente.',
@@ -282,6 +289,7 @@ export default function NewOrderScreen() {
             }
         } catch (error) {
             console.error(error);
+            haptics.error();
             Alert.alert('Error', 'Ocurrió un error al guardar el pedido');
         } finally {
             setSubmitting(false);

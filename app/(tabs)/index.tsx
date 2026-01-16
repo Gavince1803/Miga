@@ -180,7 +180,7 @@ export default function HomeScreen() {
       const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
       const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
 
-      console.log('Fetching expenses for:', startOfMonth, 'to', endOfMonth);
+
       const { data, error } = await supabase
         .from('inventory_movements')
         .select(`
@@ -200,13 +200,13 @@ export default function HomeScreen() {
       }
 
       if (data) {
-        // console.log('Expenses Data Raw:', JSON.stringify(data, null, 2));
+
         const expenses = data.reduce((sum, move: any) => {
           const itemData = move.inventory_items || move.item;
           const cost = itemData?.cost_per_unit || 0;
           return sum + (move.quantity * cost);
         }, 0);
-        console.log('Calculated Expenses:', expenses);
+
         setMonthlyExpenses(expenses);
       }
     } catch (err) {

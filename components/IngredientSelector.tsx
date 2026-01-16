@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { useHaptics } from '@/hooks/useHaptics';
 import { useInventory } from '@/hooks/useInventory';
 import { InventoryItem, UNIT_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -44,6 +45,8 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newIngredientName, setNewIngredientName] = useState('');
 
+    const haptics = useHaptics();
+
     // Filter inventory items not already selected
     const availableItems = inventory.filter(
         item => !selectedIngredients.some(sel => sel.inventoryItemId === item.id)
@@ -56,6 +59,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
         : availableItems;
 
     const handleSelectItem = (item: InventoryItem) => {
+        haptics.selection();
         setSelectedItem(item);
         setUnit(item.unit);
         setQuantity('');
@@ -63,6 +67,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
     const handleAddIngredient = () => {
         if (!quantity || parseFloat(quantity) <= 0) {
+            haptics.error();
             Alert.alert('Error', 'Ingresa una cantidad válida');
             return;
         }
@@ -76,6 +81,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                 unit: unit
             };
             onIngredientsChange([...selectedIngredients, newIngredient]);
+            haptics.success();
         } else if (newIngredientName.trim()) {
             // Create new ingredient (will be created when recipe is saved)
             const normalizedName = newIngredientName.trim()
@@ -89,6 +95,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
             );
 
             if (existsInInventory) {
+                haptics.warning();
                 Alert.alert(
                     'Ya existe',
                     `"${normalizedName}" ya está en tu inventario. Selecciónalo de la lista.`
@@ -104,6 +111,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
             );
 
             if (alreadySelected) {
+                haptics.error();
                 Alert.alert('Error', `"${normalizedName}" ya está agregado a esta receta.`);
                 return;
             }
@@ -115,6 +123,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                 unit: unit
             };
             onIngredientsChange([...selectedIngredients, newIngredient]);
+            haptics.success();
         }
 
         // Reset and close modal
@@ -127,12 +136,14 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     };
 
     const handleRemoveIngredient = (index: number) => {
+        haptics.warning();
         const updated = [...selectedIngredients];
         updated.splice(index, 1);
         onIngredientsChange(updated);
     };
 
     const handleQuantityChange = (index: number, newQty: string) => {
+        haptics.light();
         const updated = [...selectedIngredients];
         updated[index].quantity = parseFloat(newQty) || 0;
         onIngredientsChange(updated);
