@@ -1,4 +1,3 @@
-import BackButton from '@/components/BackButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { Stack } from 'expo-router';
@@ -20,13 +19,7 @@ export default function RecipesLayout() {
                 },
             }}
         >
-            <Stack.Screen
-                name="index"
-                options={{
-                    title: 'Recetario',
-                    headerLeft: () => <BackButton />,
-                }}
-            />
+
             <Stack.Screen
                 name="new"
                 options={{

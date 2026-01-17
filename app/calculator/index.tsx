@@ -1,12 +1,12 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useRecipes } from '@/hooks/useRecipes';
 import { CostIngredient, RecipeCostConfig, UNIT_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-    Alert,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -15,7 +15,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 
 export default function CostCalculatorScreen() {
@@ -23,6 +23,7 @@ export default function CostCalculatorScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { showAlert } = useAlert();
 
     // State for Recipe Name
     const [recipeName, setRecipeName] = useState(params.recipeName as string || '');
@@ -106,7 +107,7 @@ export default function CostCalculatorScreen() {
 
     const handleAddIngredient = () => {
         if (!newIngName || !newIngUsed || !newIngBought || !newIngPrice) {
-            Alert.alert('Error', 'Por favor completa todos los campos del ingrediente');
+            showAlert({ title: 'Error', message: 'Por favor completa todos los campos del ingrediente', type: 'error' });
             return;
         }
 
@@ -131,7 +132,7 @@ export default function CostCalculatorScreen() {
 
     const handleSavePrice = async () => {
         if (!recipeId) {
-            Alert.alert('Info', 'Este cálculo no está vinculado a una receta guardada.');
+            showAlert({ title: 'Info', message: 'Este cálculo no está vinculado a una receta guardada.', type: 'info' });
             return;
         }
         setSaving(true);
@@ -142,7 +143,7 @@ export default function CostCalculatorScreen() {
         );
         setSaving(false);
         if (success) {
-            Alert.alert('Éxito', 'Precio guardado en la receta');
+            showAlert({ title: 'Éxito', message: 'Precio guardado en la receta', type: 'success' });
         }
     };
 
@@ -164,7 +165,7 @@ export default function CostCalculatorScreen() {
                 style={{ flex: 1 }}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
             >
-                <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                     {/* Header Input */}
                     <View style={styles.section}>
@@ -203,7 +204,11 @@ export default function CostCalculatorScreen() {
                                     <View style={{ flex: 1 }}>
                                         <Text style={[styles.ingredientName, { color: colors.text }]}>{ing.name}</Text>
                                         <Text style={[styles.ingredientDetail, { color: colors.textSecondary }]}>
-                                            Uso: {ing.quantityUsed} {ing.unit} | Compra: {ing.quantityBought} {ing.unit} (${ing.priceBought})
+                                            Uso: {ing.quantityUsed} {ing.unit} | Compra: {
+                                                (ing.unit === 'g' && ing.quantityBought >= 1000) ? `${ing.quantityBought / 1000} kg` :
+                                                    (ing.unit === 'ml' && ing.quantityBought >= 1000) ? `${ing.quantityBought / 1000} l` :
+                                                        `${ing.quantityBought} ${ing.unit}`
+                                            } (${ing.priceBought})
                                         </Text>
                                     </View>
                                     <View style={{ alignItems: 'flex-end', marginRight: Spacing.sm }}>

@@ -1,13 +1,15 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const { showAlert } = useAlert();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -21,7 +23,7 @@ export default function LoginScreen() {
             password,
         });
 
-        if (error) Alert.alert('Error', error.message);
+        if (error) showAlert({ title: 'Error', message: error.message, type: 'error' });
         setLoading(false);
     }
 
@@ -32,8 +34,8 @@ export default function LoginScreen() {
             password,
         });
 
-        if (error) Alert.alert('Error', error.message);
-        else Alert.alert('Registro exitoso', 'Por favor verifica tu correo electrónico (si aplica) o inicia sesión.');
+        if (error) showAlert({ title: 'Error', message: error.message, type: 'error' });
+        else showAlert({ title: 'Registro exitoso', message: 'Por favor verifica tu correo electrónico (si aplica) o inicia sesión.', type: 'success' });
         setLoading(false);
     }
 

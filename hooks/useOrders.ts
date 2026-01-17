@@ -1,14 +1,16 @@
-import { deductInventoryForOrder, showDeductionSummary } from '@/lib/inventoryDeduction';
+import { useAlert } from '@/context/AlertContext';
+import { deductInventoryForOrder, formatDeductionMessage } from '@/lib/inventoryDeduction';
 import { cancelOrderNotification, scheduleOrderNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { Order, OrderFormData } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
 export function useOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    const { showAlert } = useAlert();
 
     const fetchOrders = async () => {
         try {
@@ -58,7 +60,7 @@ export function useOrders() {
             }
         } catch (error) {
             console.error('Error fetching orders:', error);
-            Alert.alert('Error', 'No se pudieron cargar los pedidos');
+            showAlert({ title: 'Error', message: 'No se pudieron cargar los pedidos', type: 'error' });
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -89,7 +91,7 @@ export function useOrders() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                Alert.alert('Error', 'Debes iniciar sesión para guardar pedidos');
+                showAlert({ title: 'Error', message: 'Debes iniciar sesión para guardar pedidos', type: 'error' });
                 return null;
             }
 
@@ -148,7 +150,7 @@ export function useOrders() {
             return data;
         } catch (error) {
             console.error('Error creating order:', error);
-            Alert.alert('Error', 'No se pudo guardar el pedido');
+            showAlert({ title: 'Error', message: 'No se pudo guardar el pedido', type: 'error' });
             return null;
         }
     };
@@ -181,10 +183,11 @@ export function useOrders() {
 
                 if (error) throw error;
 
-                // Auto-deduct inventory when order is paid
+                // Auto-deduct inventory including in updateOrder
                 const { deductedItems, errors } = await deductInventoryForOrder(id);
-                if (deductedItems.length > 0 || errors.length > 0) {
-                    showDeductionSummary(deductedItems, errors);
+                const notification = formatDeductionMessage(deductedItems, errors);
+                if (notification) {
+                    showAlert(notification);
                 }
             } else {
                 const { error } = await supabase
@@ -198,7 +201,7 @@ export function useOrders() {
             await fetchOrders();
         } catch (error) {
             console.error('Error updating order:', error);
-            Alert.alert('Error', 'No se pudo actualizar el estado');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar el estado', type: 'error' });
         }
     };
 
@@ -220,29 +223,11 @@ export function useOrders() {
             if (orderData.totalPrice !== undefined) updates.total_price = orderData.totalPrice;
             if (orderData.depositAmount !== undefined) updates.deposit_amount = orderData.depositAmount;
             if (orderData.paymentMethod) updates.payment_method = orderData.paymentMethod;
-            // Calculate new Payment Status if monetary fields change
-            // Default to existing data if not provided
-            /* We need to fetch current order if fields are missing to calculate correctly.
-               But for now let's assume if they change one, they might change logic.
-               Better approach: Let the UI pass the status OR calculate here.
-            */
-            // Simplified: If paymentStatus is passed explicitly, use it.
-            // If check below detects full payment, override it to 'pagado'.
 
             if (orderData.paymentStatus) updates.payment_status = orderData.paymentStatus;
 
             // Check changes to reminderDays
             if (orderData.reminderDays !== undefined) updates.reminder_days = orderData.reminderDays;
-
-            // Auto-detect 'Pagado'
-            // We need current values if only partial update
-            // Skipping complex fetch for now to keep it fast, unless needed.
-            // User feedback implies they set it manually or via UI logic. 
-            // New logic: After update, check if it became paid? 
-            // Or just trust the caller.
-
-            // If caller sets 'paymentStatus' to 'pagado' (or UI calculated it), we should deduct.
-            // We can check `updates.payment_status === 'pagado'`
 
             const { data, error } = await supabase
                 .from('orders')
@@ -253,11 +238,11 @@ export function useOrders() {
 
             if (error) throw error;
 
-            // Auto-deduct inventory if updated to paid
             if (updates.payment_status === 'pagado' || updates.status === 'pagado') {
                 const { deductedItems, errors } = await deductInventoryForOrder(id);
-                if (deductedItems.length > 0 || errors.length > 0) {
-                    showDeductionSummary(deductedItems, errors);
+                const notification = formatDeductionMessage(deductedItems, errors);
+                if (notification) {
+                    showAlert(notification);
                 }
             }
 
@@ -279,7 +264,7 @@ export function useOrders() {
             return data;
         } catch (error) {
             console.error('Error updating order:', error);
-            Alert.alert('Error', 'No se pudo actualizar el pedido');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar el pedido', type: 'error' });
             return null;
         }
     };
@@ -299,7 +284,7 @@ export function useOrders() {
             setOrders(prev => prev.filter(o => o.id !== id));
         } catch (error) {
             console.error('Error deleting order:', error);
-            Alert.alert('Error', 'No se pudo eliminar el pedido');
+            showAlert({ title: 'Error', message: 'No se pudo eliminar el pedido', type: 'error' });
         }
     };
 

@@ -1,12 +1,14 @@
+import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import { InventoryItem } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
 export function useInventory() {
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    const { showAlert } = useAlert();
 
     const fetchInventory = async () => {
         try {
@@ -40,7 +42,7 @@ export function useInventory() {
             }
         } catch (error) {
             console.error('Error fetching inventory:', error);
-            Alert.alert('Error', 'No se pudo cargar el inventario');
+            showAlert({ title: 'Error', message: 'No se pudo cargar el inventario', type: 'error' });
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -92,7 +94,7 @@ export function useInventory() {
             }
         } catch (error) {
             console.error('Error updating stock:', error);
-            Alert.alert('Error', 'No se pudo actualizar el stock');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar el stock', type: 'error' });
         }
     };
 
@@ -137,7 +139,7 @@ export function useInventory() {
             return true;
         } catch (error) {
             console.error('Error setting stock:', error);
-            Alert.alert('Error', 'No se pudo actualizar el stock');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar el stock', type: 'error' });
             return false;
         }
     };
@@ -188,7 +190,7 @@ export function useInventory() {
             return true;
         } catch (error) {
             console.error('Error adding item:', error);
-            Alert.alert('Error', 'No se pudo agregar el ingrediente');
+            showAlert({ title: 'Error', message: 'No se pudo agregar el ingrediente', type: 'error' });
             return false;
         }
     };
@@ -230,7 +232,7 @@ export function useInventory() {
             return true;
         } catch (error) {
             console.error('Error updating item:', error);
-            Alert.alert('Error', 'No se pudo actualizar el ingrediente');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar el ingrediente', type: 'error' });
             return false;
         }
     };
@@ -335,7 +337,7 @@ export function useInventory() {
 
         } catch (error) {
             console.error('Error importing inventory:', error);
-            Alert.alert('Error', 'Falló la importación');
+            showAlert({ title: 'Error', message: 'Falló la importación', type: 'error' });
             return null;
         } finally {
             setLoading(false);

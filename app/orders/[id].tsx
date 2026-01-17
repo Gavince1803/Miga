@@ -1,13 +1,15 @@
+import BackButton from '@/components/BackButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useOrders } from '@/hooks/useOrders';
-import { ORDER_STATUS_OPTIONS } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Linking,
     ScrollView,
     StyleSheet,
@@ -15,10 +17,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-
-import BackButton from '@/components/BackButton';
-import { supabase } from '@/lib/supabase';
-import { Order } from '@/types';
 
 function DetailRow({
     icon,
@@ -56,6 +54,7 @@ export default function OrderDetailScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
     const { updateOrderStatus } = useOrders();
+    const { showAlert } = useAlert();
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
@@ -102,7 +101,7 @@ export default function OrderDetailScreen() {
             }
         } catch (error) {
             console.error('Error fetching order:', error);
-            Alert.alert('Error', 'No se pudo cargar el pedido');
+            showAlert({ title: 'Error', message: 'No se pudo cargar el pedido', type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -147,30 +146,40 @@ export default function OrderDetailScreen() {
                 onPress: async () => {
                     if (!order) return;
                     await updateOrderStatus(order.id, option.value);
-                    // Refresh order locally or wait for hook? 
-                    // Hook calls fetchOrders but that updates list in hook, not this screen state necessarily.
-                    // But maybe we should refetch?
-                    // Let's just update local state for UI responsiveness, logic handled.
                     setOrder(prev => prev ? { ...prev, status: option.value } : null);
-                    Alert.alert('Estado Actualizado', `El pedido ahora está: ${option.label}`);
+                    showAlert({ title: 'Estado Actualizado', message: `El pedido ahora está: ${option.label}`, type: 'success' });
                 },
             })),
             { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } }
         ];
-        Alert.alert('Cambiar Estado', 'Selecciona el nuevo estado del pedido', buttons);
+        showAlert({
+            title: 'Cambiar Estado',
+            message: 'Selecciona el nuevo estado del pedido',
+            buttons: buttons
+        });
     };
 
     const handleCall = () => {
-        Alert.alert('Llamar', `¿Llamar a ${order.clientPhone}?`, [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Llamar', onPress: () => { } },
-        ]);
+        showAlert({
+            title: 'Llamar',
+            message: `¿Llamar a ${order.clientPhone}?`,
+            buttons: [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Llamar', onPress: () => {
+                        if (order.clientPhone) {
+                            Linking.openURL(`tel:${order.clientPhone}`);
+                        }
+                    }
+                },
+            ]
+        });
     };
 
     // Placeholder actions
     const handleWhatsApp = () => {
         if (!order.clientPhone) {
-            Alert.alert('Error', 'Este pedido no tiene número de teléfono');
+            showAlert({ title: 'Error', message: 'Este pedido no tiene número de teléfono', type: 'error' });
             return;
         }
         // Clean phone number (remove spaces, dashes, etc.)
@@ -178,16 +187,17 @@ export default function OrderDetailScreen() {
         const message = `Hola! Te escribo sobre tu pedido de ${order.description || 'repostería'}.`;
         const whatsappUrl = `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
         Linking.openURL(whatsappUrl).catch(() => {
-            Alert.alert('Error', 'No se pudo abrir WhatsApp');
+            showAlert({ title: 'Error', message: 'No se pudo abrir WhatsApp', type: 'error' });
         });
     };
     const handleEdit = () => router.push(`/orders/edit?id=${order.id}`);
 
     const handleDelete = () => {
-        Alert.alert(
-            'Eliminar Pedido',
-            '¿Estás segura de que quieres eliminar este pedido?',
-            [
+        showAlert({
+            title: 'Eliminar Pedido',
+            message: '¿Estás segura de que quieres eliminar este pedido?',
+            type: 'warning',
+            buttons: [
                 { text: 'Cancelar', style: 'cancel' },
                 {
                     text: 'Eliminar',
@@ -196,15 +206,19 @@ export default function OrderDetailScreen() {
                         try {
                             const { error } = await supabase.from('orders').delete().eq('id', order.id);
                             if (error) throw error;
-                            Alert.alert('Eliminado', 'Pedido eliminado correctamente');
-                            router.back();
+                            showAlert({
+                                title: 'Eliminado',
+                                message: 'Pedido eliminado correctamente',
+                                type: 'success',
+                                buttons: [{ text: 'OK', onPress: () => router.back() }]
+                            });
                         } catch (error) {
-                            Alert.alert('Error', 'No se pudo eliminar');
+                            showAlert({ title: 'Error', message: 'No se pudo eliminar', type: 'error' });
                         }
                     }
                 },
             ]
-        );
+        });
     };
 
     return (

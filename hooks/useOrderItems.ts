@@ -1,6 +1,6 @@
+import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 export type OrderItem = {
     id: string;
@@ -26,6 +26,7 @@ export type NewOrderItem = {
 
 export function useOrderItems() {
     const [loading, setLoading] = useState(false);
+    const { showAlert } = useAlert();
 
     /**
      * Get all items for an order with recipe details
@@ -103,7 +104,7 @@ export function useOrderItems() {
             return true;
         } catch (error) {
             console.error('Error setting order items:', error);
-            Alert.alert('Error', 'No se pudieron guardar los productos');
+            showAlert({ title: 'Error', message: 'No se pudieron guardar los productos', type: 'error' });
             return false;
         } finally {
             setLoading(false);

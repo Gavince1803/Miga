@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { extractTextFromImage } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -8,7 +9,6 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Image,
     ScrollView,
     StyleSheet,
@@ -21,6 +21,7 @@ export default function ScanRecipeScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
+    const { showAlert } = useAlert();
 
     const [image, setImage] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
@@ -38,7 +39,7 @@ export default function ScanRecipeScreen() {
             if (source === 'camera') {
                 const { status } = await ImagePicker.requestCameraPermissionsAsync();
                 if (status !== 'granted') {
-                    Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara para escanear.');
+                    showAlert({ title: 'Permiso denegado', message: 'Necesitamos acceso a la cámara para escanear.', type: 'error' });
                     return;
                 }
                 result = await ImagePicker.launchCameraAsync(options);
@@ -57,7 +58,7 @@ export default function ScanRecipeScreen() {
             }
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'No se pudo cargar la imagen');
+            showAlert({ title: 'Error', message: 'No se pudo cargar la imagen', type: 'error' });
         }
     };
 
@@ -70,19 +71,21 @@ export default function ScanRecipeScreen() {
             const extractedText = await extractTextFromImage(image);
 
             if (!extractedText) {
-                Alert.alert(
-                    'Error de Escaneo',
-                    'No se pudo extraer texto de la imagen. Intenta con una foto más clara.',
-                    [{ text: 'OK' }]
-                );
+                showAlert({
+                    title: 'Error de Escaneo',
+                    message: 'No se pudo extraer texto de la imagen. Intenta con una foto más clara.',
+                    type: 'error',
+                    buttons: [{ text: 'OK' }]
+                });
                 setProcessing(false);
                 return;
             }
 
-            Alert.alert(
-                'Escaneo Completado',
-                'Se ha extraído el texto de la receta con éxito.',
-                [
+            showAlert({
+                title: 'Escaneo Completado',
+                message: 'Se ha extraído el texto de la receta con éxito.',
+                type: 'success',
+                buttons: [
                     {
                         text: 'Crear Receta',
                         onPress: () => {
@@ -96,10 +99,10 @@ export default function ScanRecipeScreen() {
                         }
                     }
                 ]
-            );
+            });
         } catch (error) {
             console.error('OCR error:', error);
-            Alert.alert('Error', 'Ocurrió un error al procesar la imagen.');
+            showAlert({ title: 'Error', message: 'Ocurrió un error al procesar la imagen.', type: 'error' });
         } finally {
             setProcessing(false);
         }

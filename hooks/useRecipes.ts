@@ -1,7 +1,7 @@
+import { useAlert } from '@/context/AlertContext';
 import { uploadImage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
 export type Recipe = {
     id: string;
@@ -40,6 +40,11 @@ export function useRecipes() {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Assuming useAlert is defined elsewhere and imported
+    // const { showAlert } = useAlert(); // This line was commented out in the original, but the instruction implies it should be here. I'll assume it's meant to be uncommented.
+    // If useAlert is not defined, this will cause an error. I'll keep it as it was in the original, but move it.
+    const { showAlert } = useAlert();
 
     const fetchRecipes = async (silent = false) => {
         try {
@@ -108,7 +113,7 @@ export function useRecipes() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                Alert.alert('Error', 'Debes iniciar sesión');
+                showAlert({ title: 'Error', message: 'Debes iniciar sesión', type: 'error' });
                 return null;
             }
 
@@ -137,7 +142,7 @@ export function useRecipes() {
             return newRecipe;
         } catch (error) {
             console.error('Error creating recipe:', error);
-            Alert.alert('Error', 'No se pudo guardar la receta');
+            showAlert({ title: 'Error', message: 'No se pudo guardar la receta', type: 'error' });
             return null;
         }
     };
@@ -167,7 +172,7 @@ export function useRecipes() {
             return true;
         } catch (error) {
             console.error('Error updating recipe:', error);
-            Alert.alert('Error', 'No se pudo actualizar la receta');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar la receta', type: 'error' });
             return false;
         }
     };
@@ -213,7 +218,7 @@ export function useRecipes() {
             await fetchRecipes();
         } catch (error) {
             console.error('Error deleting recipe:', error);
-            Alert.alert('Error', 'No se pudo eliminar la receta');
+            showAlert({ title: 'Error', message: 'No se pudo eliminar la receta', type: 'error' });
         }
     };
 
@@ -244,7 +249,7 @@ export function useRecipes() {
             return true;
         } catch (error) {
             console.error('Error updating recipe price:', error);
-            Alert.alert('Error', 'No se pudo guardar el precio');
+            showAlert({ title: 'Error', message: 'No se pudo guardar el precio', type: 'error' });
             return false;
         }
     };

@@ -2,6 +2,7 @@ import DynamicListInput from '@/components/DynamicListInput';
 import { IngredientSelector, SelectedIngredient } from '@/components/IngredientSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -10,7 +11,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Image,
     ScrollView,
     StyleSheet,
@@ -27,6 +27,7 @@ export default function EditRecipeScreen() {
     const router = useRouter();
     const { getRecipeById, updateRecipe } = useRecipes();
     const { getIngredientsForRecipe, createAndAddIngredient, setIngredientsForRecipe } = useRecipeIngredients();
+    const { showAlert } = useAlert();
 
     const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState('');
@@ -67,7 +68,7 @@ export default function EditRecipeScreen() {
             }));
             setLinkedIngredients(mappedIngredients);
         } else {
-            Alert.alert('Error', 'Receta no encontrada');
+            showAlert({ title: 'Error', message: 'Receta no encontrada', type: 'error' });
             router.back();
         }
         setLoading(false);
@@ -90,7 +91,7 @@ export default function EditRecipeScreen() {
     const takePhoto = async () => {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (permission.status !== 'granted') {
-            Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara');
+            showAlert({ title: 'Permiso denegado', message: 'Necesitamos acceso a la cámara', type: 'error' });
             return;
         }
 
@@ -108,7 +109,7 @@ export default function EditRecipeScreen() {
 
     const handleSubmit = async () => {
         if (!title.trim()) {
-            Alert.alert('Error', 'Por favor ingresa un título');
+            showAlert({ title: 'Error', message: 'Por favor ingresa un título', type: 'error' });
             return;
         }
 
@@ -172,7 +173,7 @@ export default function EditRecipeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                 {/* Title Section */}
                 <View style={styles.section}>

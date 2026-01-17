@@ -287,6 +287,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                     </View>
                                 ) : (
                                     <FlatList
+                                        keyboardShouldPersistTaps="handled"
                                         data={filteredRecipes}
                                         keyExtractor={item => item.id}
                                         style={styles.list}

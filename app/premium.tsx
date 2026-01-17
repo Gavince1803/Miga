@@ -1,12 +1,12 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { FREE_TIER_LIMITS, useSubscription } from '@/hooks/useSubscription';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Linking,
     Platform,
@@ -43,13 +43,14 @@ export default function PremiumScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
     const { isPremium, premiumUntil, redeemCode, loading } = useSubscription();
+    const { showAlert } = useAlert();
 
     const [code, setCode] = useState('');
     const [redeeming, setRedeeming] = useState(false);
 
     const handleRedeemCode = async () => {
         if (!code.trim()) {
-            Alert.alert('Error', 'Ingresa un código de activación');
+            showAlert({ title: 'Error', message: 'Ingresa un código de activación', type: 'error' });
             return;
         }
 
@@ -58,14 +59,15 @@ export default function PremiumScreen() {
         setRedeeming(false);
 
         if (result.success) {
-            Alert.alert(
-                '🎉 ¡Premium Activado!',
-                `Tu suscripción está activa hasta ${result.premiumUntil?.toLocaleDateString('es-ES')}`,
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
+            showAlert({
+                title: '🎉 ¡Premium Activado!',
+                message: `Tu suscripción está activa hasta ${result.premiumUntil?.toLocaleDateString('es-ES')}`,
+                type: 'success',
+                buttons: [{ text: 'OK', onPress: () => router.back() }]
+            });
             setCode('');
         } else {
-            Alert.alert('Error', result.error || 'No se pudo activar el código');
+            showAlert({ title: 'Error', message: result.error || 'No se pudo activar el código', type: 'error' });
         }
     };
 

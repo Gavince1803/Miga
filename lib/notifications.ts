@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 // Configure how notifications behave when app is in foreground
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
-        shouldShowAlert: true,
+
         shouldPlaySound: true,
         shouldSetBadge: false,
         shouldShowBanner: true,
@@ -50,7 +50,6 @@ export async function scheduleOrderNotification(order: {
         if (!hasPermission) return;
 
         // Parse DATE as local time component (YYYY-MM-DD -> Local Year, Month, Day)
-        // new Date('2024-01-01') is UTC, which shifts to previous day in Western Hemisphere.
         const parts = order.deliveryDate.split('-').map(Number);
         if (parts.length !== 3) {
             console.log('Invalid delivery date format:', order.deliveryDate);
@@ -64,9 +63,8 @@ export async function scheduleOrderNotification(order: {
         const [hours, minutes] = order.deliveryTime ? order.deliveryTime.split(':').map(Number) : [12, 0];
         deliveryMoment.setHours(hours, minutes, 0, 0);
 
-        // Calculate trigger time: X days before
-        // User requested: "4 notifs, at 2:30am evrdyay" implies daily reminders leading up to the date.
-        // We will schedule notifications for every day from 'reminderDays' ago up to 1 day ago.
+        // Formatter for body text
+        const friendlyDate = deliveryMoment.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
         // Loop from reminderDays down to 1
         for (let i = 1; i <= order.reminderDays; i++) {
@@ -75,24 +73,38 @@ export async function scheduleOrderNotification(order: {
 
             // If time is in the past, don't schedule
             if (triggerDate.getTime() <= Date.now()) {
-                console.log(`Notification for ${i} days before is in the past, skipping.`);
                 continue;
             }
 
-            // Unique ID per day: order_123_4 (4 days before), order_123_1 (1 day before)
             const identifier = `order_${order.id}_${i}`;
-            // Also schedule the legacy ID for the "main" reminder (largest day count? or 1 day before?)
-            // To be safe and clean, we'll just use the suffixed IDs. 
-            // NOTE: We should probably ensure we clean up old non-suffixed ones too.
+
+            // --- IMPROVED COPY LOGIC ---
+            let title = '';
+            let body = '';
+
+            if (i === 1) {
+                title = `🚨 ¡Mañana es la entrega! 🎂`;
+                body = `👩‍🍳 Para: ${order.clientName}\n📅 Fecha: ${friendlyDate}\n📝 Detalle: ${order.description || order.size || 'Sin descripción'}`;
+            } else if (i === 2) {
+                title = `⏰ Faltan 2 días para el pedido`;
+                body = `Para: ${order.clientName}\nRecuerda preparar los ingredientes 🧁`;
+            } else if (i <= 7) {
+                title = `📅 Recordatorio: Faltan ${i} días`;
+                body = `Pedido de ${order.clientName} para el ${friendlyDate}.`;
+            } else {
+                title = `🗓️ Próximo Pedido (${i} días)`;
+                body = `Cliente: ${order.clientName}\nFecha: ${friendlyDate}`;
+            }
 
             await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: i === 1 ? '🎂 ¡Entrega Mañana!' : `🎂 Recordatorio de Entrega (${i} días)`,
-                    body: `Tu pedido para ${order.clientName} es el ${order.deliveryDate}.\n${order.description || order.size || ''}`,
+                    title,
+                    body,
                     sound: true,
                     data: { orderId: order.id },
+                    subtitle: 'Agenda Repostera'
                 },
-                trigger: triggerDate as unknown as Notifications.NotificationTriggerInput,
+                trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
                 identifier,
             });
 

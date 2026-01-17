@@ -1,6 +1,6 @@
+import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 
 export type RecipeIngredient = {
     id: string;
@@ -31,6 +31,8 @@ export function useRecipeIngredients() {
     /**
      * Fetch all ingredients for a recipe with their inventory item details
      */
+    const { showAlert } = useAlert();
+
     const getIngredientsForRecipe = async (recipeId: string): Promise<RecipeIngredient[]> => {
         try {
             const { data, error } = await supabase
@@ -44,7 +46,6 @@ export function useRecipeIngredients() {
                     inventory_items (
                         id,
                         name,
-
                         quantity,
                         unit,
                         cost_per_unit
@@ -64,7 +65,6 @@ export function useRecipeIngredients() {
                     id: (item.inventory_items as any).id,
                     name: (item.inventory_items as any).name,
                     quantity: (item.inventory_items as any).quantity,
-
                     unit: (item.inventory_items as any).unit,
                     costPerUnit: (item.inventory_items as any).cost_per_unit || 0,
                 } : undefined
@@ -75,10 +75,6 @@ export function useRecipeIngredients() {
         }
     };
 
-    /**
-     * Add an ingredient to a recipe
-     * If inventoryItemId is null, we'll create a new inventory item first
-     */
     const addIngredient = async (
         recipeId: string,
         ingredient: NewRecipeIngredient
@@ -108,17 +104,13 @@ export function useRecipeIngredients() {
             };
         } catch (error) {
             console.error('Error adding ingredient:', error);
-            Alert.alert('Error', 'No se pudo agregar el ingrediente');
+            showAlert({ title: 'Error', message: 'No se pudo agregar el ingrediente', type: 'error' });
             return null;
         } finally {
             setLoading(false);
         }
     };
 
-    /**
-     * Create a new inventory item and add it as recipe ingredient
-     * Used when user types a new ingredient name not in inventory
-     */
     const createAndAddIngredient = async (
         recipeId: string,
         name: string,
@@ -128,17 +120,14 @@ export function useRecipeIngredients() {
         try {
             setLoading(true);
 
-            // 1. Get session
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('No session');
 
-            // 2. Normalize name (capitalize first letter of each word)
             const normalizedName = name.trim()
                 .split(' ')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                 .join(' ');
 
-            // 3. Check if item already exists (case insensitive)
             const { data: existing } = await supabase
                 .from('inventory_items')
                 .select('id')
@@ -148,16 +137,14 @@ export function useRecipeIngredients() {
             let inventoryItemId: string;
 
             if (existing) {
-                // Use existing
                 inventoryItemId = existing.id;
             } else {
-                // Create new inventory item with 0 stock
                 const { data: newItem, error: createError } = await supabase
                     .from('inventory_items')
                     .insert({
                         user_id: session.user.id,
                         name: normalizedName,
-                        quantity: 0, // Start with 0 stock
+                        quantity: 0,
                         unit: unit,
                         min_stock: 5,
                         category: 'General'
@@ -169,7 +156,6 @@ export function useRecipeIngredients() {
                 inventoryItemId = newItem.id;
             }
 
-            // 4. Add as recipe ingredient
             return await addIngredient(recipeId, {
                 inventoryItemId,
                 quantity,
@@ -177,16 +163,13 @@ export function useRecipeIngredients() {
             });
         } catch (error) {
             console.error('Error creating ingredient:', error);
-            Alert.alert('Error', 'No se pudo crear el ingrediente');
+            showAlert({ title: 'Error', message: 'No se pudo crear el ingrediente', type: 'error' });
             return null;
         } finally {
             setLoading(false);
         }
     };
 
-    /**
-     * Update ingredient quantity/unit
-     */
     const updateIngredient = async (
         id: string,
         updates: { quantity?: number; unit?: string }
@@ -205,9 +188,6 @@ export function useRecipeIngredients() {
         }
     };
 
-    /**
-     * Remove ingredient from recipe
-     */
     const removeIngredient = async (id: string): Promise<boolean> => {
         try {
             const { error } = await supabase
@@ -223,9 +203,6 @@ export function useRecipeIngredients() {
         }
     };
 
-    /**
-     * Bulk add ingredients to a recipe (for initial creation)
-     */
     const setIngredientsForRecipe = async (
         recipeId: string,
         ingredients: NewRecipeIngredient[]
@@ -233,13 +210,11 @@ export function useRecipeIngredients() {
         try {
             setLoading(true);
 
-            // First, delete existing ingredients
             await supabase
                 .from('recipe_ingredients')
                 .delete()
                 .eq('recipe_id', recipeId);
 
-            // Then insert new ones
             if (ingredients.length > 0) {
                 const { error } = await supabase
                     .from('recipe_ingredients')
@@ -258,7 +233,7 @@ export function useRecipeIngredients() {
             return true;
         } catch (error) {
             console.error('Error setting ingredients:', error);
-            Alert.alert('Error', 'No se pudieron guardar los ingredientes');
+            showAlert({ title: 'Error', message: 'No se pudieron guardar los ingredientes', type: 'error' });
             return false;
         } finally {
             setLoading(false);

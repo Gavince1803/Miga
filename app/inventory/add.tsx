@@ -1,11 +1,11 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useInventory } from '@/hooks/useInventory';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -13,7 +13,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,6 +29,7 @@ export default function AddItemScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { addItem } = useInventory();
+    const { showAlert } = useAlert();
 
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
@@ -48,7 +49,7 @@ export default function AddItemScreen() {
 
     const handleSave = async () => {
         if (!name.trim()) {
-            Alert.alert('Error', 'El nombre es requerido');
+            showAlert({ title: 'Error', message: 'El nombre es requerido', type: 'error' });
             return;
         }
 
@@ -246,7 +247,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.md,
         height: 50,
         textAlignVertical: 'center', // Android
-        justifyContent: 'center',
         ...Typography.body,
     },
     purchaseCard: {

@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { RecipeIngredient, useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -7,7 +8,6 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Dimensions,
     Image,
     ScrollView,
@@ -27,6 +27,7 @@ export default function RecipeDetailScreen() {
     const router = useRouter();
     const { getRecipeById, deleteRecipe } = useRecipes();
     const { getIngredientsForRecipe } = useRecipeIngredients();
+    const { showAlert } = useAlert();
 
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [linkedIngredients, setLinkedIngredients] = useState<RecipeIngredient[]>([]);
@@ -78,15 +79,16 @@ export default function RecipeDetailScreen() {
                 title: `Receta: ${recipe.title}`
             });
         } catch (error: any) {
-            Alert.alert('Error', error.message);
+            showAlert({ title: 'Error', message: error.message, type: 'error' });
         }
     };
 
     const handleDelete = () => {
-        Alert.alert(
-            'Eliminar Receta',
-            '¿Estás seguro que quieres eliminar esta receta?',
-            [
+        showAlert({
+            title: 'Eliminar Receta',
+            message: '¿Estás seguro que quieres eliminar esta receta?',
+            type: 'warning',
+            buttons: [
                 { text: 'Cancelar', style: 'cancel' },
                 {
                     text: 'Eliminar',
@@ -99,7 +101,7 @@ export default function RecipeDetailScreen() {
                     }
                 }
             ]
-        );
+        });
     };
 
     if (loading) {

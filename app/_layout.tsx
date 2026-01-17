@@ -15,6 +15,7 @@ export {
 } from 'expo-router';
 
 // Auth
+import { AlertProvider } from '@/context/AlertContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { requestNotificationPermissions } from '@/lib/notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -74,7 +75,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <AlertProvider>
+        <RootLayoutNav />
+      </AlertProvider>
     </AuthProvider>
   );
 }

@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
 import { convertValue } from '@/lib/units';
-import { Alert } from 'react-native';
 
 /**
  * Deduct inventory items based on recipes linked to an order's products.
@@ -123,14 +122,14 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
 }
 
 /**
- * Show a summary of what was deducted
+ * Format the deduction summary message
  */
-export function showDeductionSummary(
+export function formatDeductionMessage(
     deductedItems: { name: string; quantity: number; unit: string }[],
     errors: string[]
-) {
+): { title: string; message: string; type: 'success' | 'warning' } | null {
     if (deductedItems.length === 0 && errors.length === 0) {
-        return; // Nothing to show
+        return null; // Nothing to show
     }
 
     let message = '';
@@ -149,8 +148,9 @@ export function showDeductionSummary(
         });
     }
 
-    Alert.alert(
-        deductedItems.length > 0 ? '✓ Inventario Actualizado' : '⚠️ Advertencias',
-        message.trim()
-    );
+    return {
+        title: deductedItems.length > 0 ? '✓ Inventario Actualizado' : '⚠️ Advertencias',
+        message: message.trim(),
+        type: errors.length > 0 ? 'warning' : 'success'
+    };
 }

@@ -2,6 +2,7 @@ import DynamicListInput from '@/components/DynamicListInput';
 import { IngredientSelector, SelectedIngredient } from '@/components/IngredientSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
@@ -11,7 +12,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -30,6 +30,7 @@ export default function NewRecipeScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
     const { createRecipe } = useRecipes();
+    const { showAlert } = useAlert();
 
     const [mode, setMode] = useState<InputMode>('manual');
     const [title, setTitle] = useState('');
@@ -103,7 +104,7 @@ export default function NewRecipeScreen() {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (permission.status !== 'granted') {
             haptics.warning();
-            Alert.alert('Permiso denegado', 'Necesitamos acceso a la cámara para tomar fotos.');
+            showAlert({ title: 'Permiso denegado', message: 'Necesitamos acceso a la cámara para tomar fotos.', type: 'error' });
             return;
         }
 
@@ -123,7 +124,7 @@ export default function NewRecipeScreen() {
     const handleSubmit = async () => {
         if (!title.trim()) {
             haptics.error();
-            Alert.alert('Error', 'Por favor ingresa un título para la receta.');
+            showAlert({ title: 'Error', message: 'Por favor ingresa un título para la receta.', type: 'error' });
             return;
         }
 
@@ -173,7 +174,7 @@ export default function NewRecipeScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         >
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                 {/* Title Section */}
                 <View style={styles.section}>

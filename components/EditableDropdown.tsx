@@ -148,6 +148,7 @@ export function EditableDropdown({
                                     </View>
                                 ) : (
                                     <FlatList
+                                        keyboardShouldPersistTaps="handled"
                                         data={options}
                                         keyExtractor={(item) => item}
                                         renderItem={({ item }) => (

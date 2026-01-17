@@ -1,6 +1,7 @@
 import { DateTimePickerField } from '@/components/DateTimePickerField';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
@@ -10,7 +11,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -75,6 +75,7 @@ export default function EditOrderScreen() {
     const { updateOrder } = useOrders();
     const { bcv, parallel, euro } = useExchangeRates();
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
+    const { showAlert } = useAlert();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -139,7 +140,7 @@ export default function EditOrderScreen() {
                 }
             } catch (error) {
                 console.error(error);
-                Alert.alert('Error', 'No se pudo cargar el pedido');
+                showAlert({ title: 'Error', message: 'No se pudo cargar el pedido', type: 'error' });
             } finally {
                 setLoading(false);
             }
@@ -151,7 +152,7 @@ export default function EditOrderScreen() {
     const handleSave = async () => {
         // Validate required fields
         if (!clientName.trim() || !clientPhone.trim()) {
-            Alert.alert('Error', 'Por favor completa todos los campos requeridos (*)');
+            showAlert({ title: 'Error', message: 'Por favor completa todos los campos requeridos (*)', type: 'error' });
             return;
         }
 
@@ -179,13 +180,16 @@ export default function EditOrderScreen() {
             });
 
             if (updated) {
-                Alert.alert('Éxito', 'Pedido actualizado correctamente', [
-                    { text: 'OK', onPress: () => router.back() }
-                ]);
+                showAlert({
+                    title: 'Éxito',
+                    message: 'Pedido actualizado correctamente',
+                    type: 'success',
+                    buttons: [{ text: 'OK', onPress: () => router.back() }]
+                });
             }
         } catch (error) {
             console.error(error);
-            Alert.alert('Error', 'No se pudo actualizar');
+            showAlert({ title: 'Error', message: 'No se pudo actualizar', type: 'error' });
         } finally {
             setSubmitting(false);
         }

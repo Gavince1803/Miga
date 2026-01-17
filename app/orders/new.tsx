@@ -4,6 +4,7 @@ import { EditableDropdown } from '@/components/EditableDropdown';
 import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
@@ -13,7 +14,6 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -145,6 +145,7 @@ export default function NewOrderScreen() {
 
     const { createOrder, getDictionaryOptions } = useOrders();
     const { setItemsForOrder } = useOrderItems();
+    const { showAlert } = useAlert();
     const { bcv, parallel, euro } = useExchangeRates();
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const [submitting, setSubmitting] = useState(false);
@@ -221,7 +222,7 @@ export default function NewOrderScreen() {
         // Validate required fields
         if (!clientName.trim() || !clientPhone.trim()) {
             haptics.error();
-            Alert.alert('Error', 'Por favor completa todos los campos marcados con *');
+            showAlert({ title: 'Error', message: 'Por favor completa todos los campos marcados con *', type: 'error' });
             return;
         }
 
@@ -229,14 +230,14 @@ export default function NewOrderScreen() {
         const finalSize = showCustomSize ? customSize.trim() : size;
         if (!finalSize) {
             haptics.warning();
-            Alert.alert('Error', 'Por favor ingresa el tamaño');
+            showAlert({ title: 'Error', message: 'Por favor ingresa el tamaño', type: 'warning' });
             return;
         }
 
         const finalReminderDays = showCustomReminder ? customReminderDays.trim() : reminderDays;
         if (showCustomReminder && !finalReminderDays) {
             haptics.warning();
-            Alert.alert('Error', 'Por favor ingresa el número de días para el recordatorio');
+            showAlert({ title: 'Error', message: 'Por favor ingresa el número de días para el recordatorio', type: 'warning' });
             return;
         }
 
@@ -281,16 +282,17 @@ export default function NewOrderScreen() {
                 }
 
                 haptics.success();
-                Alert.alert(
-                    '¡Pedido Guardado!',
-                    'El pedido se ha creado exitosamente.',
-                    [{ text: 'OK', onPress: () => router.back() }]
-                );
+                showAlert({
+                    title: '¡Pedido Guardado!',
+                    message: 'El pedido se ha creado exitosamente.',
+                    type: 'success',
+                    buttons: [{ text: 'OK', onPress: () => router.back() }]
+                });
             }
         } catch (error) {
             console.error(error);
             haptics.error();
-            Alert.alert('Error', 'Ocurrió un error al guardar el pedido');
+            showAlert({ title: 'Error', message: 'Ocurrió un error al guardar el pedido', type: 'error' });
         } finally {
             setSubmitting(false);
         }

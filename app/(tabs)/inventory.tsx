@@ -1,11 +1,14 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
+import { useInventory } from '@/hooks/useInventory';
 import { InventoryItem } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-    Alert,
     FlatList,
     KeyboardAvoidingView,
     Modal,
@@ -17,10 +20,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-
-import { useInventory } from '@/hooks/useInventory';
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as XLSX from 'xlsx';
 
 // Unit Options for selection
@@ -162,6 +161,7 @@ export default function InventoryScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, addItem, updateItemDetails, importInventory, exportInventory } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
+    const { showAlert } = useAlert();
 
     // Add Item Modal State
     const [showAddModal, setShowAddModal] = useState(false);
@@ -270,7 +270,7 @@ export default function InventoryScreen() {
         const newQty = parseInt(editQuantity);
 
         if (isNaN(newQty) || newQty < 0) {
-            Alert.alert('Error', 'Ingresa una cantidad válida');
+            showAlert({ title: 'Error', message: 'Ingresa una cantidad válida', type: 'error' });
             return;
         }
 
@@ -325,7 +325,7 @@ export default function InventoryScreen() {
 
     const handleAddItem = async () => {
         if (!newItemName.trim()) {
-            Alert.alert('Error', 'El nombre es obligatorio');
+            showAlert({ title: 'Error', message: 'El nombre es obligatorio', type: 'error' });
             return;
         }
 
@@ -341,7 +341,7 @@ export default function InventoryScreen() {
         if (success) {
             setShowAddModal(false);
             resetAddForm();
-            Alert.alert('Éxito', `"${newItemName}" agregado al inventario`);
+            showAlert({ title: 'Éxito', message: `"${newItemName}" agregado al inventario`, type: 'success' });
         }
     };
 
@@ -366,7 +366,7 @@ export default function InventoryScreen() {
             const data = XLSX.utils.sheet_to_json(sheet);
 
             if (!data || data.length === 0) {
-                Alert.alert('Error', 'El archivo parece estar vacío o no es válido.');
+                showAlert({ title: 'Error', message: 'El archivo parece estar vacío o no es válido.', type: 'error' });
                 return;
             }
 
@@ -393,30 +393,30 @@ export default function InventoryScreen() {
             }).filter(i => i !== null) as Partial<InventoryItem>[];
 
             if (itemsToImport.length === 0) {
-                Alert.alert('Error', 'No se encontraron columnas válidas (Nombre, Cantidad).');
+                showAlert({ title: 'Error', message: 'No se encontraron columnas válidas (Nombre, Cantidad).', type: 'error' });
                 return;
             }
 
-            Alert.alert(
-                'Confirmar Importación',
-                `Se encontraron ${itemsToImport.length} items. ¿Deseas importarlos?`,
-                [
+            showAlert({
+                title: 'Confirmar Importación',
+                message: `Se encontraron ${itemsToImport.length} items. ¿Deseas importarlos?`,
+                buttons: [
                     { text: 'Cancelar', style: 'cancel' },
                     {
                         text: 'Importar',
                         onPress: async () => {
                             const result = await importInventory(itemsToImport);
                             if (result) {
-                                Alert.alert('Éxito', `Inventario actualizado. Agregados: ${result.added}, Actualizados: ${result.updated}`);
+                                showAlert({ title: 'Éxito', message: `Inventario actualizado. Agregados: ${result.added}, Actualizados: ${result.updated}`, type: 'success' });
                             }
                         }
                     }
                 ]
-            );
+            });
 
         } catch (error) {
             console.error('Import error:', error);
-            Alert.alert('Error', 'Hubo un problema al leer el archivo Excel.');
+            showAlert({ title: 'Error', message: 'Hubo un problema al leer el archivo Excel.', type: 'error' });
         }
     };
 
@@ -424,7 +424,7 @@ export default function InventoryScreen() {
         try {
             const data = exportInventory();
             if (data.length === 0) {
-                Alert.alert('Info', 'No hay items para exportar.');
+                showAlert({ title: 'Info', message: 'No hay items para exportar.', type: 'info' });
                 return;
             }
 
@@ -436,10 +436,10 @@ export default function InventoryScreen() {
             const uri = FileSystem.documentDirectory + 'inventario.xlsx';
             await FileSystem.writeAsStringAsync(uri, wbout, { encoding: FileSystem.EncodingType.Base64 });
 
-            Alert.alert('Éxito', `Se exportaron ${data.length} items.\n\nArchivo: inventario.xlsx`);
+            showAlert({ title: 'Éxito', message: `Se exportaron ${data.length} items.\n\nArchivo: inventario.xlsx`, type: 'success' });
         } catch (error) {
             console.error('Export error:', error);
-            Alert.alert('Error', 'Hubo un problema al exportar.');
+            showAlert({ title: 'Error', message: 'Hubo un problema al exportar.', type: 'error' });
         }
     };
 
@@ -798,98 +798,99 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         flexDirection: 'row',
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.md,
-        gap: Spacing.sm,
+        padding: Spacing.md,
+        alignItems: 'center',
     },
     searchBar: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.full,
+        height: 48,
+        borderRadius: BorderRadius.lg,
         borderWidth: 1,
-        gap: Spacing.sm,
+        marginRight: Spacing.sm,
     },
     searchInput: {
         flex: 1,
-        ...Typography.body,
-        paddingVertical: Spacing.sm,
+        marginLeft: Spacing.sm,
+        fontSize: 16,
     },
     importButton: {
-        width: 44,
-        height: 44,
-        borderRadius: BorderRadius.full,
+        width: 48,
+        height: 48,
+        borderRadius: BorderRadius.lg,
         alignItems: 'center',
         justifyContent: 'center',
     },
     listContent: {
         padding: Spacing.md,
-        paddingTop: Spacing.xs,
-        gap: Spacing.md,
+        paddingTop: 0,
+        paddingBottom: 100,
     },
     itemCard: {
         borderRadius: BorderRadius.lg,
         padding: Spacing.md,
+        marginBottom: Spacing.md,
     },
     itemHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: Spacing.sm,
+        marginBottom: Spacing.md,
     },
     itemInfo: {
         flex: 1,
     },
     itemName: {
-        ...Typography.subtitle,
-        fontWeight: '600',
+        ...Typography.bodyBold,
+        marginBottom: 2,
     },
     itemCategory: {
         ...Typography.caption,
-        marginTop: 2,
     },
     lowStockBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
+        paddingHorizontal: 6,
         paddingVertical: 4,
-        borderRadius: BorderRadius.full,
+        borderRadius: 4,
         gap: 4,
     },
     lowStockText: {
-        ...Typography.caption,
-        fontWeight: '600',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
     itemBody: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-end',
+        marginBottom: Spacing.md,
     },
     quantitySection: {
-        alignItems: 'flex-start',
+        // padding: 4,
     },
     quantity: {
-        ...Typography.title,
-        fontWeight: '700',
+        fontSize: 32,
+        fontWeight: 'bold',
     },
     unit: {
-        ...Typography.body,
+        fontSize: 16,
+        fontWeight: '600',
         marginLeft: 4,
     },
     quickActions: {
         flexDirection: 'row',
-        gap: Spacing.sm,
+        gap: 8,
     },
     quickButton: {
-        width: 36,
-        height: 36,
-        borderRadius: BorderRadius.full,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
     stockIndicator: {
-        marginTop: Spacing.md,
         gap: 4,
     },
     stockBar: {
@@ -902,128 +903,103 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     stockText: {
-        ...Typography.caption,
+        fontSize: 10,
+        textAlign: 'right',
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 60,
+        gap: Spacing.md,
+    },
+    emptyText: {
+        ...Typography.body,
     },
     fab: {
         position: 'absolute',
-        right: Spacing.lg,
-        bottom: Spacing.lg,
+        bottom: 24,
+        right: 24,
         width: 56,
         height: 56,
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    // Modal Styles
     modalOverlay: {
         flex: 1,
+        justifyContent: 'flex-end',
         backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: Spacing.lg,
     },
     modalContent: {
-        width: '100%',
-        maxWidth: 400,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
-        paddingTop: Spacing.sm,
-    },
-    modalTitle: {
-        ...Typography.title,
-        textAlign: 'center',
-        marginBottom: Spacing.lg,
-    },
-    inputLabel: {
-        ...Typography.caption,
-        marginBottom: 6,
-    },
-    input: {
-        borderWidth: 1,
-        borderRadius: BorderRadius.md,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        ...Typography.body,
-    },
-    modalInput: {
-        borderWidth: 1,
-        borderRadius: BorderRadius.md,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        ...Typography.body,
-    },
-    unitPill: {
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 6,
-        borderRadius: BorderRadius.full,
-        minWidth: 36,
-        alignItems: 'center',
-    },
-    unitRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.sm,
-        marginBottom: Spacing.md,
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        gap: Spacing.md,
-        marginTop: Spacing.xl,
-    },
-    addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingVertical: Spacing.md,
-        borderRadius: BorderRadius.md,
-    },
-    addButtonText: {
-        color: '#FFF',
-        fontWeight: '600',
-    },
-    emptyState: {
-        padding: Spacing.xl,
-        alignItems: 'center',
-        borderRadius: BorderRadius.lg,
-    },
-    emptyText: {
-        ...Typography.body,
-        textAlign: 'center',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: Spacing.lg,
+        maxHeight: '90%',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: Spacing.sm,
+        marginBottom: Spacing.lg,
+    },
+    modalTitle: {
+        ...Typography.title,
     },
     modalBody: {
-        maxHeight: 300,
+        //
     },
     inputRow: {
         flexDirection: 'row',
         gap: Spacing.md,
         marginBottom: Spacing.md,
     },
-    editModalContent: {
-        width: '90%',
-        maxWidth: 400,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.md,
+    inputLabel: {
+        ...Typography.caption,
+        fontWeight: '600',
+        marginBottom: Spacing.xs,
     },
-    editQuantityInput: {
-        fontSize: 24,
-        fontWeight: '700',
-        textAlign: 'center',
+    modalInput: {
+        borderWidth: 1,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: Spacing.md,
+        height: 44,
+        fontSize: 16,
+    },
+    addButton: {
+        height: 50,
+        borderRadius: BorderRadius.lg,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    addButtonText: {
+        color: '#FFFFFF',
+        ...Typography.bodyBold,
+        fontSize: 16,
+    },
+    editModalContent: {
+        margin: 20,
+        padding: 20,
+        borderRadius: 20,
+        // elevation: 5
+    },
+    unitPill: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'transparent'
     },
     editModalButtons: {
         flexDirection: 'row',
-        gap: Spacing.md,
-        marginTop: Spacing.lg,
+        gap: 12,
+        marginTop: 8
     },
     editModalButton: {
         flex: 1,
+        height: 44,
+        borderRadius: 12,
         alignItems: 'center',
-        paddingVertical: Spacing.md,
-        borderRadius: BorderRadius.md,
-    },
+        justifyContent: 'center'
+    }
 });

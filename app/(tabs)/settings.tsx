@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { requestNotificationPermissions } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
@@ -8,7 +9,6 @@ import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
     Linking,
     ScrollView,
     StyleSheet,
@@ -95,6 +95,7 @@ export default function SettingsScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
+    const { showAlert } = useAlert();
 
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [dailyReminders, setDailyReminders] = useState(true);
@@ -114,20 +115,21 @@ export default function SettingsScreen() {
     const handleNotificationPermission = async () => {
         if (notificationStatus === 'granted') {
             // Already granted, show info
-            Alert.alert('✅ Notificaciones Activas', 'Ya tienes los permisos de notificación activados.');
+            showAlert({ title: '✅ Notificaciones Activas', message: 'Ya tienes los permisos de notificación activados.', type: 'success' });
             return;
         }
 
         if (notificationStatus === 'denied') {
             // Denied - need to go to settings
-            Alert.alert(
-                'Permiso Denegado',
-                'Las notificaciones están desactivadas. Abre la configuración del sistema para habilitarlas.',
-                [
+            showAlert({
+                title: 'Permiso Denegado',
+                message: 'Las notificaciones están desactivadas. Abre la configuración del sistema para habilitarlas.',
+                type: 'warning',
+                buttons: [
                     { text: 'Cancelar', style: 'cancel' },
                     { text: 'Abrir Configuración', onPress: () => Linking.openSettings() },
                 ]
-            );
+            });
             return;
         }
 
@@ -135,51 +137,55 @@ export default function SettingsScreen() {
         const granted = await requestNotificationPermissions();
         if (granted) {
             setNotificationStatus('granted');
-            Alert.alert('✅ ¡Listo!', 'Ahora recibirás recordatorios de tus pedidos.');
+            showAlert({ title: '✅ ¡Listo!', message: 'Ahora recibirás recordatorios de tus pedidos.', type: 'success' });
         } else {
             setNotificationStatus('denied');
-            Alert.alert('❌ Permiso Denegado', 'No podrás recibir recordatorios sin activar las notificaciones.');
+            showAlert({ title: '❌ Permiso Denegado', message: 'No podrás recibir recordatorios sin activar las notificaciones.', type: 'error' });
         }
     };
 
     const handleBusinessName = () => {
-        Alert.prompt(
-            'Nombre del Negocio',
-            'Ingresa el nombre de tu repostería',
-            [
+        showAlert({
+            title: 'Nombre del Negocio',
+            message: 'Ingresa el nombre de tu repostería',
+            inputConfig: {
+                defaultValue: 'Mi Repostería',
+                placeholder: 'Nombre del negocio'
+            },
+            buttons: [
                 { text: 'Cancelar', style: 'cancel' },
-                { text: 'Guardar', onPress: (name: string | undefined) => console.log('Business name:', name) },
-            ],
-            'plain-text',
-            'Mi Repostería'
-        );
+                { text: 'Guardar', onPress: (name) => console.log('Business name:', name) },
+            ]
+        });
     };
 
     const handlePhoneEdit = () => {
-        Alert.prompt(
-            'Editar Teléfono',
-            'Ingresa el nuevo número de teléfono',
-            [
+        showAlert({
+            title: 'Editar Teléfono',
+            message: 'Ingresa el nuevo número de teléfono',
+            inputConfig: {
+                defaultValue: '+58 412 123 4567',
+                placeholder: '+58...',
+                keyboardType: 'phone-pad'
+            },
+            buttons: [
                 { text: 'Cancelar', style: 'cancel' },
-                { text: 'Guardar', onPress: (phone: string | undefined) => console.log('New phone:', phone) },
-            ],
-            'plain-text',
-            '+58 412 123 4567',
-            'phone-pad'
-        );
+                { text: 'Guardar', onPress: (phone) => console.log('New phone:', phone) },
+            ]
+        });
     };
 
     const handleExportData = () => {
-        Alert.alert(
-            'Exportar Datos',
-            '¿Qué datos quieres exportar?',
-            [
-                { text: 'Pedidos', onPress: () => Alert.alert('Próximamente', 'Esta función estará disponible pronto.') },
-                { text: 'Inventario', onPress: () => Alert.alert('Próximamente', 'Esta función estará disponible pronto.') },
-                { text: 'Todo', onPress: () => Alert.alert('Próximamente', 'Esta función estará disponible pronto.') },
+        showAlert({
+            title: 'Exportar Datos',
+            message: '¿Qué datos quieres exportar?',
+            buttons: [
+                { text: 'Pedidos', onPress: () => showAlert({ title: 'Próximamente', message: 'Esta función estará disponible pronto.', type: 'info' }) },
+                { text: 'Inventario', onPress: () => showAlert({ title: 'Próximamente', message: 'Esta función estará disponible pronto.', type: 'info' }) },
+                { text: 'Todo', onPress: () => showAlert({ title: 'Próximamente', message: 'Esta función estará disponible pronto.', type: 'info' }) },
                 { text: 'Cancelar', style: 'cancel' },
             ]
-        );
+        });
     };
 
     const { isPremium, premiumUntil } = useSubscription();
@@ -260,9 +266,9 @@ export default function SettingsScreen() {
                                     },
                                     trigger: null, // Immediate
                                 });
-                                Alert.alert('Enviado', 'Se ha enviado una notificación de prueba.');
+                                showAlert({ title: 'Enviado', message: 'Se ha enviado una notificación de prueba.', type: 'success' });
                             } else {
-                                Alert.alert('Permiso Denegado', 'No se tienen permisos para enviar notificaciones.');
+                                showAlert({ title: 'Permiso Denegado', message: 'No se tienen permisos para enviar notificaciones.', type: 'error' });
                             }
                         }}
                         colors={colors}
@@ -328,21 +334,26 @@ export default function SettingsScreen() {
             {/* Logout */}
             <TouchableOpacity
                 style={[styles.logoutButton, { backgroundColor: colors.error + '10' }]}
-                onPress={() => Alert.alert('Cerrar Sesión', '¿Estás segura de que quieres cerrar sesión?', [
-                    { text: 'Cancelar', style: 'cancel' },
-                    {
-                        text: 'Cerrar Sesión', style: 'destructive', onPress: async () => {
-                            try {
-                                const { error } = await supabase.auth.signOut();
-                                if (error) throw error;
-                                router.replace('/auth/login');
-                            } catch (error) {
-                                Alert.alert('Error', 'No se pudo cerrar sesión. Intenta de nuevo.');
-                                console.error('Error logging out:', error);
+                onPress={() => showAlert({
+                    title: 'Cerrar Sesión',
+                    message: '¿Estás segura de que quieres cerrar sesión?',
+                    type: 'warning',
+                    buttons: [
+                        { text: 'Cancelar', style: 'cancel' },
+                        {
+                            text: 'Cerrar Sesión', style: 'destructive', onPress: async () => {
+                                try {
+                                    const { error } = await supabase.auth.signOut();
+                                    if (error) throw error;
+                                    router.replace('/auth/login');
+                                } catch (error) {
+                                    showAlert({ title: 'Error', message: 'No se pudo cerrar sesión. Intenta de nuevo.', type: 'error' });
+                                    console.error('Error logging out:', error);
+                                }
                             }
-                        }
-                    },
-                ])}
+                        },
+                    ]
+                })}
             >
                 <FontAwesome name="sign-out" size={18} color={colors.error} />
                 <Text style={[styles.logoutText, { color: colors.error }]}>

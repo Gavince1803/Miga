@@ -1,16 +1,17 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useInventory } from '@/hooks/useInventory';
 import { InventoryItem, UNIT_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
 import {
-    Alert,
     FlatList,
     KeyboardAvoidingView,
     Modal,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -34,6 +35,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { inventory } = useInventory();
+    const { showAlert } = useAlert();
 
     const [showModal, setShowModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -68,7 +70,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     const handleAddIngredient = () => {
         if (!quantity || parseFloat(quantity) <= 0) {
             haptics.error();
-            Alert.alert('Error', 'Ingresa una cantidad válida');
+            showAlert({ title: 'Error', message: 'Ingresa una cantidad válida', type: 'error' });
             return;
         }
 
@@ -96,10 +98,11 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
             if (existsInInventory) {
                 haptics.warning();
-                Alert.alert(
-                    'Ya existe',
-                    `"${normalizedName}" ya está en tu inventario. Selecciónalo de la lista.`
-                );
+                showAlert({
+                    title: 'Ya existe',
+                    message: `"${normalizedName}" ya está en tu inventario. Selecciónalo de la lista.`,
+                    type: 'warning'
+                });
                 setSearchQuery(normalizedName);
                 setShowCreateForm(false);
                 return;
@@ -112,7 +115,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
             if (alreadySelected) {
                 haptics.error();
-                Alert.alert('Error', `"${normalizedName}" ya está agregado a esta receta.`);
+                showAlert({ title: 'Error', message: `"${normalizedName}" ya está agregado a esta receta.`, type: 'error' });
                 return;
             }
 
@@ -232,7 +235,11 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
                         {/* If item selected, show quantity input */}
                         {(selectedItem || showCreateForm) ? (
-                            <View style={styles.quantityForm}>
+                            <ScrollView
+                                style={styles.quantityForm}
+                                keyboardShouldPersistTaps="handled"
+                                showsVerticalScrollIndicator={false}
+                            >
                                 {showCreateForm && (
                                     <>
                                         <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
@@ -308,7 +315,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                         ← Volver a buscar
                                     </Text>
                                 </TouchableOpacity>
-                            </View>
+                            </ScrollView>
                         ) : (
                             <>
                                 {/* Search */}
@@ -326,6 +333,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
                                 {/* Inventory List */}
                                 <FlatList
+                                    keyboardShouldPersistTaps="handled"
                                     data={filteredItems}
                                     keyExtractor={item => item.id}
                                     style={styles.list}
