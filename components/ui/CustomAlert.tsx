@@ -7,6 +7,7 @@ import {
     KeyboardAvoidingView,
     Modal,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -104,29 +105,34 @@ export function CustomAlert({
             animationType="none"
             onRequestClose={onClose}
         >
-            <View style={styles.overlay}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.overlay}
+            >
                 <TouchableWithoutFeedback onPress={onClose}>
                     <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
                 </TouchableWithoutFeedback>
 
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'position' : undefined}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? -50 : 0}
+                <Animated.View
+                    style={[
+                        styles.alertContainer,
+                        {
+                            backgroundColor: colors.surface,
+                            opacity: fadeAnim,
+                            transform: [{ scale: scaleAnim }],
+                        },
+                        Shadows.lg
+                    ]}
                 >
-                    <Animated.View
-                        style={[
-                            styles.alertContainer,
-                            {
-                                backgroundColor: colors.surface,
-                                opacity: fadeAnim,
-                                transform: [{ scale: scaleAnim }],
-                            },
-                            Shadows.lg
-                        ]}
+                    <ScrollView
+                        style={{ flexGrow: 0 }}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
                     >
                         <View style={styles.content}>
                             <View style={[styles.iconContainer, { backgroundColor: iconData.color + '15' }]}>
-                                <FontAwesome name={iconData.name as any} size={32} color={iconData.color} />
+                                <FontAwesome name={iconData.name as any} size={24} color={iconData.color} />
                             </View>
 
                             <Text style={[styles.title, { color: colors.text }]}>
@@ -187,9 +193,9 @@ export function CustomAlert({
                                 );
                             })}
                         </View>
-                    </Animated.View>
-                </KeyboardAvoidingView>
-            </View>
+                    </ScrollView>
+                </Animated.View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 }
@@ -199,49 +205,55 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: Spacing.xl,
+        padding: Spacing.md, // Reduced padding
         zIndex: 1000,
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0,0,0,0.6)',
     },
+
     alertContainer: {
         width: '100%',
-        minWidth: 300,
-        maxWidth: 340,
+        minWidth: 280,
+        maxWidth: 320,
+        // maxHeight removed to allow content to grow
         borderRadius: BorderRadius.xl,
-        padding: Spacing.xl,
+        overflow: 'hidden', // Keep overflow hidden for rounded corners
+    },
+    scrollContent: {
+        padding: Spacing.md,
         alignItems: 'center',
     },
     content: {
         alignItems: 'center',
-        marginBottom: Spacing.xl,
+        marginBottom: Spacing.lg, // Reduced margin
         width: '100%',
     },
     iconContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
+        width: 48, // Smaller icon
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: Spacing.md,
+        marginBottom: Spacing.sm,
     },
     title: {
         ...Typography.subtitle,
-        fontSize: 20,
+        fontSize: 18, // Slightly smaller
         textAlign: 'center',
-        marginBottom: Spacing.sm,
+        marginBottom: 4,
     },
     message: {
         ...Typography.body,
         textAlign: 'center',
-        lineHeight: 22,
+        lineHeight: 20,
+        fontSize: 14,
     },
     buttonContainer: {
         flexDirection: 'row',
         width: '100%',
-        gap: Spacing.md,
+        gap: Spacing.sm, // Tighter gap
         justifyContent: 'center',
     },
     buttonContainerVertical: {
@@ -249,25 +261,26 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: Spacing.md,
+        paddingVertical: 10, // Shorter buttons
+        paddingHorizontal: Spacing.sm,
         borderRadius: BorderRadius.md,
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 44,
+        minHeight: 40,
     },
     buttonVertical: {
         width: '100%',
     },
     buttonText: {
         ...Typography.bodyBold,
+        fontSize: 14, // Smaller text
         textAlign: 'center',
     },
     input: {
         width: '100%',
-        marginTop: Spacing.md,
+        marginTop: Spacing.sm,
         paddingHorizontal: Spacing.md,
-        paddingVertical: 10,
+        paddingVertical: 8, // More compact input
         borderRadius: BorderRadius.md,
         borderWidth: 1,
         fontSize: 16,

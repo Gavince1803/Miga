@@ -37,14 +37,8 @@ export async function scheduleOrderNotification(order: {
     size?: string;
     deliveryDate: string; // ISO string 2026-01-10T00:00:00
     deliveryTime: string; // "14:30" or "14:30:00"
-    reminderDays: number;
+    reminderDays?: number; // Kept for interface compatibility but ignored or used as toggle
 }) {
-    // 0 means no reminder
-    if (!order.reminderDays || order.reminderDays <= 0) {
-        await cancelOrderNotification(order.id);
-        return;
-    }
-
     try {
         const hasPermission = await requestNotificationPermissions();
         if (!hasPermission) return;
@@ -63,37 +57,63 @@ export async function scheduleOrderNotification(order: {
         const [hours, minutes] = order.deliveryTime ? order.deliveryTime.split(':').map(Number) : [12, 0];
         deliveryMoment.setHours(hours, minutes, 0, 0);
 
+        // Cancel previous notifications for this order to avoid duplicates
+        await cancelOrderNotification(order.id);
+
+        const now = new Date();
+        // Calculate total days until delivery
+        const timeDiff = deliveryMoment.getTime() - now.getTime();
+        const daysUntilDelivery = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        if (daysUntilDelivery <= 0) return;
+
         // Formatter for body text
         const friendlyDate = deliveryMoment.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
-        // Loop from reminderDays down to 1
-        for (let i = 1; i <= order.reminderDays; i++) {
+        // Schedule notification for EVERY DAY from now until delivery
+        // Loop 'i' represents "days remaining"
+        // We start from daysUntilDelivery down to 1
+        for (let i = daysUntilDelivery; i >= 1; i--) {
             const triggerDate = new Date(deliveryMoment);
             triggerDate.setDate(triggerDate.getDate() - i);
 
-            // If time is in the past, don't schedule
+            // Set notification time to 9:00 AM for daily reminders
+            // Exception: If 'today' is the trigger date and it's past 9am, we might skip or set to soon.
+            // For simplicity, let's target 9:00 AM. 
+            // If the calculated triggerDate at 9am is in the past, JS Notifications usually fires immediately or fails.
+            triggerDate.setHours(9, 0, 0, 0);
+
+            // If it's already past 9am today, maybe schedule for "now + 1 min" or just skip today's morning reminder?
+            // User request: "send a notification every day".
+            // Let's stick to the relative day check.
+            // If it's already past 9am today:
+            // 1. If the trigger date is TODAY, send it 1 minute from now so the user gets it.
+            // 2. If the trigger date is purely in the past (yesterday etc), skip it.
             if (triggerDate.getTime() <= Date.now()) {
-                continue;
+                const isSameDay = triggerDate.toDateString() === new Date().toDateString();
+                if (isSameDay) {
+                    // Send in 1 minute
+                    triggerDate.setTime(Date.now() + 60 * 1000);
+                } else {
+                    continue;
+                }
             }
 
             const identifier = `order_${order.id}_${i}`;
 
-            // --- IMPROVED COPY LOGIC ---
+            // --- COPY LOGIC ---
             let title = '';
             let body = '';
 
             if (i === 1) {
                 title = `🚨 ¡Mañana es la entrega! 🎂`;
                 body = `👩‍🍳 Para: ${order.clientName}\n📅 Fecha: ${friendlyDate}\n📝 Detalle: ${order.description || order.size || 'Sin descripción'}`;
-            } else if (i === 2) {
-                title = `⏰ Faltan 2 días para el pedido`;
+            } else if (i <= 3) {
+                title = `⏰ Faltan ${i} días para el pedido`;
                 body = `Para: ${order.clientName}\nRecuerda preparar los ingredientes 🧁`;
-            } else if (i <= 7) {
-                title = `📅 Recordatorio: Faltan ${i} días`;
-                body = `Pedido de ${order.clientName} para el ${friendlyDate}.`;
             } else {
-                title = `🗓️ Próximo Pedido (${i} días)`;
-                body = `Cliente: ${order.clientName}\nFecha: ${friendlyDate}`;
+                title = `🗓️ Recordatorio: Faltan ${i} días`;
+                body = `Pedido de ${order.clientName} para el ${friendlyDate}.`;
             }
 
             await Notifications.scheduleNotificationAsync({

@@ -138,10 +138,7 @@ export default function NewOrderScreen() {
     const [depositAmount, setDepositAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 
-    // Notifications State
-    const [reminderDays, setReminderDays] = useState('0'); // 0 = Sin recordatorio
-    const [customReminderDays, setCustomReminderDays] = useState('');
-    const [showCustomReminder, setShowCustomReminder] = useState(false);
+
 
     const { createOrder, getDictionaryOptions } = useOrders();
     const { setItemsForOrder } = useOrderItems();
@@ -185,14 +182,7 @@ export default function NewOrderScreen() {
 
     const SIZE_OPTIONS_DISPLAY = [...Array.from(uniqueHelper), 'Otro'];
 
-    const REMINDER_OPTIONS = [
-        { label: 'Sin recordatorio', value: '0' },
-        { label: '1 día antes', value: '1' },
-        { label: '2 días antes', value: '2' },
-        { label: '3 días antes', value: '3' },
-        { label: '1 sem. antes', value: '7' },
-        { label: 'Otro', value: 'custom' },
-    ];
+
 
     const handleSizeSelect = (val: string) => {
         if (val === 'Otro') {
@@ -205,16 +195,7 @@ export default function NewOrderScreen() {
         }
     };
 
-    const handleReminderSelect = (val: string) => {
-        if (val === 'custom') {
-            setShowCustomReminder(true);
-            setReminderDays(val);
-        } else {
-            setShowCustomReminder(false);
-            setReminderDays(val);
-            setCustomReminderDays('');
-        }
-    };
+
 
     const haptics = useHaptics();
 
@@ -234,12 +215,7 @@ export default function NewOrderScreen() {
             return;
         }
 
-        const finalReminderDays = showCustomReminder ? customReminderDays.trim() : reminderDays;
-        if (showCustomReminder && !finalReminderDays) {
-            haptics.warning();
-            showAlert({ title: 'Error', message: 'Por favor ingresa el número de días para el recordatorio', type: 'warning' });
-            return;
-        }
+
 
 
         setSubmitting(true);
@@ -267,7 +243,7 @@ export default function NewOrderScreen() {
                 paymentMethod,
                 paymentStatus,
 
-                reminderDays: parseInt(finalReminderDays) || 0,
+                reminderDays: 1, // Automatic daily reminders (handled by backend/notifications)
             });
 
             if (newOrder) {
@@ -355,7 +331,7 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Delivery Information */}
-                <FormSection title="ENTREGA Y RECORDATORIOS" colors={colors}>
+                <FormSection title="ENTREGA" colors={colors}>
                     <View style={[styles.row, { paddingTop: Spacing.sm }]}>
                         <View style={{ flex: 1, marginRight: Spacing.sm }}>
                             {/* Label shortened to prevent wrapping/misalignment */}
@@ -379,47 +355,7 @@ export default function NewOrderScreen() {
                         </View>
                     </View>
 
-                    <FormField label="Notificaciones de Recordatorio" colors={colors}>
-                        <View style={styles.chipContainer}>
-                            {REMINDER_OPTIONS.map((opt) => (
-                                <TouchableOpacity
-                                    key={opt.value}
-                                    onPress={() => handleReminderSelect(opt.value)}
-                                    style={[
-                                        styles.chip,
-                                        {
-                                            backgroundColor: reminderDays === opt.value ? colors.primary : colors.surfaceSecondary,
-                                            borderColor: reminderDays === opt.value ? colors.primary : colors.border,
-                                        },
-                                    ]}
-                                >
-                                    <Text style={[styles.chipText, { color: reminderDays === opt.value ? '#FFFFFF' : colors.text }]}>
-                                        {opt.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
 
-                        {showCustomReminder && (
-                            <View style={{ marginTop: 10 }}>
-                                <TextInput
-                                    style={[styles.input, { color: colors.text, borderBottomWidth: 1, borderColor: colors.primary }]}
-                                    placeholder="Ingrese número de días antes..."
-                                    placeholderTextColor={colors.textMuted}
-                                    value={customReminderDays}
-                                    onChangeText={setCustomReminderDays}
-                                    keyboardType="number-pad"
-                                    autoFocus
-                                />
-                            </View>
-                        )}
-
-                        <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-                            {(reminderDays !== '0' && (reminderDays !== 'custom' || customReminderDays))
-                                ? `Se enviarán recordatorios diarios desde ${showCustomReminder ? customReminderDays : reminderDays} día(s) antes.`
-                                : 'Selecciona cuándo quieres recibir alertas.'}
-                        </Text>
-                    </FormField>
                 </FormSection>
 
                 {/* Product Details */}

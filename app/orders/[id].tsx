@@ -18,6 +18,42 @@ import {
     View,
 } from 'react-native';
 
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
+function CurrencyConversions({ amount, colors }: { amount: number, colors: typeof Colors.light }) {
+    const { bcv, parallel, euro, loading } = useExchangeRates();
+
+    if (loading) return <ActivityIndicator size="small" color={colors.primary} />;
+
+    return (
+        <View style={{ marginTop: Spacing.xs, paddingTop: Spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+            <Text style={[styles.detailLabel, { color: colors.textMuted, marginBottom: 8 }]}>Estimado en Bolívares:</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                <View style={{ alignItems: 'center' }}>
+                    <Text style={{ ...Typography.caption, color: colors.textSecondary }}>BCV</Text>
+                    <Text style={{ ...Typography.bodyBold, color: colors.text }}>
+                        Bs {(amount * bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                    <Text style={{ ...Typography.caption, color: colors.textSecondary }}>Paralelo</Text>
+                    <Text style={{ ...Typography.bodyBold, color: colors.text }}>
+                        Bs {(amount * parallel).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                </View>
+                {euro > 0 && (
+                    <View style={{ alignItems: 'center' }}>
+                        <Text style={{ ...Typography.caption, color: colors.textSecondary }}>Euro</Text>
+                        <Text style={{ ...Typography.bodyBold, color: colors.text }}>
+                            Bs {(amount * euro).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </Text>
+                    </View>
+                )}
+            </View>
+        </View>
+    );
+}
+
 function DetailRow({
     icon,
     label,
@@ -379,6 +415,10 @@ export default function OrderDetailScreen() {
                             ${order.totalPrice.toFixed(2)}
                         </Text>
                     </View>
+
+                    <CurrencyConversions amount={order.totalPrice} colors={colors} />
+
+                    <View style={{ height: Spacing.sm }} />
                     <DetailRow
                         icon={order.paymentMethod === 'efectivo' ? 'money' : order.paymentMethod === 'pago_movil' ? 'mobile-phone' : 'bank'}
                         label="Forma de pago"

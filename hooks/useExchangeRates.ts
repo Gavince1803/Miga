@@ -33,17 +33,52 @@ export function useExchangeRates() {
         try {
             setRates(prev => ({ ...prev, loading: true, error: null }));
 
-            // Parallel & USD BCV from ve.dolarapi.com (Reliable for Parallel)
-            const dolarApiResponse = await fetch('https://ve.dolarapi.com/v1/dolares');
-            const dolarApiData: DolarApiResponse[] = await dolarApiResponse.json();
+            // Helper for timeout
+            const fetchWithTimeout = async (url: string, timeout = 5000) => {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), timeout);
+                try {
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(id);
+                    return response;
+                } catch (error) {
+                    clearTimeout(id);
+                    throw error;
+                }
+            };
 
-            // Euro BCV from api.dolarvzla.com (Reliable for BCV Euro)
-            const bcvResponse = await fetch('https://api.dolarvzla.com/public/exchange-rate');
-            const bcvData = await bcvResponse.json();
+            // Fetch concurrently with Promise.allSettled to allow partial success
+            const [dolarApiResult, bcvApiResult] = await Promise.allSettled([
+                fetchWithTimeout('https://ve.dolarapi.com/v1/dolares').then(r => r.json()),
+                fetchWithTimeout('https://api.dolarvzla.com/public/exchange-rate').then(r => r.json())
+            ]);
 
-            const bcvRate = dolarApiData.find(d => d.fuente === 'oficial')?.promedio || 0;
-            const parallelRate = dolarApiData.find(d => d.fuente === 'paralelo')?.promedio || 0;
-            const euroRate = bcvData?.current?.eur || 0;
+            let bcvRate = 0;
+            let parallelRate = 0;
+            let euroRate = 0;
+
+            // Process DolarAPI (Primary source for Parallel & BCV USD)
+            if (dolarApiResult.status === 'fulfilled') {
+                const data = dolarApiResult.value as DolarApiResponse[];
+                bcvRate = data.find(d => d.fuente === 'oficial')?.promedio || 0;
+                parallelRate = data.find(d => d.fuente === 'paralelo')?.promedio || 0;
+            } else {
+                console.warn('DolarAPI failed:', dolarApiResult.reason);
+            }
+
+            // Process BCV API (Primary source for Euro, fallback for others if needed)
+            if (bcvApiResult.status === 'fulfilled') {
+                const data = bcvApiResult.value as any;
+                // Use Euro from here
+                euroRate = data?.current?.eur || 0;
+
+                // Fallback for BCV USD if DolarAPI failed
+                if (bcvRate === 0) {
+                    bcvRate = data?.current?.usd || 0;
+                }
+            } else {
+                console.warn('BCV API failed:', bcvApiResult.reason);
+            }
 
             setRates({
                 bcv: bcvRate,
@@ -51,14 +86,15 @@ export function useExchangeRates() {
                 euro: euroRate,
                 lastUpdated: new Date(),
                 loading: false,
-                error: null,
+                error: (bcvRate === 0 && parallelRate === 0) ? 'Error obteniendo tasas' : null,
             });
+
         } catch (error) {
-            console.error('Error fetching exchange rates:', error);
+            console.error('Critical error in exchange rates:', error);
             setRates(prev => ({
                 ...prev,
                 loading: false,
-                error: 'Error al actualizar tasas'
+                error: 'Error de conexión'
             }));
         }
     }, []);

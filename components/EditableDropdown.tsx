@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    Keyboard,
     Modal,
     StyleSheet,
     Text,
@@ -94,7 +95,10 @@ export function EditableDropdown({
 
             <TouchableOpacity
                 style={[styles.selector, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                onPress={() => setVisible(true)}
+                onPress={() => {
+                    Keyboard.dismiss();
+                    setVisible(true);
+                }}
             >
                 <Text style={[styles.valueText, { color: value ? colors.text : colors.textMuted }]}>
                     {value || 'Seleccionar o escribir...'}
