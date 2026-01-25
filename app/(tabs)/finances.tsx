@@ -1,6 +1,9 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAlert } from '@/context/AlertContext';
 import { useFinances } from '@/hooks/useFinances';
+import { useHaptics } from '@/hooks/useHaptics';
+import { useInventory } from '@/hooks/useInventory';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Stack } from 'expo-router';
 import React, { useMemo } from 'react';
@@ -26,6 +29,42 @@ export default function FinancesScreen() {
         currentDate.getFullYear(),
         currentDate.getMonth()
     );
+    const { deleteMovement } = useInventory();
+    const { showAlert } = useAlert();
+    const haptics = useHaptics();
+
+    const handleTransactionPress = (transaction: any) => {
+        haptics.selection();
+
+        if (transaction.type === 'expense') {
+            showAlert({
+                title: 'Detalles del Gasto',
+                message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\n¿Deseas revertir esta operación? Esto eliminará el registro y devolverá el stock al inventario.`,
+                type: 'warning',
+                buttons: [
+                    { text: 'Cancelar', onPress: () => { }, style: 'cancel' },
+                    {
+                        text: 'Revertir / Eliminar',
+                        onPress: async () => {
+                            const success = await deleteMovement(transaction.id);
+                            if (success) {
+                                haptics.success();
+                                onRefresh(); // Refresh finances
+                            }
+                        },
+                        style: 'destructive'
+                    }
+                ]
+            });
+        } else {
+            // Future: Navigate to Order Details
+            showAlert({
+                title: 'Detalles del Ingreso',
+                message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\nPara modificar ingresos, ve a la sección de Pedidos.`,
+                type: 'info'
+            });
+        }
+    };
 
     const formatCurrency = (amount: number) => {
         return `$${amount.toFixed(2)}`;
@@ -181,7 +220,10 @@ export default function FinancesScreen() {
                     </View>
                 }
                 renderItem={({ item }) => (
-                    <View style={[styles.transactionRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+                    <TouchableOpacity
+                        onPress={() => handleTransactionPress(item)}
+                        style={[styles.transactionRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
+                    >
                         <View style={[styles.transactionIcon, {
                             backgroundColor: item.type === 'income' ? colors.success + '15' : colors.error + '15'
                         }]}>
@@ -202,7 +244,7 @@ export default function FinancesScreen() {
                         }]}>
                             {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
                         </Text>
-                    </View>
+                    </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                     !loading ? (

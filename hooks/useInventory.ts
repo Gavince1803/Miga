@@ -356,6 +356,66 @@ export function useInventory() {
         }));
     };
 
+    const deleteMovement = async (movementId: string) => {
+        try {
+            // 1. Get movement details to know what to reverse
+            const { data: movement, error: fetchError } = await supabase
+                .from('inventory_movements')
+                .select('*')
+                .eq('id', movementId)
+                .single();
+
+            if (fetchError || !movement) throw new Error('Movement not found');
+
+            // 2. Reverse stock impact
+            // If it was 'agregado' (Added), we need to SUBTRACT.
+            // If it was 'uso' (Used), we need to ADD.
+            let delta = 0;
+            if (movement.movement_type === 'agregado') {
+                delta = -movement.quantity;
+            } else if (movement.movement_type === 'uso') {
+                delta = movement.quantity;
+            }
+
+            // Apply stock reversal
+            if (delta !== 0) {
+                // We reuse updateStock logic but locally/manually to avoid circular logging
+                // Actually updateStock logs a NEW movement. We don't want that.
+                // We want to silently adjust the stock because we are deleting the log.
+                // So we use supabase update directly.
+
+                const { data: item } = await supabase
+                    .from('inventory_items')
+                    .select('quantity')
+                    .eq('id', movement.inventory_item_id)
+                    .single();
+
+                if (item) {
+                    const newQty = Math.max(0, item.quantity + delta);
+                    await supabase
+                        .from('inventory_items')
+                        .update({ quantity: newQty })
+                        .eq('id', movement.inventory_item_id);
+                }
+            }
+
+            // 3. Delete the movement record
+            const { error: deleteError } = await supabase
+                .from('inventory_movements')
+                .delete()
+                .eq('id', movementId);
+
+            if (deleteError) throw deleteError;
+
+            await fetchInventory(); // Refresh local list
+            return true;
+        } catch (error) {
+            console.error('Error deleting movement:', error);
+            showAlert({ title: 'Error', message: 'No se pudo revertir el movimiento', type: 'error' });
+            return false;
+        }
+    };
+
     return {
         inventory,
         loading,
@@ -367,6 +427,7 @@ export function useInventory() {
         addItem,
         importInventory,
         updateItemDetails,
-        exportInventory
+        exportInventory,
+        deleteMovement
     };
 }
