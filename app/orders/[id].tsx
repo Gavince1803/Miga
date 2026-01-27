@@ -41,11 +41,11 @@ function CurrencyConversions({ amount, colors }: { amount: number, colors: typeo
                         Bs {(amount * parallel).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                 </View>
-                {euro > 0 && (
+                {(euro || 0) > 0 && (
                     <View style={{ alignItems: 'center' }}>
                         <Text style={{ ...Typography.caption, color: colors.textSecondary }}>Euro</Text>
                         <Text style={{ ...Typography.bodyBold, color: colors.text }}>
-                            Bs {(amount * euro).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            Bs {(amount * (euro || 0)).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Text>
                     </View>
                 )}
@@ -166,7 +166,11 @@ export default function OrderDetailScreen() {
     const statusOption = ORDER_STATUS_OPTIONS.find(s => s.value === order.status);
 
     const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
+        // Manual parse to ensure local date without timezone shifts
+        if (!dateStr) return '';
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day); // Local midnight
+
         return date.toLocaleDateString('es-ES', {
             weekday: 'long',
             day: 'numeric',

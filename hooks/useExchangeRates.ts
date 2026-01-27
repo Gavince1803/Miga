@@ -48,8 +48,9 @@ export function useExchangeRates() {
             };
 
             // Fetch concurrently with Promise.allSettled to allow partial success
-            const [dolarApiResult, bcvApiResult] = await Promise.allSettled([
+            const [dolarApiResult, dolarApiEuroResult, bcvApiResult] = await Promise.allSettled([
                 fetchWithTimeout('https://ve.dolarapi.com/v1/dolares').then(r => r.json()),
+                fetchWithTimeout('https://ve.dolarapi.com/v1/euros').then(r => r.json()),
                 fetchWithTimeout('https://api.dolarvzla.com/public/exchange-rate').then(r => r.json())
             ]);
 
@@ -57,22 +58,40 @@ export function useExchangeRates() {
             let parallelRate = 0;
             let euroRate = 0;
 
-            // Process DolarAPI (Primary source for Parallel & BCV USD)
+            // Process DolarAPI (USD)
             if (dolarApiResult.status === 'fulfilled') {
                 const data = dolarApiResult.value as DolarApiResponse[];
                 bcvRate = data.find(d => d.fuente === 'oficial')?.promedio || 0;
                 parallelRate = data.find(d => d.fuente === 'paralelo')?.promedio || 0;
             } else {
-                console.warn('DolarAPI failed:', dolarApiResult.reason);
+                console.warn('DolarAPI (USD) failed:', dolarApiResult.reason);
             }
 
-            // Process BCV API (Primary source for Euro, fallback for others if needed)
+            // Process DolarAPI (Euro) - Robust Fallback
+            if (dolarApiEuroResult.status === 'fulfilled') {
+                const data = dolarApiEuroResult.value as DolarApiResponse[];
+                // DolarAPI /v1/euros usually returns list with 'oficial'.
+                // Fallback: Use the first item if 'oficial' not found.
+                const official = data.find(d => d.fuente === 'oficial');
+                if (official) {
+                    euroRate = official.promedio;
+                } else if (data.length > 0) {
+                    // Fallback to first available if defined
+                    euroRate = data[0].promedio || 0;
+                }
+            }
+
+            // Process BCV API (Primary source check, overwrite if valid and different?)
+            // Actually DolarAPI is quite reliable. Let's use BCV API as a fallback or cross-check.
             if (bcvApiResult.status === 'fulfilled') {
                 const data = bcvApiResult.value as any;
-                // Use Euro from here
-                euroRate = data?.current?.eur || 0;
 
-                // Fallback for BCV USD if DolarAPI failed
+                // If we didn't get Euro from DolarAPI, try here
+                if (euroRate === 0) {
+                    euroRate = data?.current?.eur || 0;
+                }
+
+                // Fallback for BCV USD
                 if (bcvRate === 0) {
                     bcvRate = data?.current?.usd || 0;
                 }

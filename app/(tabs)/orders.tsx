@@ -39,7 +39,9 @@ function OrderCard({
     else if (daysUntil <= 7) urgencyColor = colors.urgentWeek;
 
     const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
+        if (!dateStr) return '';
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
         return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
     };
 

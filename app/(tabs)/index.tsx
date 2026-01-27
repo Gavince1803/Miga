@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
@@ -70,7 +71,11 @@ function UpcomingOrderCard({
   colors: typeof Colors.light;
 }) {
   const urgencyColor = getUrgencyColor(order.deliveryDate, colors);
-  const dateObj = new Date(order.deliveryDate);
+
+  // Manual parse to ensure local date without timezone shifts
+  const [year, month, day] = order.deliveryDate.split('-').map(Number);
+  const dateObj = new Date(year, month - 1, day);
+
   const formattedDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
   return (
@@ -112,8 +117,12 @@ function UpcomingOrderCard({
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { user } = useAuth();
   const { orders, onRefresh } = useOrders();
   const { inventory, onRefresh: onRefreshInventory } = useInventory();
+
+  // Get first name or business name
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -250,7 +259,7 @@ export default function HomeScreen() {
       {/* Welcome Header */}
       <View style={styles.header}>
         <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-          ¡Bienvenida! 🧁
+          {userName ? `¡Bienvenida, ${userName}! 🧁` : '¡Bienvenida! 🧁'}
         </Text>
         <Text style={[styles.title, { color: colors.text }]}>
           Tu día de hoy

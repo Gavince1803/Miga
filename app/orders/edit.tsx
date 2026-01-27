@@ -117,7 +117,9 @@ export default function EditOrderScreen() {
 
                     // Parse Date
                     if (data.delivery_date) {
-                        setDeliveryDateObj(new Date(data.delivery_date));
+                        // Append T12:00:00 to force Local Time parsing at Noon.
+                        // This prevents backward shifts (from UTC Midnight) and forward shifts (from late night).
+                        setDeliveryDateObj(new Date(`${data.delivery_date}T12:00:00`));
                     }
 
                     // Parse Time (HH:MM:SS)

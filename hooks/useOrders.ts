@@ -110,7 +110,13 @@ export function useOrders() {
                         client_name: orderData.clientName,
                         client_phone: orderData.clientPhone,
                         address: orderData.address,
-                        delivery_date: orderData.deliveryDate.toISOString().split('T')[0], // YYYY-MM-DD
+                        delivery_date: (() => {
+                            const d = orderData.deliveryDate;
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            return `${year}-${month}-${day}`;
+                        })(),
                         delivery_time: orderData.deliveryTime,
                         size: orderData.size,
                         servings: orderData.servings,
@@ -211,7 +217,13 @@ export function useOrders() {
             if (orderData.clientName) updates.client_name = orderData.clientName;
             if (orderData.clientPhone) updates.client_phone = orderData.clientPhone;
             if (orderData.address) updates.address = orderData.address;
-            if (orderData.deliveryDate) updates.delivery_date = orderData.deliveryDate.toISOString().split('T')[0];
+            if (orderData.deliveryDate) {
+                const d = orderData.deliveryDate;
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                updates.delivery_date = `${year}-${month}-${day}`;
+            }
             if (orderData.deliveryTime) updates.delivery_time = orderData.deliveryTime;
             if (orderData.size) updates.size = orderData.size;
             if (orderData.servings) updates.servings = orderData.servings;

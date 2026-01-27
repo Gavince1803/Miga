@@ -8,24 +8,46 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { showAlert } = useAlert();
     const router = useRouter();
 
+    const [fullName, setFullName] = useState('');
+    const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    async function signInWithEmail() {
+    async function signUp() {
+        if (!email || !password || !fullName) {
+            showAlert({ title: 'Campos requeridos', message: 'Por favor completa al menos Nombre, Correo y Contraseña.', type: 'warning' });
+            return;
+        }
+
         setLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                data: {
+                    full_name: fullName,
+                    phone: phone,
+                }
+            }
         });
 
-        if (error) showAlert({ title: 'Error', message: error.message, type: 'error' });
+        if (error) {
+            showAlert({ title: 'Error', message: error.message, type: 'error' });
+        } else {
+            showAlert({
+                title: 'Registro exitoso',
+                message: 'Cuenta creada correctamente. Por favor verifica tu correo o inicia sesión.',
+                type: 'success',
+                buttons: [{ text: 'OK', onPress: () => router.push('/auth/login') }]
+            });
+        }
         setLoading(false);
     }
 
@@ -34,7 +56,6 @@ export default function LoginScreen() {
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
                     contentContainerStyle={styles.container}
@@ -42,27 +63,45 @@ export default function LoginScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.header}>
+                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                            <FontAwesome name="arrow-left" size={20} color={colors.text} />
+                        </TouchableOpacity>
                         <View style={styles.logoContainer}>
-                            <FontAwesome name="birthday-cake" size={48} color={colors.primary} />
+                            <FontAwesome name="user-plus" size={32} color={colors.primary} />
                         </View>
-                        <Text style={[styles.title, { color: colors.text }]}>Miga</Text>
+                        <Text style={[styles.title, { color: colors.text }]}>Crear Cuenta</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                            Gestiona tus pedidos e inventario
+                            Únete a Miga y gestiona tu negocio
                         </Text>
                     </View>
 
                     <View style={[styles.formContainer, { backgroundColor: colors.surface }, Shadows.md]}>
-                        <View style={styles.modeToggle}>
-                            <Text style={[styles.formTitle, { color: colors.text }]}>
-                                Bienvenido de Nuevo
-                            </Text>
-                            <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
-                                Ingresa tus credenciales para continuar
-                            </Text>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>Nombre o Negocio *</Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                                onChangeText={setFullName}
+                                value={fullName}
+                                placeholder="Ej: Marcela Bollería"
+                                placeholderTextColor={colors.textMuted}
+                            />
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: colors.text }]}>Correo Electrónico</Text>
+                            <Text style={[styles.label, { color: colors.text }]}>Teléfono (Opcional)</Text>
+                            <TextInput
+                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                                onChangeText={setPhone}
+                                value={phone}
+                                placeholder="+58 412 1234567"
+                                placeholderTextColor={colors.textMuted}
+                                keyboardType="phone-pad"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>Correo Electrónico *</Text>
                             <TextInput
                                 style={[styles.input, { color: colors.text, borderColor: colors.border }]}
                                 onChangeText={setEmail}
@@ -75,7 +114,7 @@ export default function LoginScreen() {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: colors.text }]}>Contraseña</Text>
+                            <Text style={[styles.label, { color: colors.text }]}>Contraseña *</Text>
                             <TextInput
                                 style={[styles.input, { color: colors.text, borderColor: colors.border }]}
                                 onChangeText={setPassword}
@@ -99,11 +138,11 @@ export default function LoginScreen() {
                                     elevation: 5,
                                 }
                             ]}
-                            onPress={signInWithEmail}
+                            onPress={signUp}
                             disabled={loading}
                         >
                             <Text style={styles.buttonText}>
-                                {loading ? 'Procesando...' : 'INICIAR SESIÓN'}
+                                {loading ? 'Creando cuenta...' : 'REGISTRARME'}
                             </Text>
                         </TouchableOpacity>
 
@@ -113,10 +152,10 @@ export default function LoginScreen() {
 
                         <TouchableOpacity
                             style={{ alignItems: 'center', padding: Spacing.sm }}
-                            onPress={() => router.push('/auth/register')}
+                            onPress={() => router.push('/auth/login')}
                         >
                             <Text style={{ color: colors.textSecondary }}>
-                                ¿No tienes cuenta? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Regístrate aquí</Text>
+                                ¿Ya tienes cuenta? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Inicia Sesión</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -130,46 +169,41 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         paddingBottom: Spacing.xl,
-        justifyContent: 'center',
+        paddingHorizontal: Spacing.md,
     },
     header: {
         alignItems: 'center',
-        marginBottom: Spacing.xl,
-        marginTop: Spacing.xl,
+        marginVertical: Spacing.xl,
+        position: 'relative',
+    },
+    backButton: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        padding: Spacing.sm,
     },
     logoContainer: {
         marginBottom: Spacing.md,
-        backgroundColor: '#FAF5EF', // Light cream bg for logo
-        padding: Spacing.lg,
+        backgroundColor: '#FAF5EF',
+        padding: Spacing.md,
         borderRadius: BorderRadius.full,
+        width: 64,
+        height: 64,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     title: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 'bold',
-        fontFamily: 'Nunito', // Assuming standard font if Nunito fail, but style is nice
         marginBottom: Spacing.xs,
     },
     subtitle: {
         fontSize: 16,
+        textAlign: 'center',
     },
     formContainer: {
         padding: Spacing.lg,
         borderRadius: BorderRadius.lg,
-        marginHorizontal: Spacing.sm,
-    },
-    modeToggle: {
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
-    },
-    formTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        marginBottom: 4,
-        textAlign: 'center',
-    },
-    formSubtitle: {
-        fontSize: 14,
-        textAlign: 'center',
     },
     inputGroup: {
         marginBottom: Spacing.md,
@@ -185,7 +219,6 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         paddingHorizontal: Spacing.md,
         fontSize: 16,
-        textAlignVertical: 'center',
     },
     button: {
         height: 52,
@@ -207,21 +240,5 @@ const styles = StyleSheet.create({
     dividerLine: {
         flex: 1,
         height: 1,
-    },
-    dividerText: {
-        paddingHorizontal: Spacing.md,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    switchButton: {
-        height: 52,
-        borderRadius: BorderRadius.md,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-    },
-    switchText: {
-        fontSize: 16,
-        fontWeight: '600',
     },
 });

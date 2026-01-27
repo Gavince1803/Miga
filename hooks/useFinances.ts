@@ -154,11 +154,83 @@ export function useFinances(year?: number, month?: number) {
         fetchFinances();
     }, [year, month]);
 
+    const revertTransaction = async (transaction: Transaction) => {
+        try {
+            setLoading(true);
+            if (transaction.type === 'income') {
+                // It's an order. Revert status to 'pendiente'.
+                // This effectively "un-pays" the order.
+                const { error } = await supabase
+                    .from('orders')
+                    .update({
+                        status: 'pendiente',
+                        payment_status: 'pendiente',
+                        // Optional: Reset deposit if it was a full payment transaction?
+                        // For safety, let's just mark it pending. User can fix amounts.
+                    })
+                    .eq('id', transaction.id);
+
+                if (error) throw error;
+
+            } else if (transaction.type === 'expense') {
+                // It's an inventory movement (purchase).
+                // 1. Get the movement details to know what to subtract
+                const { data: movement, error: fetchError } = await supabase
+                    .from('inventory_movements')
+                    .select('inventory_id, quantity')
+                    .eq('id', transaction.id)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                if (movement) {
+                    // 2. Fetch current item quantity
+                    const { data: item, error: itemError } = await supabase
+                        .from('inventory_items')
+                        .select('quantity')
+                        .eq('id', movement.inventory_id)
+                        .single();
+
+                    if (itemError) throw itemError;
+
+                    // 3. Subtract the added quantity (Reverse the operation)
+                    const newQuantity = (item.quantity || 0) - movement.quantity;
+
+                    const { error: updateError } = await supabase
+                        .from('inventory_items')
+                        .update({ quantity: newQuantity })
+                        .eq('id', movement.inventory_id);
+
+                    if (updateError) throw updateError;
+
+                    // 4. Delete the movement record
+                    const { error: deleteError } = await supabase
+                        .from('inventory_movements')
+                        .delete()
+                        .eq('id', transaction.id);
+
+                    if (deleteError) throw deleteError;
+                }
+            }
+
+            // Refresh data
+            await fetchFinances();
+            return true;
+
+        } catch (error) {
+            console.error('Error reverting transaction:', error);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         summary,
         recentTransactions,
         loading,
         refreshing,
-        onRefresh
+        onRefresh,
+        revertTransaction
     };
 }
