@@ -57,7 +57,7 @@ export function DateTimePickerField({
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { borderBottomColor: colors.border }]}>
             <Text style={[styles.label, { color: colors.text }]}>
                 {label}
                 {required && <Text style={{ color: colors.error }}> *</Text>}
@@ -128,7 +128,9 @@ export function DateTimePickerField({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: Spacing.md,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         width: '100%',
     },
     label: {

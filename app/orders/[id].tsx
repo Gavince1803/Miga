@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     section: {
-        padding: Spacing.md,
+        padding: Spacing.lg,
         borderRadius: BorderRadius.md,
         marginBottom: Spacing.md,
     },
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     detailRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: Spacing.sm,
+        paddingVertical: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     detailIcon: {
@@ -528,14 +528,14 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.sm,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: Spacing.sm,
+        marginRight: Spacing.md,
     },
     detailContent: {
         flex: 1,
     },
     detailLabel: {
         ...Typography.small,
-        marginBottom: 2,
+        marginBottom: 4,
     },
     detailValue: {
         ...Typography.body,
