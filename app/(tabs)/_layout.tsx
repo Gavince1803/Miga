@@ -15,8 +15,12 @@ function TabBarIcon(props: {
   focused?: boolean;
 }) {
   return (
-    <View style={props.focused ? styles.activeIconContainer : undefined}>
-      <FontAwesome size={24} {...props} />
+    <View style={[
+      styles.iconContainer,
+      props.focused && styles.activeIconContainer,
+      { backgroundColor: props.focused ? props.color + '15' : 'transparent' } // Subtle background tint
+    ]}>
+      <FontAwesome size={20} style={{ marginBottom: -2 }} {...props} />
     </View>
   );
 }
@@ -156,7 +160,15 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 44, // Fixed width for stability
+    height: 32, // Fixed height
+    borderRadius: 16, // Pill shape
+  },
   activeIconContainer: {
-    padding: 4,
+    // No padding needed, size is fixed in iconContainer
+    // Background color is handled inline for dynamic 'color' prop
   },
 });

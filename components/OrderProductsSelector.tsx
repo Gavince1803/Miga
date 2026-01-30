@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
+    LayoutAnimation,
     Modal,
     Platform,
     ScrollView,
@@ -15,8 +16,15 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    UIManager,
     View,
 } from 'react-native';
+
+if (Platform.OS === 'android') {
+    if (UIManager.setLayoutAnimationEnabledExperimental) {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+}
 
 export type SelectedProduct = {
     productName: string;
@@ -52,6 +60,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
 
     const handleSelectRecipe = (recipe: Recipe) => {
         haptics.selection();
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setSelectedRecipe(recipe);
         setProductName(recipe.title);
     };
@@ -253,6 +262,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 <TouchableOpacity
                                     style={styles.backButton}
                                     onPress={() => {
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                                         setSelectedRecipe(null);
                                         setAddingWithoutRecipe(false);
                                         setProductName('');
@@ -327,6 +337,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 <TouchableOpacity
                                     style={[styles.noRecipeButton, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
                                     onPress={() => {
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                                         setAddingWithoutRecipe(true);
                                         setProductName(searchQuery || '');
                                     }}
@@ -431,6 +442,7 @@ const styles = StyleSheet.create({
         paddingTop: Spacing.lg,
         paddingBottom: Spacing.xxl,
         maxHeight: '85%',
+        minHeight: 500, // Enforce a minimum height to prevent "jumping" from bottom
     },
     modalHeader: {
         flexDirection: 'row',
@@ -518,6 +530,7 @@ const styles = StyleSheet.create({
         ...Typography.small,
         marginTop: 2,
     },
+
     inputLabel: {
         ...Typography.small,
         marginTop: Spacing.sm,
@@ -525,10 +538,10 @@ const styles = StyleSheet.create({
     input: {
         ...Typography.body,
         paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
+        paddingVertical: 12, // Use padding for vertical centering instead of fixed height
         borderRadius: BorderRadius.md,
         borderWidth: 1,
-        height: 44,
+        // height: 48, // Removed fixed height
         textAlignVertical: 'center',
     },
     confirmButton: {

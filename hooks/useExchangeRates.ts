@@ -47,56 +47,57 @@ export function useExchangeRates() {
                 }
             };
 
-            // Fetch concurrently with Promise.allSettled to allow partial success
-            const [dolarApiResult, dolarApiEuroResult, bcvApiResult] = await Promise.allSettled([
-                fetchWithTimeout('https://ve.dolarapi.com/v1/dolares').then(r => r.json()),
-                fetchWithTimeout('https://ve.dolarapi.com/v1/euros').then(r => r.json()),
-                fetchWithTimeout('https://api.dolarvzla.com/public/exchange-rate').then(r => r.json())
-            ]);
-
             let bcvRate = 0;
             let parallelRate = 0;
             let euroRate = 0;
 
-            // Process DolarAPI (USD)
-            if (dolarApiResult.status === 'fulfilled') {
-                const data = dolarApiResult.value as DolarApiResponse[];
-                bcvRate = data.find(d => d.fuente === 'oficial')?.promedio || 0;
-                parallelRate = data.find(d => d.fuente === 'paralelo')?.promedio || 0;
-            } else {
-                console.warn('DolarAPI (USD) failed:', dolarApiResult.reason);
+            // 1. Fetch Dollars (Both BCV and Parallel)
+            // We use the list endpoint to get both in one request if possible, 
+            // but to be consistent with the user's snippet which uses /oficial, 
+            // let's try to get them reliable. The list endpoint /v1/dolares works well for both.
+            try {
+                const dollarResponse = await fetchWithTimeout('https://ve.dolarapi.com/v1/dolares');
+                if (dollarResponse.ok) {
+                    const data = await dollarResponse.json() as DolarApiResponse[];
+                    bcvRate = data.find(d => d.fuente === 'oficial')?.promedio || 0;
+                    parallelRate = data.find(d => d.fuente === 'paralelo')?.promedio || 0;
+                }
+            } catch (e) {
+                console.warn('Error fetching Dollars:', e);
             }
 
-            // Process DolarAPI (Euro) - Robust Fallback
-            if (dolarApiEuroResult.status === 'fulfilled') {
-                const data = dolarApiEuroResult.value as DolarApiResponse[];
-                // DolarAPI /v1/euros usually returns list with 'oficial'.
-                // Fallback: Use the first item if 'oficial' not found.
-                const official = data.find(d => d.fuente === 'oficial');
-                if (official) {
-                    euroRate = official.promedio;
-                } else if (data.length > 0) {
-                    // Fallback to first available if defined
-                    euroRate = data[0].promedio || 0;
+            // 2. Try Fetch Euro (BCV)
+            try {
+                const euroResponse = await fetchWithTimeout('https://ve.dolarapi.com/v1/euros/oficial');
+                if (euroResponse.ok) {
+                    const data = await euroResponse.json();
+                    euroRate = data.promedio || 0;
                 }
+            } catch (e) {
+                console.log('Euro API direct fetch failed, trying fallback...');
             }
 
-            // Process BCV API (Primary source check, overwrite if valid and different?)
-            // Actually DolarAPI is quite reliable. Let's use BCV API as a fallback or cross-check.
-            if (bcvApiResult.status === 'fulfilled') {
-                const data = bcvApiResult.value as any;
-
-                // If we didn't get Euro from DolarAPI, try here
-                if (euroRate === 0) {
-                    euroRate = data?.current?.eur || 0;
+            // 3. Fallback: Calculate Euro from Dollar if API failed
+            if (euroRate === 0 && bcvRate > 0) {
+                try {
+                    const crossRes = await fetchWithTimeout('https://api.exchangerate-api.com/v4/latest/USD');
+                    if (crossRes.ok) {
+                        const crossData = await crossRes.json();
+                        // 1 USD = X EUR (e.g., 0.96)
+                        // 1 EUR = 1/X USD
+                        // Rate EUR/Bs = Rate USD/Bs * (1 EUR in USD)
+                        const rates = crossData.rates as { EUR: number };
+                        if (rates.EUR) {
+                            const usdPerEur = 1 / rates.EUR;
+                            euroRate = parseFloat((bcvRate * usdPerEur).toFixed(2));
+                            console.log(`Calculated Euro via Cross Rate: ${euroRate} (Factor: ${usdPerEur})`);
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Cross rate fetch failed, using hard constant');
+                    // Hard Fallback (Constant 1.05)
+                    euroRate = parseFloat((bcvRate * 1.05).toFixed(2));
                 }
-
-                // Fallback for BCV USD
-                if (bcvRate === 0) {
-                    bcvRate = data?.current?.usd || 0;
-                }
-            } else {
-                console.warn('BCV API failed:', bcvApiResult.reason);
             }
 
             setRates({

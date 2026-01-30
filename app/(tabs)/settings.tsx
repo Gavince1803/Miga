@@ -251,28 +251,6 @@ export default function SettingsScreen() {
                         onPress={handleNotificationPermission}
                         colors={colors}
                     />
-                    <SettingRow
-                        icon="paper-plane"
-                        label="Probar Notificaciones"
-                        value="Envia un mensaje de prueba"
-                        onPress={async () => {
-                            const hasPermission = await Notifications.requestPermissionsAsync();
-                            if (hasPermission.status === 'granted') {
-                                await Notifications.scheduleNotificationAsync({
-                                    content: {
-                                        title: '🔔 Notificación de Prueba',
-                                        body: 'Si ves esto, las notificaciones funcionan correctamente.',
-                                        sound: true,
-                                    },
-                                    trigger: null, // Immediate
-                                });
-                                showAlert({ title: 'Enviado', message: 'Se ha enviado una notificación de prueba.', type: 'success' });
-                            } else {
-                                showAlert({ title: 'Permiso Denegado', message: 'No se tienen permisos para enviar notificaciones.', type: 'error' });
-                            }
-                        }}
-                        colors={colors}
-                    />
                 </View>
             </View>
 
