@@ -6,6 +6,7 @@ import { useAlert } from '@/context/AlertContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
+import { parseRecipeText } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,6 +23,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+
+// ... imports
+
+
 
 type InputMode = 'manual' | 'scan';
 
@@ -50,35 +55,18 @@ export default function NewRecipeScreen() {
 
     useEffect(() => {
         if (params.scannedText) {
-            const text = params.scannedText as string;
-            // Simple parsing strategy: 
-            // 1st line -> Title
-            // Lines starting with numbers -> Steps
-            // Rest -> Ingredients (Notes)
+            console.log('Parsing scanned text...');
+            const { title, ingredients, steps } = parseRecipeText(params.scannedText as string);
 
-            const lines = text.split('\n').filter(l => l.trim().length > 0);
-            if (lines.length > 0) {
-                setTitle(lines[0].replace('Tit:', '').trim());
-
-                const steps: string[] = [];
-                const ingredients: string[] = [];
-
-                lines.slice(1).forEach(line => {
-                    if (/^\d+\./.test(line.trim())) {
-                        steps.push(line.trim());
-                    } else {
-                        ingredients.push(line.trim());
-                    }
-                });
-
-                if (ingredients.length > 0) setIngredientsList(ingredients);
-                if (steps.length > 0) setStepsList(steps);
-            }
+            if (title) setTitle(title);
+            if (ingredients.length > 0) setIngredientsList(ingredients);
+            if (steps.length > 0) setStepsList(steps);
         }
+
         if (params.scannedImage) {
             setImage(params.scannedImage as string);
         }
-    }, [params]);
+    }, [params.scannedText, params.scannedImage]);
 
     const [image, setImage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
