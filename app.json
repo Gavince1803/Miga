@@ -18,7 +18,8 @@
       "bundleIdentifier": "com.agendarepostera.app",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Miga usa tu cámara para escanear recetas físicas para digitalizarlas y para tomar fotos de tus ingredientes y productos para el inventario."
       }
     },
     "android": {

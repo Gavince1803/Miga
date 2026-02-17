@@ -46,6 +46,7 @@ export function useOrders() {
                     filling: item.filling,
                     cover: item.cover,
                     occasion: item.occasion,
+                    cakeType: item.cake_type,
                     description: item.description,
                     totalPrice: item.total_price,
                     depositAmount: item.deposit_amount || 0,
@@ -99,8 +100,16 @@ export function useOrders() {
             if (orderData.filling) saveToDictionary('filling', orderData.filling);
             if (orderData.cover) saveToDictionary('cover', orderData.cover);
             if (orderData.occasion) saveToDictionary('occasion', orderData.occasion);
+            if (orderData.cakeType) saveToDictionary('cake_type', orderData.cakeType);
             // Save custom size
             if (orderData.size) saveToDictionary('size', orderData.size);
+
+            if (orderData.size) saveToDictionary('size', orderData.size);
+
+            console.log('Sending Order to DB:', {
+                cakeType: orderData.cakeType,
+                clientId: session.user.id
+            });
 
             const { data, error } = await supabase
                 .from('orders')
@@ -123,6 +132,7 @@ export function useOrders() {
                         filling: orderData.filling,
                         cover: orderData.cover,
                         occasion: orderData.occasion,
+                        cake_type: orderData.cakeType,
                         description: orderData.description,
 
                         total_price: orderData.totalPrice,
@@ -230,6 +240,7 @@ export function useOrders() {
             if (orderData.filling) updates.filling = orderData.filling;
             if (orderData.cover) updates.cover = orderData.cover;
             if (orderData.occasion) updates.occasion = orderData.occasion;
+            if (orderData.cakeType) updates.cake_type = orderData.cakeType;
             if (orderData.description) updates.description = orderData.description;
 
             if (orderData.totalPrice !== undefined) updates.total_price = orderData.totalPrice;
@@ -329,6 +340,54 @@ export function useOrders() {
         fetchOrders();
     }, []);
 
+    /**
+     * Fetch all orders from a specific client (case-insensitive match)
+     */
+    const getOrdersByClient = async (clientName: string): Promise<Order[]> => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return [];
+
+            const { data, error } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .ilike('client_name', clientName)
+                .order('delivery_date', { ascending: false });
+
+            if (error) throw error;
+
+            return (data || []).map(item => ({
+                id: item.id,
+                userId: item.user_id,
+                orderNumber: item.order_number,
+                clientName: item.client_name,
+                clientPhone: item.client_phone,
+                address: item.address,
+                orderDate: item.created_at,
+                deliveryDate: item.delivery_date,
+                deliveryTime: item.delivery_time,
+                size: item.size,
+                servings: item.servings,
+                filling: item.filling,
+                cover: item.cover,
+                occasion: item.occasion,
+                description: item.description,
+                totalPrice: item.total_price,
+                depositAmount: item.deposit_amount || 0,
+                paymentMethod: item.payment_method,
+                paymentStatus: item.payment_status || 'pendiente',
+                status: item.status,
+                reminderDays: item.reminder_days || 0,
+                createdAt: item.created_at,
+                updatedAt: item.updated_at,
+            }));
+        } catch (error) {
+            console.error('Error fetching client orders:', error);
+            return [];
+        }
+    };
+
     return {
         orders,
         loading,
@@ -337,6 +396,8 @@ export function useOrders() {
         createOrder,
         updateOrderStatus,
         updateOrder,
+        deleteOrder,
         getDictionaryOptions,
+        getOrdersByClient,
     };
 }

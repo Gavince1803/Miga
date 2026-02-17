@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface SubscriptionStatus {
@@ -14,6 +15,8 @@ export interface RedeemResult {
     premiumUntil?: Date;
 }
 
+const CACHE_KEY = 'subscription_status_cache';
+
 export function useSubscription() {
     const [status, setStatus] = useState<SubscriptionStatus>({
         isPremium: false,
@@ -22,22 +25,49 @@ export function useSubscription() {
         loading: true,
     });
 
+    const loadCache = async () => {
+        try {
+            const cached = await AsyncStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                // Check if likely valid (not expired if we have expiration?)
+                // Actually, just trust cache for initial render
+                setStatus(prev => ({
+                    ...prev,
+                    isPremium: parsed.isPremium,
+                    planType: parsed.planType,
+                    premiumUntil: parsed.premiumUntil ? new Date(parsed.premiumUntil) : null,
+                    loading: false // Important: Stop loading if cache exists
+                }));
+            }
+        } catch (e) {
+            console.error('Failed to load subscription cache', e);
+        }
+    };
+
     const checkPremiumStatus = useCallback(async () => {
         try {
             const { data, error } = await supabase.rpc('check_premium_status');
 
             if (error) {
                 console.error('Error checking premium status:', error);
+                // If we haven't loaded cache yet, stop loading anyway
                 setStatus(prev => ({ ...prev, loading: false }));
                 return;
             }
 
-            setStatus({
+            const newStatus = {
                 isPremium: data?.is_premium ?? false,
                 planType: data?.plan_type ?? 'free',
                 premiumUntil: data?.premium_until ? new Date(data.premium_until) : null,
                 loading: false,
-            });
+            };
+
+            setStatus(newStatus);
+
+            // Update Cache
+            AsyncStorage.setItem(CACHE_KEY, JSON.stringify(newStatus));
+
         } catch (error) {
             console.error('Error checking premium status:', error);
             setStatus(prev => ({ ...prev, loading: false }));
@@ -74,7 +104,11 @@ export function useSubscription() {
 
     // Check status on mount
     useEffect(() => {
-        checkPremiumStatus();
+        // First load cache for instant UI
+        loadCache().then(() => {
+            // Then fetch fresh data
+            checkPremiumStatus();
+        });
     }, [checkPremiumStatus]);
 
     // Refresh on app focus

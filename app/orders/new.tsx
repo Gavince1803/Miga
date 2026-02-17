@@ -9,6 +9,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
 import { useOrders } from '@/hooks/useOrders';
+import { useSubscription } from '@/hooks/useSubscription';
 import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack } from 'expo-router';
@@ -129,6 +130,7 @@ export default function NewOrderScreen() {
 
     const [servings, setServings] = useState('');
     const [filling, setFilling] = useState('');
+    const [cakeType, setCakeType] = useState('');
     const [cover, setCover] = useState('');
     const [occasion, setOccasion] = useState('');
     const [description, setDescription] = useState('');
@@ -140,13 +142,15 @@ export default function NewOrderScreen() {
 
 
 
-    const { createOrder, getDictionaryOptions } = useOrders();
+    const { createOrder, getDictionaryOptions, orders } = useOrders(); // Destructure orders
     const { setItemsForOrder } = useOrderItems();
     const { showAlert } = useAlert();
+    const { isPremium } = useSubscription(); // Import this hook
     const { bcv, parallel, euro } = useExchangeRates();
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const [submitting, setSubmitting] = useState(false);
     const [dynamicSizes, setDynamicSizes] = useState<string[]>([]);
+
 
     // Products with recipes
     const [orderProducts, setOrderProducts] = useState<SelectedProduct[]>([]);
@@ -171,6 +175,7 @@ export default function NewOrderScreen() {
 
     // Defaults for dropdowns
     const DEFAULT_FILLINGS = ['Chocolate', 'Vainilla', 'Arequipe', 'Frutos Rojos'];
+    const DEFAULT_CAKE_TYPES = ['Vainilla', 'Chocolate', 'Red Velvet', 'Marmolada', 'Zanahoria'];
     const DEFAULT_COVERS = ['Buttercream', 'Fondant', 'Merengue', 'Ganache'];
     const DEFAULT_OCCASIONS = ['Cumpleaños', 'Boda', 'Aniversario', 'Baby Shower'];
 
@@ -207,6 +212,25 @@ export default function NewOrderScreen() {
             return;
         }
 
+        // Check Premium Limit (Max 10 active orders)
+        if (!isPremium) {
+            // Active orders: Not completed or cancelled
+            const activeOrders = orders.filter(o => o.status !== 'completado' && o.status !== 'cancelado').length;
+            if (activeOrders >= 10) {
+                haptics.error();
+                showAlert({
+                    title: 'Límite Alcanzado',
+                    message: 'Tienes 10 pedidos activos (límite gratuito).\n\nCompleta o cancela pedidos existentes, o suscríbete a Premium para pedidos ilimitados.',
+                    type: 'warning',
+                    buttons: [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                    ]
+                });
+                return;
+            }
+        }
+
         // Validate custom inputs
         const finalSize = showCustomSize ? customSize.trim() : size;
         if (!finalSize) {
@@ -234,6 +258,7 @@ export default function NewOrderScreen() {
                 size: finalSize,
                 servings: servings ? parseInt(servings) : 0,
                 filling,
+                cakeType,
                 cover,
                 occasion,
                 description,
@@ -391,6 +416,16 @@ export default function NewOrderScreen() {
                             keyboardType="number-pad"
                         />
                     </FormField>
+
+                    <View style={{ marginTop: Spacing.md }}>
+                        <EditableDropdown
+                            label="Tipo de Ponqué"
+                            value={cakeType}
+                            onValueChange={setCakeType}
+                            category="cake_type"
+                            defaultOptions={DEFAULT_CAKE_TYPES}
+                        />
+                    </View>
 
                     <View style={{ marginTop: Spacing.md }}>
                         <EditableDropdown

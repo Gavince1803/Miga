@@ -22,6 +22,7 @@ export function useInventory() {
             const { data, error } = await supabase
                 .from('inventory_items')
                 .select('*')
+                .eq('is_archived', false)
                 .order('name', { ascending: true });
 
             if (error) throw error;
@@ -36,6 +37,7 @@ export function useInventory() {
                     minStock: item.min_stock,
                     costPerUnit: item.cost_per_unit, // Financials
                     category: item.category,
+                    isArchived: item.is_archived || false,
                     createdAt: item.created_at,
                 }));
                 setInventory(mappedItems);
@@ -416,6 +418,42 @@ export function useInventory() {
         }
     };
 
+    const archiveItem = async (id: string): Promise<boolean> => {
+        try {
+            const { error } = await supabase
+                .from('inventory_items')
+                .update({ is_archived: true })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            await fetchInventory();
+            return true;
+        } catch (error) {
+            console.error('Error archiving item:', error);
+            showAlert({ title: 'Error', message: 'No se pudo archivar el ingrediente', type: 'error' });
+            return false;
+        }
+    };
+
+    const unarchiveItem = async (id: string): Promise<boolean> => {
+        try {
+            const { error } = await supabase
+                .from('inventory_items')
+                .update({ is_archived: false })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            await fetchInventory();
+            return true;
+        } catch (error) {
+            console.error('Error unarchiving item:', error);
+            showAlert({ title: 'Error', message: 'No se pudo restaurar el ingrediente', type: 'error' });
+            return false;
+        }
+    };
+
     return {
         inventory,
         loading,
@@ -428,6 +466,8 @@ export function useInventory() {
         importInventory,
         updateItemDetails,
         exportInventory,
-        deleteMovement
+        deleteMovement,
+        archiveItem,
+        unarchiveItem
     };
 }

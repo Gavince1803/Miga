@@ -50,6 +50,7 @@ export interface Order {
     cover?: string; // Cubierta
     occasion?: string; // Motivo
     description?: string; // Descripción
+    cakeType?: string; // Tipo de Ponqué
     decorationImageUrl?: string; // Sketch/photo of decoration
 
     // Payment
@@ -85,6 +86,7 @@ export interface OrderFormData {
     filling?: string;
     cover?: string;
     occasion?: string;
+    cakeType?: string;
     description?: string;
     totalPrice: number;
     depositAmount: number;
@@ -103,6 +105,7 @@ export interface InventoryItem {
     minStock: number;
     costPerUnit?: number; // New field for financial calc
     category?: string;
+    isArchived?: boolean;
     createdAt: string;
 }
 

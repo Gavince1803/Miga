@@ -14,6 +14,7 @@ import {
     Share,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -32,6 +33,11 @@ export default function RecipeDetailScreen() {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [linkedIngredients, setLinkedIngredients] = useState<RecipeIngredient[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Scaling calculator state
+    const [scalingActive, setScalingActive] = useState(false);
+    const [basePortions, setBasePortions] = useState('12');
+    const [targetPortions, setTargetPortions] = useState('12');
 
     useEffect(() => {
         if (id) {
@@ -277,6 +283,12 @@ export default function RecipeDetailScreen() {
                                         <Text style={[styles.linkedIngredientName, { color: colors.text }]}>
                                             {ing.inventoryItem?.name || 'Ingrediente'}
                                         </Text>
+                                        {ing.inventoryItem?.isArchived && (
+                                            <View style={[styles.lowStockWarning, { backgroundColor: colors.warning + '20' }]}>
+                                                <FontAwesome name="archive" size={10} color={colors.warning} />
+                                                <Text style={[styles.lowStockText, { color: colors.warning }]}>Archivado</Text>
+                                            </View>
+                                        )}
                                         {ing.inventoryItem && ing.inventoryItem.quantity < ing.quantity && (
                                             <View style={[styles.lowStockWarning, { backgroundColor: colors.error + '20' }]}>
                                                 <FontAwesome name="exclamation-triangle" size={10} color={colors.error} />
@@ -288,6 +300,149 @@ export default function RecipeDetailScreen() {
                             </View>
                         </View>
                     )}
+
+                    {/* Scaling Calculator */}
+                    <View style={styles.section}>
+                        <TouchableOpacity
+                            style={styles.sectionHeader}
+                            onPress={() => setScalingActive(!scalingActive)}
+                        >
+                            <FontAwesome name="balance-scale" size={18} color={colors.primary} />
+                            <Text style={[styles.sectionTitle, { color: colors.text, flex: 1 }]}>Calculadora de Escalado</Text>
+                            <FontAwesome
+                                name={scalingActive ? 'chevron-up' : 'chevron-down'}
+                                size={14}
+                                color={colors.textMuted}
+                            />
+                        </TouchableOpacity>
+
+                        {scalingActive && (linkedIngredients.length === 0 ? (
+                            <View style={{ alignItems: 'center', paddingVertical: Spacing.lg, paddingHorizontal: Spacing.md }}>
+                                <FontAwesome name="cubes" size={36} color={colors.textMuted} />
+                                <Text style={{ ...Typography.body, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.sm }}>
+                                    Añade ingredientes del inventario a esta receta para usar la calculadora de escalado.
+                                </Text>
+                                <TouchableOpacity
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        marginTop: Spacing.md,
+                                        backgroundColor: colors.primary + '15',
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 10,
+                                        borderRadius: BorderRadius.md,
+                                    }}
+                                    onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)}
+                                >
+                                    <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                    <Text style={{ ...Typography.bodyBold, color: colors.primary }}>Editar Receta</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (() => {
+                            const base = parseFloat(basePortions) || 1;
+                            const target = parseFloat(targetPortions) || 1;
+                            const multiplier = target / base;
+
+                            return (
+                                <View>
+                                    {/* Portion Inputs */}
+                                    <View style={[styles.scalingInputRow, { backgroundColor: colors.surfaceSecondary, borderRadius: BorderRadius.md }]}>
+                                        <View style={styles.scalingInputColumn}>
+                                            <Text style={[styles.scalingInputLabel, { color: colors.textMuted }]}>Receta para</Text>
+                                            <View style={[styles.scalingInputBox, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                                                <TextInput
+                                                    style={[styles.scalingInput, { color: colors.text }]}
+                                                    value={basePortions}
+                                                    onChangeText={setBasePortions}
+                                                    keyboardType="numeric"
+                                                    selectTextOnFocus
+                                                />
+                                                <Text style={[styles.scalingUnit, { color: colors.textMuted }]}>porc.</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.scalingArrow}>
+                                            <FontAwesome name="long-arrow-right" size={20} color={colors.primary} />
+                                        </View>
+
+                                        <View style={styles.scalingInputColumn}>
+                                            <Text style={[styles.scalingInputLabel, { color: colors.textMuted }]}>Necesito para</Text>
+                                            <View style={[styles.scalingInputBox, { borderColor: colors.primary, backgroundColor: colors.surface }]}>
+                                                <TextInput
+                                                    style={[styles.scalingInput, { color: colors.primary, fontWeight: '700' }]}
+                                                    value={targetPortions}
+                                                    onChangeText={setTargetPortions}
+                                                    keyboardType="numeric"
+                                                    selectTextOnFocus
+                                                />
+                                                <Text style={[styles.scalingUnit, { color: colors.primary }]}>porc.</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+
+                                    {/* Multiplier Badge */}
+                                    {multiplier !== 1 && (
+                                        <View style={[styles.multiplierBadge, { backgroundColor: colors.primary + '15' }]}>
+                                            <FontAwesome name="times" size={12} color={colors.primary} />
+                                            <Text style={[styles.multiplierText, { color: colors.primary }]}>
+                                                {multiplier.toFixed(2)}x
+                                            </Text>
+                                        </View>
+                                    )}
+
+                                    {/* Scaled Ingredients Table */}
+                                    <View style={[styles.scaledTable, { borderColor: colors.border }]}>
+                                        <View style={[styles.scaledTableHeader, { backgroundColor: colors.surfaceSecondary }]}>
+                                            <Text style={[styles.scaledTableHeaderText, { color: colors.textMuted, flex: 2 }]}>Ingrediente</Text>
+                                            <Text style={[styles.scaledTableHeaderText, { color: colors.textMuted, flex: 1, textAlign: 'center' }]}>Original</Text>
+                                            <Text style={[styles.scaledTableHeaderText, { color: colors.primary, flex: 1, textAlign: 'center', fontWeight: '700' }]}>Escalado</Text>
+                                        </View>
+                                        {linkedIngredients.map((ing) => {
+                                            const scaled = ing.quantity * multiplier;
+                                            const displayScaled = scaled >= 1000 && (ing.unit === 'g' || ing.unit === 'ml')
+                                                ? `${(scaled / 1000).toFixed(2)} ${ing.unit === 'g' ? 'kg' : 'L'}`
+                                                : `${scaled % 1 === 0 ? scaled : scaled.toFixed(1)} ${ing.unit}`;
+
+                                            return (
+                                                <View key={ing.id} style={[styles.scaledTableRow, { borderBottomColor: colors.border }]}>
+                                                    <Text style={[styles.scaledIngName, { color: colors.text }]} numberOfLines={1}>
+                                                        {ing.inventoryItem?.name || 'Ingrediente'}
+                                                    </Text>
+                                                    <Text style={[styles.scaledIngOriginal, { color: colors.textMuted }]}>
+                                                        {ing.quantity} {ing.unit}
+                                                    </Text>
+                                                    <Text style={[styles.scaledIngScaled, { color: multiplier !== 1 ? colors.primary : colors.text }]}>
+                                                        {displayScaled}
+                                                    </Text>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+
+                                    {/* Scaled Cost */}
+                                    {linkedIngredients.some(ing => ing.inventoryItem?.costPerUnit) && (() => {
+                                        const totalCost = linkedIngredients.reduce((sum, ing) => {
+                                            const cost = ing.inventoryItem?.costPerUnit || 0;
+                                            return sum + (ing.quantity * cost * multiplier);
+                                        }, 0);
+                                        return (
+                                            <View style={[styles.scaledCostCard, { backgroundColor: colors.success + '10', borderColor: colors.success + '30' }]}>
+                                                <FontAwesome name="money" size={16} color={colors.success} />
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={[styles.scaledCostLabel, { color: colors.textMuted }]}>Costo estimado de ingredientes</Text>
+                                                    <Text style={[styles.scaledCostValue, { color: colors.success }]}>
+                                                        ${totalCost.toFixed(2)}
+                                                        {target > 1 ? ` ($${(totalCost / target).toFixed(2)}/porción)` : ''}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        );
+                                    })()}
+                                </View>
+                            );
+                        })())}
+                    </View>
 
                     {/* Text-based Ingredients Section */}
                     <View style={styles.section}>
@@ -479,5 +634,114 @@ const styles = StyleSheet.create({
     lowStockText: {
         fontSize: 10,
         fontWeight: '600',
+    },
+    // Scaling Calculator Styles
+    scalingInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: Spacing.md,
+        marginTop: Spacing.md,
+    },
+    scalingInputColumn: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    scalingInputLabel: {
+        ...Typography.small,
+        marginBottom: 6,
+        fontWeight: '600',
+    },
+    scalingInputBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+    },
+    scalingInput: {
+        ...Typography.subtitle,
+        fontSize: 20,
+        textAlign: 'center',
+        minWidth: 40,
+        paddingVertical: 2,
+    },
+    scalingUnit: {
+        ...Typography.small,
+        marginLeft: 4,
+    },
+    scalingArrow: {
+        paddingHorizontal: Spacing.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    multiplierBadge: {
+        flexDirection: 'row',
+        alignSelf: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 6,
+        marginTop: Spacing.sm,
+        marginBottom: Spacing.sm,
+    },
+    multiplierText: {
+        ...Typography.bodyBold,
+        fontSize: 16,
+    },
+    scaledTable: {
+        borderWidth: 1,
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        marginTop: Spacing.sm,
+    },
+    scaledTableHeader: {
+        flexDirection: 'row',
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 8,
+    },
+    scaledTableHeaderText: {
+        ...Typography.small,
+        fontWeight: '600',
+    },
+    scaledTableRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 10,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    scaledIngName: {
+        ...Typography.body,
+        flex: 2,
+    },
+    scaledIngOriginal: {
+        ...Typography.small,
+        flex: 1,
+        textAlign: 'center',
+    },
+    scaledIngScaled: {
+        ...Typography.bodyBold,
+        flex: 1,
+        textAlign: 'center',
+    },
+    scaledCostCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        gap: Spacing.sm,
+        marginTop: Spacing.md,
+    },
+    scaledCostLabel: {
+        ...Typography.small,
+    },
+    scaledCostValue: {
+        ...Typography.bodyBold,
+        fontSize: 16,
+        marginTop: 2,
     },
 });

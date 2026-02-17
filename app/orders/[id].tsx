@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Linking,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -89,11 +90,14 @@ export default function OrderDetailScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
-    const { updateOrderStatus } = useOrders();
+    const { updateOrderStatus, getOrdersByClient } = useOrders();
     const { showAlert } = useAlert();
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
+    const [clientHistoryVisible, setClientHistoryVisible] = useState(false);
+    const [clientOrders, setClientOrders] = useState<Order[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
 
     const fetchOrder = async () => {
         if (!id) return;
@@ -120,6 +124,7 @@ export default function OrderDetailScreen() {
                     size: data.size,
                     servings: data.servings,
                     filling: data.filling,
+                    cakeType: data.cake_type,
                     cover: data.cover,
                     occasion: data.occasion,
                     description: data.description,
@@ -232,6 +237,26 @@ export default function OrderDetailScreen() {
     };
     const handleEdit = () => router.push(`/orders/edit?id=${order.id}`);
 
+    const handleClientHistory = async () => {
+        setLoadingHistory(true);
+        setClientHistoryVisible(true);
+        const orders = await getOrdersByClient(order.clientName);
+        setClientOrders(orders.filter(o => o.id !== order.id)); // exclude current order
+        setLoadingHistory(false);
+    };
+
+    const clientTotalSpent = clientOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+
+    const getStatusColor = (status: string) => {
+        const option = ORDER_STATUS_OPTIONS.find(s => s.value === status);
+        return option?.color || colors.textMuted;
+    };
+
+    const getStatusLabel = (status: string) => {
+        const option = ORDER_STATUS_OPTIONS.find(s => s.value === status);
+        return option?.label || status;
+    };
+
     const handleDelete = () => {
         showAlert({
             title: 'Eliminar Pedido',
@@ -295,9 +320,15 @@ export default function OrderDetailScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={[styles.clientName, { color: colors.text }]}>
-                        {order.clientName}
-                    </Text>
+                    <TouchableOpacity onPress={handleClientHistory} style={styles.clientNameRow}>
+                        <Text style={[styles.clientName, { color: colors.text }]}>
+                            {order.clientName}
+                        </Text>
+                        <View style={[styles.historyHint, { backgroundColor: colors.primary + '15' }]}>
+                            <FontAwesome name="history" size={12} color={colors.primary} />
+                            <Text style={[styles.historyHintText, { color: colors.primary }]}>Historial</Text>
+                        </View>
+                    </TouchableOpacity>
 
                     {/* Quick Actions */}
                     <View style={styles.quickActions}>
@@ -368,6 +399,12 @@ export default function OrderDetailScreen() {
                         icon="arrows-alt"
                         label="Medida"
                         value={order.size || '-'}
+                        colors={colors}
+                    />
+                    <DetailRow
+                        icon="birthday-cake"
+                        label="Tipo de Ponqué"
+                        value={order.cakeType || '-'}
                         colors={colors}
                     />
                     <DetailRow
@@ -444,6 +481,138 @@ export default function OrderDetailScreen() {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            {/* Client History Modal */}
+            <Modal
+                visible={clientHistoryVisible}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setClientHistoryVisible(false)}
+            >
+                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                    <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                        <View>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>
+                                {order.clientName}
+                            </Text>
+                            <Text style={[styles.modalSubtitle, { color: colors.textMuted }]}>
+                                Historial de Pedidos
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setClientHistoryVisible(false)}
+                            style={[styles.modalClose, { backgroundColor: colors.surface }]}
+                        >
+                            <FontAwesome name="times" size={18} color={colors.text} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {loadingHistory ? (
+                        <View style={styles.modalLoading}>
+                            <ActivityIndicator size="large" color={colors.primary} />
+                        </View>
+                    ) : (
+                        <ScrollView contentContainerStyle={styles.modalContent}>
+                            {/* Summary Card */}
+                            <View style={[styles.summaryCard, { backgroundColor: colors.primary + '10' }]}>
+                                <View style={styles.summaryItem}>
+                                    <Text style={[styles.summaryNumber, { color: colors.primary }]}>
+                                        {clientOrders.length + 1}
+                                    </Text>
+                                    <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Pedidos totales</Text>
+                                </View>
+                                <View style={[styles.summaryDivider, { backgroundColor: colors.primary + '30' }]} />
+                                <View style={styles.summaryItem}>
+                                    <Text style={[styles.summaryNumber, { color: colors.primary }]}>
+                                        ${(clientTotalSpent + order.totalPrice).toFixed(2)}
+                                    </Text>
+                                    <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Total gastado</Text>
+                                </View>
+                            </View>
+
+                            {/* Current Order */}
+                            <Text style={[styles.historySectionTitle, { color: colors.textMuted }]}>
+                                PEDIDO ACTUAL
+                            </Text>
+                            <View style={[styles.historyCard, { backgroundColor: colors.surface, borderLeftColor: colors.primary }, Shadows.sm]}>
+                                <View style={styles.historyCardHeader}>
+                                    <Text style={[styles.historyOrderNumber, { color: colors.primary }]}>
+                                        #{order.orderNumber}
+                                    </Text>
+                                    <View style={[styles.historyStatusBadge, { backgroundColor: statusOption?.color + '20' }]}>
+                                        <Text style={{ ...Typography.small, color: statusOption?.color, fontWeight: '600' }}>
+                                            {statusOption?.label}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Text style={[styles.historyDescription, { color: colors.text }]}>
+                                    {order.description || order.size || 'Sin descripción'}
+                                </Text>
+                                <View style={styles.historyMeta}>
+                                    <Text style={[styles.historyDate, { color: colors.textMuted }]}>
+                                        📅 {formatDate(order.deliveryDate)}
+                                    </Text>
+                                    <Text style={[styles.historyPrice, { color: colors.text }]}>
+                                        ${order.totalPrice.toFixed(2)}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* Past Orders */}
+                            {clientOrders.length > 0 && (
+                                <>
+                                    <Text style={[styles.historySectionTitle, { color: colors.textMuted }]}>
+                                        PEDIDOS ANTERIORES ({clientOrders.length})
+                                    </Text>
+                                    {clientOrders.map((pastOrder) => (
+                                        <TouchableOpacity
+                                            key={pastOrder.id}
+                                            style={[styles.historyCard, { backgroundColor: colors.surface, borderLeftColor: getStatusColor(pastOrder.status) }, Shadows.sm]}
+                                            onPress={() => {
+                                                setClientHistoryVisible(false);
+                                                router.push(`/orders/${pastOrder.id}`);
+                                            }}
+                                        >
+                                            <View style={styles.historyCardHeader}>
+                                                <Text style={[styles.historyOrderNumber, { color: colors.text }]}>
+                                                    #{pastOrder.orderNumber}
+                                                </Text>
+                                                <View style={[styles.historyStatusBadge, { backgroundColor: getStatusColor(pastOrder.status) + '20' }]}>
+                                                    <Text style={{ ...Typography.small, color: getStatusColor(pastOrder.status), fontWeight: '600' }}>
+                                                        {getStatusLabel(pastOrder.status)}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <Text style={[styles.historyDescription, { color: colors.text }]} numberOfLines={1}>
+                                                {pastOrder.description || pastOrder.size || 'Sin descripción'}
+                                            </Text>
+                                            <View style={styles.historyMeta}>
+                                                <Text style={[styles.historyDate, { color: colors.textMuted }]}>
+                                                    📅 {formatDate(pastOrder.deliveryDate)}
+                                                </Text>
+                                                <Text style={[styles.historyPrice, { color: colors.text }]}>
+                                                    ${pastOrder.totalPrice.toFixed(2)}
+                                                </Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </>
+                            )}
+
+                            {clientOrders.length === 0 && (
+                                <View style={styles.emptyHistory}>
+                                    <FontAwesome name="star-o" size={40} color={colors.textMuted} />
+                                    <Text style={[styles.emptyHistoryText, { color: colors.textMuted }]}>
+                                        ¡Este es el primer pedido de {order.clientName}!
+                                    </Text>
+                                </View>
+                            )}
+
+                            <View style={{ height: 40 }} />
+                        </ScrollView>
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -486,9 +655,28 @@ const styles = StyleSheet.create({
         ...Typography.caption,
         fontWeight: '600',
     },
+    clientNameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: Spacing.md,
+    },
     clientName: {
         ...Typography.title,
-        marginBottom: Spacing.md,
+        flex: 1,
+    },
+    historyHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: BorderRadius.sm,
+        gap: 4,
+        marginLeft: Spacing.sm,
+    },
+    historyHintText: {
+        ...Typography.small,
+        fontWeight: '600',
     },
     quickActions: {
         flexDirection: 'row',
@@ -569,5 +757,114 @@ const styles = StyleSheet.create({
     },
     deleteButtonText: {
         ...Typography.bodyBold,
+    },
+    // Client History Modal Styles
+    modalContainer: {
+        flex: 1,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.md,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    modalTitle: {
+        ...Typography.title,
+    },
+    modalSubtitle: {
+        ...Typography.caption,
+        marginTop: 2,
+    },
+    modalClose: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalLoading: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        padding: Spacing.md,
+    },
+    summaryCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.lg,
+        marginBottom: Spacing.lg,
+    },
+    summaryItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    summaryNumber: {
+        ...Typography.title,
+        fontSize: 24,
+    },
+    summaryLabel: {
+        ...Typography.small,
+        marginTop: 4,
+    },
+    summaryDivider: {
+        width: 1,
+        height: 40,
+        marginHorizontal: Spacing.md,
+    },
+    historySectionTitle: {
+        ...Typography.small,
+        fontWeight: '700',
+        letterSpacing: 1,
+        marginBottom: Spacing.sm,
+        marginTop: Spacing.sm,
+    },
+    historyCard: {
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+        marginBottom: Spacing.sm,
+        borderLeftWidth: 3,
+    },
+    historyCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    historyOrderNumber: {
+        ...Typography.bodyBold,
+    },
+    historyStatusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: BorderRadius.sm,
+    },
+    historyDescription: {
+        ...Typography.body,
+        marginBottom: 6,
+    },
+    historyMeta: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    historyDate: {
+        ...Typography.small,
+    },
+    historyPrice: {
+        ...Typography.bodyBold,
+    },
+    emptyHistory: {
+        alignItems: 'center',
+        paddingVertical: Spacing.xl,
+        gap: Spacing.md,
+    },
+    emptyHistoryText: {
+        ...Typography.body,
+        textAlign: 'center',
     },
 });

@@ -19,7 +19,7 @@ interface EditableDropdownProps {
     label: string;
     value: string;
     onValueChange: (value: string) => void; // Parent handles state
-    category: 'filling' | 'cover' | 'occasion';
+    category: 'filling' | 'cover' | 'occasion' | 'cake_type';
     defaultOptions: readonly string[];
 }
 

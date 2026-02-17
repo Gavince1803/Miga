@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import {
     FlatList,
     Image,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -104,6 +105,19 @@ export default function RecipesScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const { recipes, loading, onRefresh, refreshing, refreshSilent } = useRecipes();
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+    const categories = [
+        { label: 'Todas', value: null },
+        { label: '🎂 Tortas', value: 'Tortas' },
+        { label: '🧁 Cupcakes', value: 'Cupcakes' },
+        { label: '🍪 Galletas', value: 'Galletas' },
+        { label: '🍫 Brownies', value: 'Brownies' },
+        { label: '🍮 Postres', value: 'Postres Fríos' },
+        { label: '🍞 Panes', value: 'Panes' },
+        { label: '🍬 Dulces', value: 'Dulces' },
+        { label: '✨ Otro', value: 'Otro' },
+    ];
 
     useFocusEffect(
         React.useCallback(() => {
@@ -111,10 +125,12 @@ export default function RecipesScreen() {
         }, [])
     );
 
-    const filteredRecipes = recipes.filter(r =>
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (r.category && r.category.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredRecipes = recipes.filter(r => {
+        const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (r.category && r.category.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesCategory = !selectedCategory || r.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -144,6 +160,36 @@ export default function RecipesScreen() {
                     />
                 </View>
             </View>
+
+            {/* Category Filter Chips */}
+            <View style={{ height: 48, marginBottom: 4 }}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                    style={{ overflow: 'visible' }}
+                >
+                    {categories.map(cat => (
+                        <TouchableOpacity
+                            key={cat.label}
+                            style={[
+                                styles.filterChip,
+                                { backgroundColor: selectedCategory === cat.value ? colors.primary : colors.surface },
+                            ]}
+                            onPress={() => setSelectedCategory(cat.value)}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={[
+                                styles.filterChipText,
+                                { color: selectedCategory === cat.value ? '#FFF' : colors.textMuted },
+                            ]}>
+                                {cat.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+
 
             <FlatList
                 data={filteredRecipes}
@@ -249,5 +295,21 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    filterRow: {
+        paddingHorizontal: Spacing.md,
+        paddingBottom: Spacing.sm,
+        paddingTop: 4,
+        gap: 8,
+    },
+    filterChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: BorderRadius.full,
+    },
+    filterChipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        lineHeight: 16,
     },
 });

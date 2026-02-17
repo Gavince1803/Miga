@@ -2,6 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useInventory } from '@/hooks/useInventory';
+import { useSubscription } from '@/hooks/useSubscription';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -28,8 +29,9 @@ const UNIT_OPTIONS = [
 export default function AddItemScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { addItem } = useInventory();
+    const { addItem, inventory } = useInventory(); // Destructure inventory to check count
     const { showAlert } = useAlert();
+    const { isPremium } = useSubscription();
 
     const [name, setName] = useState('');
     const [category, setCategory] = useState('');
@@ -50,6 +52,20 @@ export default function AddItemScreen() {
     const handleSave = async () => {
         if (!name.trim()) {
             showAlert({ title: 'Error', message: 'El nombre es requerido', type: 'error' });
+            return;
+        }
+
+        // Check Premium Limit (Max 20 inventory items)
+        if (!isPremium && inventory.length >= 20) {
+            showAlert({
+                title: 'Límite Alcanzado',
+                message: 'Has alcanzado el límite de 20 ingredientes gratuitos.\n\nSuscríbete a Premium para inventario ilimitado y control de costos avanzado.',
+                type: 'warning',
+                buttons: [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                ]
+            });
             return;
         }
 

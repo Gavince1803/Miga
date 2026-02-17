@@ -1,4 +1,5 @@
 import { DateTimePickerField } from '@/components/DateTimePickerField';
+import { EditableDropdown } from '@/components/EditableDropdown';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -68,6 +69,8 @@ function ChipSelector({ options, selected, onSelect, colors }: { options: readon
     );
 }
 
+const DEFAULT_CAKE_TYPES = ['Vainilla', 'Chocolate', 'Red Velvet', 'Marmolada', 'Zanahoria'];
+
 export default function EditOrderScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
@@ -91,6 +94,7 @@ export default function EditOrderScreen() {
     const [size, setSize] = useState('20 cm');
     const [servings, setServings] = useState('');
     const [filling, setFilling] = useState('');
+    const [cakeType, setCakeType] = useState('');
     const [cover, setCover] = useState('');
     const [occasion, setOccasion] = useState('');
     const [description, setDescription] = useState('');
@@ -133,6 +137,7 @@ export default function EditOrderScreen() {
                     setSize(data.size || '20 cm');
                     setServings(data.servings ? data.servings.toString() : '');
                     setFilling(data.filling || '');
+                    setCakeType(data.cake_type || '');
                     setCover(data.cover || '');
                     setOccasion(data.occasion || '');
                     setDescription(data.description || '');
@@ -173,6 +178,7 @@ export default function EditOrderScreen() {
                 size,
                 servings: servings ? parseInt(servings) : 0,
                 filling,
+                cakeType,
                 cover,
                 occasion,
                 description,
@@ -283,6 +289,16 @@ export default function EditOrderScreen() {
                             keyboardType="number-pad"
                         />
                     </FormField>
+
+                    <View style={{ marginBottom: Spacing.md }}>
+                        <EditableDropdown
+                            label="Tipo de Ponqué"
+                            value={cakeType}
+                            onValueChange={setCakeType}
+                            category="cake_type"
+                            defaultOptions={DEFAULT_CAKE_TYPES}
+                        />
+                    </View>
 
                     <FormField label="Relleno" colors={colors}>
                         <TextInput

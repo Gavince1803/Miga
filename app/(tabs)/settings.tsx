@@ -180,9 +180,8 @@ export default function SettingsScreen() {
             title: 'Exportar Datos',
             message: '¿Qué datos quieres exportar?',
             buttons: [
-                { text: 'Pedidos', onPress: () => showAlert({ title: 'Próximamente', message: 'Esta función estará disponible pronto.', type: 'info' }) },
-                { text: 'Inventario', onPress: () => showAlert({ title: 'Próximamente', message: 'Esta función estará disponible pronto.', type: 'info' }) },
-                { text: 'Todo', onPress: () => showAlert({ title: 'Próximamente', message: 'Esta función estará disponible pronto.', type: 'info' }) },
+                { text: 'Inventario', onPress: () => router.push('/(tabs)/inventory') },
+                { text: 'Pedidos', onPress: () => showAlert({ title: 'Próximamente', message: 'La exportación de pedidos estará disponible pronto.', type: 'info' }) },
                 { text: 'Cancelar', style: 'cancel' },
             ]
         });
@@ -338,6 +337,50 @@ export default function SettingsScreen() {
                     Cerrar Sesión
                 </Text>
             </TouchableOpacity>
+
+            {/* Danger Zone */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.error }]}>
+                    ZONA DE PELIGRO
+                </Text>
+                <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.error + '30', borderWidth: 1 }, Shadows.sm]}>
+                    <TouchableOpacity
+                        style={[styles.settingRow, { borderBottomWidth: 0 }]}
+                        onPress={() => showAlert({
+                            title: '¿Eliminar Cuenta?',
+                            message: 'Esta acción es irreversible. Se borrarán todas tus recetas, inventario y datos. ¿Estás seguro?',
+                            type: 'error',
+                            buttons: [
+                                { text: 'Cancelar', style: 'cancel' },
+                                {
+                                    text: 'Eliminar Definitivamente',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                        try {
+                                            const { error } = await supabase.rpc('delete_user_account');
+                                            if (error) throw error;
+                                            await supabase.auth.signOut();
+                                            router.replace('/auth/login');
+                                            showAlert({ title: 'Cuenta Eliminada', message: 'Tu cuenta ha sido eliminada correctamente.', type: 'success' });
+                                        } catch (error) {
+                                            console.error('Error deleting account:', error);
+                                            showAlert({ title: 'Error', message: 'No se pudo eliminar la cuenta. Intenta de nuevo.', type: 'error' });
+                                        }
+                                    }
+                                }
+                            ]
+                        })}
+                    >
+                        <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}>
+                            <FontAwesome name="trash" size={16} color={colors.error} />
+                        </View>
+                        <View style={styles.settingContent}>
+                            <Text style={[styles.settingLabel, { color: colors.error }]}>Eliminar Cuenta</Text>
+                            <Text style={[styles.settingSubtitle, { color: colors.textMuted }]}>Borrar todos mis datos permanentemente</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
             <View style={{ height: 120 }} />
         </ScrollView>

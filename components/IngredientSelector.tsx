@@ -24,6 +24,10 @@ export type SelectedIngredient = {
     inventoryItemName: string;
     quantity: number;
     unit: string;
+    // Optional purchase details for new items
+    purchaseQuantity?: number;
+    purchaseUnit?: string;
+    purchaseCost?: number;
 };
 
 type Props = {
@@ -46,8 +50,17 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     // For creating new ingredient
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newIngredientName, setNewIngredientName] = useState('');
+    // New fields for cost calculation
+    const [purchaseQuantity, setPurchaseQuantity] = useState('');
+    const [purchaseUnit, setPurchaseUnit] = useState('');
+    const [purchaseCost, setPurchaseCost] = useState('');
 
     const haptics = useHaptics();
+
+    // Refs for input chaining
+    const purchaseQtyRef = React.useRef<TextInput>(null);
+    const purchaseCostRef = React.useRef<TextInput>(null);
+    const recipeQtyRef = React.useRef<TextInput>(null);
 
     // Filter inventory items not already selected
     const availableItems = inventory.filter(
@@ -65,12 +78,14 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
         setSelectedItem(item);
         setUnit(item.unit);
         setQuantity('');
+        // Focus quantity input after selection with a small delay to ensure render
+        setTimeout(() => recipeQtyRef.current?.focus(), 100);
     };
 
     const handleAddIngredient = () => {
         if (!quantity || parseFloat(quantity) <= 0) {
             haptics.error();
-            showAlert({ title: 'Error', message: 'Ingresa una cantidad válida', type: 'error' });
+            showAlert({ title: 'Error', message: 'Ingresa una cantidad válida para la receta', type: 'error' });
             return;
         }
 
@@ -85,7 +100,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
             onIngredientsChange([...selectedIngredients, newIngredient]);
             haptics.success();
         } else if (newIngredientName.trim()) {
-            // Create new ingredient (will be created when recipe is saved)
+            // Create new ingredient
             const normalizedName = newIngredientName.trim()
                 .split(' ')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -119,11 +134,18 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                 return;
             }
 
+            // Validate Purchase Details if provided
+            let pQty = parseFloat(purchaseQuantity);
+            let pCost = parseFloat(purchaseCost);
+
             const newIngredient: SelectedIngredient = {
                 inventoryItemId: `new:${normalizedName}`,
                 inventoryItemName: normalizedName,
                 quantity: parseFloat(quantity),
-                unit: unit
+                unit: unit,
+                purchaseQuantity: pQty || undefined,
+                purchaseUnit: purchaseUnit || unit, // Use selected purchase unit or default to recipe unit
+                purchaseCost: pCost || undefined
             };
             onIngredientsChange([...selectedIngredients, newIngredient]);
             haptics.success();
@@ -135,6 +157,9 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
         setSearchQuery('');
         setShowCreateForm(false);
         setNewIngredientName('');
+        setPurchaseQuantity(''); // Reset
+        setPurchaseUnit(''); // Reset
+        setPurchaseCost(''); // Reset
         setShowModal(false);
     };
 
@@ -216,6 +241,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.modalOverlay}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
                 >
                     <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
                         {/* Header */}
@@ -233,11 +259,11 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                             </TouchableOpacity>
                         </View>
 
-                        {/* If item selected, show quantity input */}
+                        {/* If item selected or creating new, show form */}
                         {(selectedItem || showCreateForm) ? (
                             <ScrollView
                                 style={styles.quantityForm}
-                                keyboardShouldPersistTaps="handled"
+                                keyboardShouldPersistTaps="always"
                                 showsVerticalScrollIndicator={false}
                             >
                                 {showCreateForm && (
@@ -252,7 +278,70 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                             placeholder="Ej: Extracto de Vainilla"
                                             placeholderTextColor={colors.textMuted}
                                             autoFocus
+                                            returnKeyType="next"
+                                            blurOnSubmit={false}
+                                            onSubmitEditing={() => purchaseQtyRef.current?.focus()}
                                         />
+
+                                        {/* Purchase Details Section */}
+                                        <View style={{ marginTop: 16, padding: 12, backgroundColor: colors.surfaceSecondary, borderRadius: 8 }}>
+                                            <Text style={[styles.inputLabel, { marginTop: 0, color: colors.primary }]}>
+                                                Datos de Compra (Opcional)
+                                            </Text>
+                                            <Text style={[styles.sublabel, { fontSize: 11, color: colors.textMuted, marginBottom: 8 }]}>
+                                                Ayuda a calcular el costo automáticamente.
+                                            </Text>
+
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <View style={{ flex: 1.2 }}>
+                                                    <Text style={[styles.inputLabel, { marginTop: 0 }]}>Cant.</Text>
+                                                    <TextInput
+                                                        ref={purchaseQtyRef}
+                                                        style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text, textAlign: 'center', paddingVertical: 0 }]}
+                                                        value={purchaseQuantity}
+                                                        onChangeText={setPurchaseQuantity}
+                                                        placeholder="1000"
+                                                        placeholderTextColor={colors.textMuted}
+                                                        keyboardType="numeric"
+                                                        returnKeyType="next"
+                                                        blurOnSubmit={false}
+                                                        onSubmitEditing={() => purchaseCostRef.current?.focus()}
+                                                    />
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={[styles.inputLabel, { marginTop: 0 }]}>Unidad</Text>
+                                                    <TouchableOpacity
+                                                        style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 0 }]}
+                                                        onPress={() => {
+                                                            const options = ['g', 'kg', 'ml', 'L', 'u'];
+                                                            const currentUnit = purchaseUnit !== '' ? purchaseUnit : unit;
+                                                            const currentIndex = options.indexOf(currentUnit);
+                                                            const nextIndex = (currentIndex + 1) % options.length;
+                                                            setPurchaseUnit(options[nextIndex]);
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: colors.text, fontWeight: '600' }}>
+                                                            {purchaseUnit !== '' ? purchaseUnit : unit}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                                <View style={{ flex: 1.2 }}>
+                                                    <Text style={[styles.inputLabel, { marginTop: 0 }]}>Costo ($)</Text>
+                                                    <TextInput
+                                                        ref={purchaseCostRef}
+                                                        style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text, textAlign: 'center', paddingVertical: 0 }]}
+                                                        value={purchaseCost}
+                                                        onChangeText={setPurchaseCost}
+                                                        placeholder="5.00"
+                                                        placeholderTextColor={colors.textMuted}
+                                                        keyboardType="numeric"
+                                                        returnKeyType="next"
+                                                        blurOnSubmit={false}
+                                                        onSubmitEditing={() => recipeQtyRef.current?.focus()}
+                                                    />
+                                                </View>
+                                            </View>
+                                        </View>
                                     </>
                                 )}
 
@@ -267,6 +356,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                 </Text>
                                 <View style={styles.quantityInputRow}>
                                     <TextInput
+                                        ref={recipeQtyRef}
                                         style={[styles.input, styles.quantityInputLarge, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                                         value={quantity}
                                         onChangeText={setQuantity}
@@ -274,6 +364,8 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                         placeholder="0"
                                         placeholderTextColor={colors.textMuted}
                                         autoFocus={!!selectedItem}
+                                        returnKeyType="done"
+                                        onSubmitEditing={handleAddIngredient}
                                     />
                                     <View style={[styles.unitPicker, { backgroundColor: colors.background, borderColor: colors.border }]}>
                                         {UNIT_OPTIONS.slice(0, 5).map(opt => (
@@ -333,7 +425,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
                                 {/* Inventory List */}
                                 <FlatList
-                                    keyboardShouldPersistTaps="handled"
+                                    keyboardShouldPersistTaps="always"
                                     data={filteredItems}
                                     keyExtractor={item => item.id}
                                     style={styles.list}
@@ -529,6 +621,10 @@ const styles = StyleSheet.create({
         ...Typography.small,
         marginBottom: Spacing.xs,
         marginTop: Spacing.md,
+    },
+    sublabel: {
+        ...Typography.small,
+        marginTop: 0,
     },
     input: {
         ...Typography.body,

@@ -3,8 +3,9 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useAlert } from '@/context/AlertContext';
 import { useFinances } from '@/hooks/useFinances';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useSubscription } from '@/hooks/useSubscription';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import React, { useMemo } from 'react';
 import {
     ActivityIndicator,
@@ -31,6 +32,17 @@ export default function FinancesScreen() {
 
     const { showAlert } = useAlert();
     const haptics = useHaptics();
+    const { isPremium, loading: isAuthLoading } = useSubscription();
+
+    const formatCurrency = (amount: number) => {
+        return `$${amount.toFixed(2)}`;
+    };
+
+    const changeMonth = (increment: number) => {
+        const newDate = new Date(currentDate);
+        newDate.setMonth(newDate.getMonth() + increment);
+        setCurrentDate(newDate);
+    };
 
     const handleTransactionPress = (transaction: any) => {
         haptics.selection();
@@ -48,7 +60,6 @@ export default function FinancesScreen() {
                             const success = await revertTransaction(transaction);
                             if (success) {
                                 haptics.success();
-                                // onRefresh handled internally by useFinances usually, keeps data fresh
                             }
                         },
                         style: 'destructive'
@@ -56,7 +67,6 @@ export default function FinancesScreen() {
                 ]
             });
         } else {
-            // Income Reversion
             showAlert({
                 title: 'Detalles del Ingreso',
                 message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\n¿Hubo un error? Puedes revertir este ingreso (se marcará como pendiente).`,
@@ -78,24 +88,12 @@ export default function FinancesScreen() {
         }
     };
 
-    const formatCurrency = (amount: number) => {
-        return `$${amount.toFixed(2)}`;
-    };
-
-    const changeMonth = (increment: number) => {
-        const newDate = new Date(currentDate);
-        newDate.setMonth(newDate.getMonth() + increment);
-        setCurrentDate(newDate);
-    };
-
     // Process data for charts: Daily Income vs Expense
-    // We aggregate by Day of Month
     const chartData = useMemo(() => {
         if (!recentTransactions || recentTransactions.length === 0) return [];
 
         const daysMap = new Map<number, { income: number; expense: number }>();
 
-        // Init some days? No, let's just map present data
         recentTransactions.forEach(t => {
             const day = new Date(t.date).getDate();
             const current = daysMap.get(day) || { income: 0, expense: 0 };
@@ -106,14 +104,7 @@ export default function FinancesScreen() {
             daysMap.set(day, current);
         });
 
-        // Convert to array sorted by day
         const sortedDays = Array.from(daysMap.keys()).sort((a, b) => a - b);
-
-        // Format for Gifted Charts: Stacked or simple? 
-        // Simple Bar: value = income - expense (Net) or just Income?
-        // Let's show Net Profit per day for simplicity, or Income (Green) vs Expense (Red) bars side by side?
-        // Gifted Charts supports "stacks" or "groups". Let's do simple Income (Green) for now to keep it clear.
-        // Better: Income Bars.
 
         return sortedDays.map(day => ({
             value: daysMap.get(day)?.income || 0,
@@ -126,6 +117,59 @@ export default function FinancesScreen() {
             ),
         }));
     }, [recentTransactions, colors]);
+
+    // Premium gate: Show upsell screen for free users
+    if (isAuthLoading) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
+
+    if (!isPremium) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                <Stack.Screen options={{
+                    title: 'Finanzas',
+                    headerStyle: { backgroundColor: colors.background },
+                    headerTintColor: colors.text,
+                    headerShadowVisible: false,
+                }} />
+                <View style={styles.premiumGate}>
+                    <View style={[styles.premiumIconCircle, { backgroundColor: colors.primary + '15' }]}>
+                        <FontAwesome name="line-chart" size={48} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.premiumTitle, { color: colors.text }]}>
+                        Estadísticas Avanzadas
+                    </Text>
+                    <Text style={[styles.premiumDesc, { color: colors.textSecondary }]}>
+                        Controla tus ingresos, gastos y rentabilidad con gráficos detallados y reportes mensuales.
+                    </Text>
+                    <View style={styles.premiumFeatures}>
+                        {[
+                            { icon: 'bar-chart', text: 'Gráficos de ingresos diarios' },
+                            { icon: 'pie-chart', text: 'Balance y margen de ganancia' },
+                            { icon: 'history', text: 'Historial de movimientos' },
+                            { icon: 'undo', text: 'Reversión de transacciones' },
+                        ].map((f, i) => (
+                            <View key={i} style={styles.premiumFeatureRow}>
+                                <FontAwesome name={f.icon as any} size={16} color={colors.primary} />
+                                <Text style={[styles.premiumFeatureText, { color: colors.text }]}>{f.text}</Text>
+                            </View>
+                        ))}
+                    </View>
+                    <TouchableOpacity
+                        style={[styles.premiumCTA, { backgroundColor: colors.primary }]}
+                        onPress={() => router.push('/premium')}
+                    >
+                        <FontAwesome name="star" size={18} color="#FFF" />
+                        <Text style={styles.premiumCTAText}>Desbloquear con Premium</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -397,5 +441,59 @@ const styles = StyleSheet.create({
     emptyText: {
         ...Typography.body,
         fontStyle: 'italic',
+    },
+    premiumGate: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: Spacing.xl,
+    },
+    premiumIconCircle: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: Spacing.lg,
+    },
+    premiumTitle: {
+        ...Typography.title,
+        fontSize: 24,
+        textAlign: 'center',
+        marginBottom: Spacing.sm,
+    },
+    premiumDesc: {
+        ...Typography.body,
+        textAlign: 'center',
+        marginBottom: Spacing.xl,
+        lineHeight: 22,
+    },
+    premiumFeatures: {
+        alignSelf: 'stretch',
+        marginBottom: Spacing.xl,
+        gap: Spacing.md,
+    },
+    premiumFeatureRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.md,
+    },
+    premiumFeatureText: {
+        ...Typography.body,
+    },
+    premiumCTA: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.sm,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.xl,
+        borderRadius: BorderRadius.lg,
+        width: '100%',
+    },
+    premiumCTAText: {
+        color: '#FFF',
+        ...Typography.bodyBold,
+        fontSize: 17,
     },
 });

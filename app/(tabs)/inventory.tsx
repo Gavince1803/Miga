@@ -2,11 +2,14 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useInventory } from '@/hooks/useInventory';
+import { useSubscription } from '@/hooks/useSubscription';
+import { supabase } from '@/lib/supabase';
 import { InventoryItem } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React, { useCallback, useState } from 'react';
 import {
     FlatList,
@@ -159,9 +162,10 @@ function InventoryCard({
 export default function InventoryScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, addItem, updateItemDetails, importInventory, exportInventory } = useInventory();
+    const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, addItem, updateItemDetails, importInventory, exportInventory, archiveItem, unarchiveItem } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
     const { showAlert } = useAlert();
+    const { isPremium } = useSubscription();
 
     // Add Item Modal State
     const [showAddModal, setShowAddModal] = useState(false);
@@ -236,9 +240,39 @@ export default function InventoryScreen() {
     const [editBoughtQty, setEditBoughtQty] = useState('');
     const [editBoughtPrice, setEditBoughtPrice] = useState('');
 
+    // Archived Items State
+    const [archivedItems, setArchivedItems] = useState<InventoryItem[]>([]);
+    const [showArchived, setShowArchived] = useState(false);
+
+    const fetchArchivedItems = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('inventory_items')
+                .select('*')
+                .eq('is_archived', true)
+                .order('name', { ascending: true });
+            if (error) throw error;
+            setArchivedItems((data || []).map((item: any) => ({
+                id: item.id,
+                userId: item.user_id,
+                name: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
+                minStock: item.min_stock,
+                costPerUnit: item.cost_per_unit,
+                category: item.category,
+                isArchived: true,
+                createdAt: item.created_at,
+            })));
+        } catch (error) {
+            console.error('Error fetching archived items:', error);
+        }
+    };
+
     useFocusEffect(
         useCallback(() => {
             fetchInventory();
+            fetchArchivedItems();
         }, [])
     );
 
@@ -346,6 +380,19 @@ export default function InventoryScreen() {
     };
 
     const handleImportExcel = async () => {
+        // Premium gate
+        if (!isPremium) {
+            showAlert({
+                title: 'Función Premium',
+                message: 'La importación desde Excel es exclusiva para usuarios Premium.\n\nSuscríbete para gestionar tu inventario de forma avanzada.',
+                type: 'warning',
+                buttons: [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                ]
+            });
+            return;
+        }
         try {
 
             const result = await DocumentPicker.getDocumentAsync({
@@ -421,6 +468,19 @@ export default function InventoryScreen() {
     };
 
     const handleExportExcel = async () => {
+        // Premium gate
+        if (!isPremium) {
+            showAlert({
+                title: 'Función Premium',
+                message: 'La exportación a Excel es exclusiva para usuarios Premium.\n\nSuscríbete para exportar y analizar tu inventario.',
+                type: 'warning',
+                buttons: [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                ]
+            });
+            return;
+        }
         try {
             const data = exportInventory();
             if (data.length === 0) {
@@ -436,7 +496,15 @@ export default function InventoryScreen() {
             const uri = FileSystem.documentDirectory + 'inventario.xlsx';
             await FileSystem.writeAsStringAsync(uri, wbout, { encoding: FileSystem.EncodingType.Base64 });
 
-            showAlert({ title: 'Éxito', message: `Se exportaron ${data.length} items.\n\nArchivo: inventario.xlsx`, type: 'success' });
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(uri, {
+                    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    dialogTitle: 'Exportar Inventario',
+                    UTI: 'com.microsoft.excel.xlsx',
+                });
+            } else {
+                showAlert({ title: 'Éxito', message: `Se exportaron ${data.length} items.`, type: 'success' });
+            }
         } catch (error) {
             console.error('Export error:', error);
             showAlert({ title: 'Error', message: 'Hubo un problema al exportar.', type: 'error' });
@@ -447,19 +515,33 @@ export default function InventoryScreen() {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header Stats */}
             <View style={styles.statsRow}>
-                <View style={[styles.statChip, { backgroundColor: colors.surface }]}>
-                    <FontAwesome name="cubes" size={14} color={colors.primary} />
-                    <Text style={[styles.statText, { color: colors.text }]}>
+                <View style={[styles.statChip, { backgroundColor: showArchived ? colors.primary + '20' : colors.surface }]}>
+                    <FontAwesome name="cubes" size={14} color={showArchived ? colors.textMuted : colors.primary} />
+                    <Text style={[styles.statText, { color: showArchived ? colors.textMuted : colors.text }]}>
                         {inventory.length} items
                     </Text>
                 </View>
-                {lowStockCount > 0 && (
+                {lowStockCount > 0 && !showArchived && (
                     <View style={[styles.statChip, { backgroundColor: colors.error + '15' }]}>
                         <FontAwesome name="exclamation-triangle" size={14} color={colors.error} />
                         <Text style={[styles.statText, { color: colors.error }]}>
                             {lowStockCount} bajo stock
                         </Text>
                     </View>
+                )}
+                {archivedItems.length > 0 && (
+                    <TouchableOpacity
+                        style={[styles.statChip, { backgroundColor: showArchived ? colors.primary : colors.surface }]}
+                        onPress={() => {
+                            setShowArchived(!showArchived);
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <FontAwesome name="archive" size={12} color={showArchived ? '#FFF' : colors.textMuted} />
+                        <Text style={[styles.statText, { color: showArchived ? '#FFF' : colors.textMuted }]}>
+                            {archivedItems.length} archivado{archivedItems.length !== 1 ? 's' : ''}
+                        </Text>
+                    </TouchableOpacity>
                 )}
             </View>
 
@@ -491,9 +573,25 @@ export default function InventoryScreen() {
 
             {/* Inventory List */}
             <FlatList
-                data={filteredInventory}
+                data={showArchived ? archivedItems : filteredInventory}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
+                renderItem={({ item }) => showArchived ? (
+                    <View style={[styles.archivedCard, { backgroundColor: colors.surface }]}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ color: colors.text, fontWeight: '500', fontSize: 15 }}>{item.name}</Text>
+                            <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>{item.quantity} {item.unit}{item.category ? ` · ${item.category}` : ''}</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={{ backgroundColor: colors.primary + '15', paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.md }}
+                            onPress={async () => {
+                                const success = await unarchiveItem(item.id);
+                                if (success) fetchArchivedItems();
+                            }}
+                        >
+                            <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 13 }}>Restaurar</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
                     <InventoryCard
                         item={item}
                         colors={colors}
@@ -504,16 +602,21 @@ export default function InventoryScreen() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshing={refreshing}
-                onRefresh={onRefresh}
+                onRefresh={() => {
+                    onRefresh();
+                    fetchArchivedItems();
+                }}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="inbox" size={48} color={loading ? colors.primary : colors.textMuted} />
+                        <FontAwesome name={showArchived ? 'archive' : 'inbox'} size={48} color={loading ? colors.primary : colors.textMuted} />
                         <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                            {loading ? 'Cargando inventario...' : 'No hay ingredientes'}
+                            {loading ? 'Cargando...' : showArchived ? 'No hay productos archivados' : 'No hay ingredientes'}
                         </Text>
                     </View>
                 }
             />
+
+
 
             {/* Floating Add Button */}
             <TouchableOpacity
@@ -767,6 +870,38 @@ export default function InventoryScreen() {
                                 <Text style={styles.addButtonText}>Guardar</Text>
                             </TouchableOpacity>
                         </View>
+
+                        {/* Archive Button */}
+                        <TouchableOpacity
+                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, marginTop: 8, borderRadius: BorderRadius.md, backgroundColor: colors.error + '15' }}
+                            onPress={() => {
+                                if (!editingItem) return;
+                                const itemToArchive = editingItem;
+                                // Close the edit modal FIRST so the alert is visible
+                                setShowEditModal(false);
+                                setEditingItem(null);
+                                setTimeout(() => {
+                                    showAlert({
+                                        title: 'Archivar Producto',
+                                        message: `¿Seguro que quieres archivar "${itemToArchive.name}"? Las recetas que lo usan mantendrán su costo. Podrás restaurarlo después.`,
+                                        type: 'warning',
+                                        buttons: [
+                                            { text: 'Cancelar', style: 'cancel' },
+                                            {
+                                                text: 'Archivar',
+                                                style: 'destructive',
+                                                onPress: async () => {
+                                                    await archiveItem(itemToArchive.id);
+                                                }
+                                            }
+                                        ]
+                                    });
+                                }, 300);
+                            }}
+                        >
+                            <FontAwesome name="archive" size={14} color={colors.error} style={{ marginRight: 8 }} />
+                            <Text style={{ color: colors.error, fontWeight: '600', fontSize: 14 }}>Archivar Producto</Text>
+                        </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
@@ -780,6 +915,7 @@ const styles = StyleSheet.create({
     },
     statsRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         paddingHorizontal: Spacing.md,
         paddingTop: Spacing.md,
         gap: Spacing.sm,
@@ -1001,5 +1137,13 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center'
-    }
+    },
+    archivedCard: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        padding: Spacing.md,
+        marginHorizontal: Spacing.md,
+        marginBottom: 8,
+        borderRadius: BorderRadius.lg,
+    },
 });

@@ -248,13 +248,39 @@ export default function EditRecipeScreen() {
 
                 <View style={styles.section}>
                     <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría</Text>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                        value={category}
-                        onChangeText={setCategory}
-                        placeholder="Ej. Tortas"
-                        placeholderTextColor={colors.textMuted}
-                    />
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                        {[
+                            { label: '🎂 Tortas', value: 'Tortas' },
+                            { label: '🧁 Cupcakes', value: 'Cupcakes' },
+                            { label: '🍪 Galletas', value: 'Galletas' },
+                            { label: '🍫 Brownies', value: 'Brownies' },
+                            { label: '🍮 Postres Fríos', value: 'Postres Fríos' },
+                            { label: '🍞 Panes', value: 'Panes' },
+                            { label: '🍬 Dulces', value: 'Dulces' },
+                            { label: '✨ Otro', value: 'Otro' },
+                        ].map((cat) => (
+                            <TouchableOpacity
+                                key={cat.value}
+                                onPress={() => setCategory(category === cat.value ? '' : cat.value)}
+                                style={{
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 8,
+                                    borderRadius: 20,
+                                    backgroundColor: category === cat.value ? colors.primary : colors.surface,
+                                    borderWidth: 1,
+                                    borderColor: category === cat.value ? colors.primary : colors.border,
+                                }}
+                            >
+                                <Text style={{
+                                    ...Typography.caption,
+                                    color: category === cat.value ? '#FFF' : colors.text,
+                                    fontWeight: category === cat.value ? '700' : '500',
+                                }}>
+                                    {cat.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
 
             </ScrollView>

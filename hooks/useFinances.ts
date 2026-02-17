@@ -106,8 +106,17 @@ export function useFinances(year?: number, month?: number) {
 
             if (movements) {
                 movements.forEach((mov: any) => {
-                    const cost = mov.inventory_items?.cost_per_unit || 0;
-                    const amount = (mov.quantity || 0) * cost;
+                    // Prefer historical cost from movement if migration was run or new data
+                    // Fallback to current item cost * quantity (legacy/migration behavior)
+                    let amount = 0;
+
+                    if (mov.total_cost !== undefined && mov.total_cost !== null && mov.total_cost > 0) {
+                        amount = mov.total_cost;
+                    } else {
+                        const cost = mov.unit_cost || mov.inventory_items?.cost_per_unit || 0;
+                        amount = (mov.quantity || 0) * cost;
+                    }
+
                     totalExpenses += amount;
 
                     expenseTransactions.push({
@@ -177,7 +186,7 @@ export function useFinances(year?: number, month?: number) {
                 // 1. Get the movement details to know what to subtract
                 const { data: movement, error: fetchError } = await supabase
                     .from('inventory_movements')
-                    .select('inventory_id, quantity')
+                    .select('inventory_item_id, quantity')
                     .eq('id', transaction.id)
                     .single();
 
@@ -188,7 +197,7 @@ export function useFinances(year?: number, month?: number) {
                     const { data: item, error: itemError } = await supabase
                         .from('inventory_items')
                         .select('quantity')
-                        .eq('id', movement.inventory_id)
+                        .eq('id', movement.inventory_item_id)
                         .single();
 
                     if (itemError) throw itemError;
@@ -199,7 +208,7 @@ export function useFinances(year?: number, month?: number) {
                     const { error: updateError } = await supabase
                         .from('inventory_items')
                         .update({ quantity: newQuantity })
-                        .eq('id', movement.inventory_id);
+                        .eq('id', movement.inventory_item_id);
 
                     if (updateError) throw updateError;
 

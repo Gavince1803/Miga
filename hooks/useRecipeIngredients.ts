@@ -16,6 +16,7 @@ export type RecipeIngredient = {
 
         unit: string;
         costPerUnit: number;
+        isArchived?: boolean;
     };
 };
 
@@ -48,7 +49,8 @@ export function useRecipeIngredients() {
                         name,
                         quantity,
                         unit,
-                        cost_per_unit
+                        cost_per_unit,
+                        is_archived
                     )
                 `)
                 .eq('recipe_id', recipeId);
@@ -67,6 +69,7 @@ export function useRecipeIngredients() {
                     quantity: (item.inventory_items as any).quantity,
                     unit: (item.inventory_items as any).unit,
                     costPerUnit: (item.inventory_items as any).cost_per_unit || 0,
+                    isArchived: (item.inventory_items as any).is_archived || false,
                 } : undefined
             }));
         } catch (error) {
@@ -115,7 +118,12 @@ export function useRecipeIngredients() {
         recipeId: string,
         name: string,
         quantity: number,
-        unit: string
+        unit: string,
+        purchaseDetails?: {
+            purchaseQuantity?: number;
+            purchaseUnit?: string;
+            purchaseCost?: number;
+        }
     ): Promise<RecipeIngredient | null> => {
         try {
             setLoading(true);
@@ -130,7 +138,7 @@ export function useRecipeIngredients() {
 
             const { data: existing } = await supabase
                 .from('inventory_items')
-                .select('id')
+                .select('id, is_archived')
                 .ilike('name', normalizedName)
                 .single();
 
@@ -138,22 +146,145 @@ export function useRecipeIngredients() {
 
             if (existing) {
                 inventoryItemId = existing.id;
+
+                // Unarchive if it was archived
+                if (existing.is_archived) {
+                    await supabase
+                        .from('inventory_items')
+                        .update({ is_archived: false })
+                        .eq('id', existing.id);
+                }
+
+                // If purchase details provided for EXISTING item, update stock and log movement!
+                if (purchaseDetails?.purchaseQuantity && purchaseDetails?.purchaseCost) {
+                    const pQty = purchaseDetails.purchaseQuantity;
+                    const pUnit = purchaseDetails.purchaseUnit || unit;
+
+                    // Conversion
+                    const convertUnit = (val: number, from: string, to: string): number => {
+                        if (from === to) return val;
+                        if (from === 'kg' && to === 'g') return val * 1000;
+                        if (from === 'g' && to === 'kg') return val / 1000;
+                        if (from === 'L' && to === 'ml') return val * 1000;
+                        if (from === 'ml' && to === 'L') return val / 1000;
+                        return val;
+                    };
+
+                    const addedQuantity = convertUnit(pQty, pUnit, unit);
+
+                    if (addedQuantity > 0) {
+                        // 1. Get current details to calc average cost
+                        const { data: currentItem } = await supabase
+                            .from('inventory_items')
+                            .select('quantity, cost_per_unit')
+                            .eq('id', existing.id)
+                            .single();
+
+                        const oldQty = currentItem?.quantity || 0;
+                        const oldCost = currentItem?.cost_per_unit || 0;
+                        const newCost = purchaseDetails.purchaseCost / addedQuantity; // Unit cost of THIS purchase
+
+                        // Weighted Average Cost
+                        // New Avg = ((OldQty * OldCost) + (NewQty * NewCost)) / (OldQty + NewQty)
+                        // Note: If OldQty < 0, handle gracefully? Assume 0 for weight.
+                        const validOldQty = Math.max(0, oldQty);
+                        const weightedCost = ((validOldQty * oldCost) + (addedQuantity * newCost)) / (validOldQty + addedQuantity);
+
+                        // 2. Update Inventory Item
+                        await supabase
+                            .from('inventory_items')
+                            .update({
+                                quantity: oldQty + addedQuantity,
+                                cost_per_unit: weightedCost
+                            })
+                            .eq('id', existing.id);
+
+                        // 3. Log Movement
+                        await supabase.from('inventory_movements').insert({
+                            user_id: session.user.id,
+                            inventory_item_id: existing.id,
+                            movement_type: 'agregado',
+                            quantity: addedQuantity,
+                            unit_cost: newCost,
+                            total_cost: purchaseDetails.purchaseCost,
+                            notes: 'Compra (desde Receta - Existente)'
+                        });
+                    }
+                }
+
             } else {
+                // Calculate Unit Cost if provided
+                let costPerUnit = 0;
+                let initialQuantity = 0;
+
+                // Basic Unit Conversion Helper
+                const convertUnit = (val: number, from: string, to: string): number => {
+                    if (from === to) return val;
+                    // Mass
+                    if (from === 'kg' && to === 'g') return val * 1000;
+                    if (from === 'g' && to === 'kg') return val / 1000;
+                    // Volume
+                    if (from === 'L' && to === 'ml') return val * 1000;
+                    if (from === 'ml' && to === 'L') return val / 1000;
+
+                    // Fallback for incompatible or custom units (e.g. u -> u, or kg -> L)
+                    return val;
+                };
+
+                if (purchaseDetails?.purchaseQuantity && purchaseDetails?.purchaseCost) {
+                    const pQty = purchaseDetails.purchaseQuantity;
+                    const pUnit = purchaseDetails.purchaseUnit || unit;
+
+                    // Convert purchase quantity to storage unit (which equals recipe unit for now)
+                    initialQuantity = convertUnit(pQty, pUnit, unit);
+
+                    // Cost per unit based on converted quantity
+                    if (initialQuantity > 0) {
+                        costPerUnit = purchaseDetails.purchaseCost / initialQuantity;
+                    }
+                } else {
+                    // Fallback: If no purchase details, assume we have at least what the recipe needs
+                    // (Fix for "0 stock" issue when user doesn't enter purchase info)
+                    initialQuantity = quantity;
+                }
+
                 const { data: newItem, error: createError } = await supabase
                     .from('inventory_items')
                     .insert({
                         user_id: session.user.id,
                         name: normalizedName,
-                        quantity: 0,
+                        quantity: initialQuantity, // Initialize with purchased amount or recipe amount
                         unit: unit,
                         min_stock: 5,
-                        category: 'General'
+                        category: 'General',
+                        cost_per_unit: costPerUnit
                     })
                     .select()
                     .single();
 
                 if (createError) throw createError;
                 inventoryItemId = newItem.id;
+
+                // Log Movement for Financials if quantity > 0
+                if (initialQuantity > 0) {
+                    let moveTotalCost = 0;
+                    if (purchaseDetails?.purchaseCost) {
+                        moveTotalCost = purchaseDetails.purchaseCost;
+                    } else {
+                        moveTotalCost = costPerUnit * initialQuantity;
+                    }
+
+                    const { error: moveError } = await supabase.from('inventory_movements').insert({
+                        user_id: session.user.id,
+                        inventory_item_id: newItem.id,
+                        movement_type: 'agregado',
+                        quantity: initialQuantity,
+                        unit_cost: costPerUnit,
+                        total_cost: moveTotalCost,
+                        notes: 'Compra Inicial (desde Receta)'
+                    });
+                    if (moveError) console.error('Error logging movement in createAndAddIngredient:', moveError);
+                }
             }
 
             return await addIngredient(recipeId, {

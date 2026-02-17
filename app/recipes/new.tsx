@@ -4,13 +4,15 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useHaptics } from '@/hooks/useHaptics';
+import { useInventory } from '@/hooks/useInventory';
 import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useSubscription } from '@/hooks/useSubscription';
 import { parseRecipeText } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -34,42 +36,75 @@ export default function NewRecipeScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
-    const { createRecipe } = useRecipes();
+    const { createRecipe, recipes } = useRecipes();
+    const { isPremium } = useSubscription();
     const { showAlert } = useAlert();
 
-    const [mode, setMode] = useState<InputMode>('manual');
-    const [title, setTitle] = useState('');
-    const [category, setCategory] = useState('');
+    const [mode, setMode] = React.useState<InputMode>('manual');
+    const [title, setTitle] = React.useState('');
+    const [category, setCategory] = React.useState('');
 
     const haptics = useHaptics();
 
     // Changed to arrays for DynamicListInput
-    const [ingredientsList, setIngredientsList] = useState<string[]>(['']);
+    const [ingredientsList, setIngredientsList] = React.useState<string[]>(['']);
 
     // Linked ingredients from inventory
-    const [linkedIngredients, setLinkedIngredients] = useState<SelectedIngredient[]>([]);
+    const [linkedIngredients, setLinkedIngredients] = React.useState<SelectedIngredient[]>([]);
     const { createAndAddIngredient, addIngredient } = useRecipeIngredients();
-    const [stepsList, setStepsList] = useState<string[]>(['']);
+    const [stepsList, setStepsList] = React.useState<string[]>(['']);
 
     const params = useLocalSearchParams();
 
-    useEffect(() => {
+    // Inventory for name lookup
+    const { inventory, fetchInventory } = useInventory();
+
+    React.useEffect(() => {
+        fetchInventory(); // Ensure we have items to match names
+    }, []);
+
+    React.useEffect(() => {
         if (params.scannedText) {
             console.log('Parsing scanned text...');
-            const { title, ingredients, steps } = parseRecipeText(params.scannedText as string);
+            const { title, ingredients, steps, linkedIngredients: parsedLinked } = parseRecipeText(params.scannedText as string);
 
             if (title) setTitle(title);
             if (ingredients.length > 0) setIngredientsList(ingredients);
             if (steps.length > 0) setStepsList(steps);
+
+            // Populate linked ingredients from inventory matches
+            if (parsedLinked && parsedLinked.length > 0 && inventory.length > 0) {
+                const mappedLinked: SelectedIngredient[] = parsedLinked.map(item => {
+                    // Find the name from our inventory list to ensure consistency
+                    const inventoryItem = inventory.find(inv => inv.id === item.inventoryId);
+                    return {
+                        inventoryItemId: item.inventoryId,
+                        inventoryItemName: inventoryItem?.name || item.originalName || 'Ingrediente Desconocido',
+                        quantity: item.quantity,
+                        unit: item.unit,
+                    };
+                });
+                setLinkedIngredients(mappedLinked);
+            } else if (parsedLinked && parsedLinked.length > 0) {
+                // If inventory not loaded yet, just use original names (or wait? useEffect might re-run when inventory loads)
+                // Since we added inventory to dependency array below, it should re-run!
+                const mappedLinked: SelectedIngredient[] = parsedLinked.map(item => ({
+                    inventoryItemId: item.inventoryId,
+                    inventoryItemName: item.originalName || 'Ingrediente',
+                    quantity: item.quantity,
+                    unit: item.unit,
+                }));
+                setLinkedIngredients(mappedLinked);
+            }
         }
 
         if (params.scannedImage) {
             setImage(params.scannedImage as string);
         }
-    }, [params.scannedText, params.scannedImage]);
+    }, [params.scannedText, params.scannedImage, inventory]);
 
-    const [image, setImage] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [image, setImage] = React.useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
 
 
@@ -116,6 +151,21 @@ export default function NewRecipeScreen() {
             return;
         }
 
+        // Check Premium Limit
+        if (!isPremium && recipes.length >= 5) {
+            haptics.error();
+            showAlert({
+                title: 'Límite Alcanzado',
+                message: 'Has alcanzado el límite de 5 recetas gratuitas.\n\nSuscríbete a Premium para crear recetas ilimitadas.',
+                type: 'warning',
+                buttons: [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                ]
+            });
+            return;
+        }
+
         setIsSubmitting(true);
 
         // Join lists into multiline strings (for text-based ingredients)
@@ -138,7 +188,17 @@ export default function NewRecipeScreen() {
                 if (ing.inventoryItemId.startsWith('new:')) {
                     // Create new inventory item
                     const name = ing.inventoryItemId.replace('new:', '');
-                    await createAndAddIngredient(newRecipe.id, name, ing.quantity, ing.unit);
+                    await createAndAddIngredient(
+                        newRecipe.id,
+                        name,
+                        ing.quantity,
+                        ing.unit,
+                        {
+                            purchaseQuantity: ing.purchaseQuantity,
+                            purchaseUnit: ing.purchaseUnit,
+                            purchaseCost: ing.purchaseCost
+                        }
+                    );
                 } else {
                     // Use existing inventory item
                     // Use addIngredient to APPEND, not setIngredientsForRecipe which wipes the list
@@ -153,7 +213,13 @@ export default function NewRecipeScreen() {
 
         haptics.success();
         setIsSubmitting(false);
-        router.back();
+
+        if (params.scannedText) {
+            // Coming from Scan screen: dismiss both NewRecipe and ScanRecipe to return to list
+            router.dismissAll();
+        } else {
+            router.back();
+        }
     };
 
     return (
@@ -283,14 +349,40 @@ export default function NewRecipeScreen() {
                 )}
 
                 <View style={styles.section}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría (Opcional)</Text>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-                        placeholder="Ej. Tortas"
-                        placeholderTextColor={colors.textMuted}
-                        value={category}
-                        onChangeText={setCategory}
-                    />
+                    <Text style={[styles.label, { color: colors.textSecondary }]}>Categoría</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                        {[
+                            { label: '🎂 Tortas', value: 'Tortas' },
+                            { label: '🧁 Cupcakes', value: 'Cupcakes' },
+                            { label: '🍪 Galletas', value: 'Galletas' },
+                            { label: '🍫 Brownies', value: 'Brownies' },
+                            { label: '🍮 Postres Fríos', value: 'Postres Fríos' },
+                            { label: '🍞 Panes', value: 'Panes' },
+                            { label: '🍬 Dulces', value: 'Dulces' },
+                            { label: '✨ Otro', value: 'Otro' },
+                        ].map((cat) => (
+                            <TouchableOpacity
+                                key={cat.value}
+                                onPress={() => setCategory(category === cat.value ? '' : cat.value)}
+                                style={{
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 8,
+                                    borderRadius: 20,
+                                    backgroundColor: category === cat.value ? colors.primary : colors.surface,
+                                    borderWidth: 1,
+                                    borderColor: category === cat.value ? colors.primary : colors.border,
+                                }}
+                            >
+                                <Text style={{
+                                    ...Typography.caption,
+                                    color: category === cat.value ? '#FFF' : colors.text,
+                                    fontWeight: category === cat.value ? '700' : '500',
+                                }}>
+                                    {cat.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
 
             </ScrollView>

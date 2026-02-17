@@ -1,5 +1,5 @@
+import Confetti from '@/components/Confetti';
 import { useColorScheme } from '@/components/useColorScheme';
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { FREE_TIER_LIMITS, useSubscription } from '@/hooks/useSubscription';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -17,9 +17,10 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/Colors';
 
 const PREMIUM_FEATURES = [
-    { icon: 'infinity', label: 'Pedidos ilimitados', free: `Hasta ${FREE_TIER_LIMITS.maxOrders}` },
+    { icon: 'plus-circle', label: 'Pedidos ilimitados', free: `Hasta ${FREE_TIER_LIMITS.maxOrders}` },
     { icon: 'cubes', label: 'Inventario ilimitado', free: `Hasta ${FREE_TIER_LIMITS.maxInventoryItems} items` },
     { icon: 'book', label: 'Recetas ilimitadas', free: `Hasta ${FREE_TIER_LIMITS.maxRecipes}` },
     { icon: 'camera', label: 'OCR Escaneo de Recetas', free: 'No disponible' },
@@ -28,14 +29,15 @@ const PREMIUM_FEATURES = [
 ];
 
 const PAYMENT_INFO = {
-    email: 'soporte@miga.app',
+    whatsapp: '34652522076',  // Phone with country code, no +
     pagoMovil: {
-        banco: 'Banesco',
-        telefono: '0412-XXXXXXX',
-        cedula: 'V-XXXXXXXX'
+        banco: 'BNC',
+        telefono: '0424-5796664',
+        cedula: 'V-30221439'
     },
-    zelle: 'tu-email@example.com',
-    precio: '$5/mes'
+    // zelle: 'tu-email@example.com',  // Para más adelante
+    paypal: 'sonicvincenzo@gmail.com',
+    precio: '$4/mes'
 };
 
 export default function PremiumScreen() {
@@ -47,6 +49,7 @@ export default function PremiumScreen() {
 
     const [code, setCode] = useState('');
     const [redeeming, setRedeeming] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
 
     const handleRedeemCode = async () => {
         if (!code.trim()) {
@@ -59,20 +62,26 @@ export default function PremiumScreen() {
         setRedeeming(false);
 
         if (result.success) {
-            showAlert({
-                title: '🎉 ¡Premium Activado!',
-                message: `Tu suscripción está activa hasta ${result.premiumUntil?.toLocaleDateString('es-ES')}`,
-                type: 'success',
-                buttons: [{ text: 'OK', onPress: () => router.back() }]
-            });
+            setShowConfetti(true);
             setCode('');
+
+            // Delay the alert slightly so confetti starts first
+            setTimeout(() => {
+                showAlert({
+                    title: '🎉 ¡Premium Activado!',
+                    message: `¡Felicidades! Tu suscripción Premium está activa hasta ${result.premiumUntil?.toLocaleDateString('es-ES')}.\n\nTodas las funciones están desbloqueadas.`,
+                    type: 'success',
+                    buttons: [{ text: '¡Genial!', onPress: () => router.back() }]
+                });
+            }, 500);
         } else {
             showAlert({ title: 'Error', message: result.error || 'No se pudo activar el código', type: 'error' });
         }
     };
 
     const handleContactSupport = () => {
-        Linking.openURL(`mailto:${PAYMENT_INFO.email}?subject=Solicitud%20Miga%20Premium`);
+        const message = encodeURIComponent('Hola! Quiero activar Miga Premium. Adjunto mi comprobante de pago.');
+        Linking.openURL(`https://wa.me/${PAYMENT_INFO.whatsapp}?text=${message}`);
     };
 
     if (loading) {
@@ -88,6 +97,7 @@ export default function PremiumScreen() {
         return (
             <View style={[styles.container, { backgroundColor: colors.background }]}>
                 <Stack.Screen options={{ title: 'Miga Premium' }} />
+                <Confetti active={true} />
                 <ScrollView contentContainerStyle={styles.content}>
                     <View style={[styles.premiumBadge, { backgroundColor: colors.primary }]}>
                         <FontAwesome name="star" size={48} color="#FFF" />
@@ -124,6 +134,7 @@ export default function PremiumScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <Stack.Screen options={{ title: 'Miga Premium' }} />
+            <Confetti active={showConfetti} />
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
@@ -158,100 +169,124 @@ export default function PremiumScreen() {
                     ))}
                 </View>
 
-                {/* Payment Info */}
-                <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        Cómo activar Premium
-                    </Text>
 
-                    <View style={styles.step}>
-                        <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                            <Text style={styles.stepNumberText}>1</Text>
-                        </View>
-                        <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-                            Realiza el pago por Pago Móvil o Zelle:
+                {/* iOS Compliance: Hide manual payments and codes conform to Guideline 3.1.1 */}
+                {Platform.OS === 'ios' ? (
+                    <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                            ¿Cómo obtener Premium?
+                        </Text>
+                        <Text style={[styles.paymentValue, { color: colors.textSecondary, lineHeight: 22 }]}>
+                            Para gestionar tu suscripción a Miga Premium, por favor visita nuestra página web o contacta a nuestro soporte técnico.
                         </Text>
                     </View>
+                ) : (
+                    <>
+                        {/* Payment Info (Android only) */}
+                        <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                Cómo activar Premium
+                            </Text>
 
-                    <View style={[styles.paymentDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>Pago Móvil:</Text>
-                        <Text style={[styles.paymentValue, { color: colors.text }]}>
-                            {PAYMENT_INFO.pagoMovil.banco} | {PAYMENT_INFO.pagoMovil.telefono}
-                        </Text>
-                        <Text style={[styles.paymentValue, { color: colors.text }]}>
-                            C.I.: {PAYMENT_INFO.pagoMovil.cedula}
-                        </Text>
+                            <View style={styles.step}>
+                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
+                                    <Text style={styles.stepNumberText}>1</Text>
+                                </View>
+                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>
+                                    Realiza el pago por Pago Móvil o PayPal:
+                                </Text>
+                            </View>
 
+                            <View style={[styles.paymentDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>Pago Móvil:</Text>
+                                <Text style={[styles.paymentValue, { color: colors.text }]}>
+                                    {PAYMENT_INFO.pagoMovil.banco} | {PAYMENT_INFO.pagoMovil.telefono}
+                                </Text>
+                                <Text style={[styles.paymentValue, { color: colors.text }]}>
+                                    C.I.: {PAYMENT_INFO.pagoMovil.cedula}
+                                </Text>
+
+                                {/* Zelle - habilitado más adelante
                         <Text style={[styles.paymentLabel, { color: colors.textMuted, marginTop: Spacing.sm }]}>
                             Zelle:
                         </Text>
                         <Text style={[styles.paymentValue, { color: colors.text }]}>
                             {PAYMENT_INFO.zelle}
                         </Text>
-                    </View>
+                        */}
 
-                    <View style={styles.step}>
-                        <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                            <Text style={styles.stepNumberText}>2</Text>
+                                <Text style={[styles.paymentLabel, { color: colors.textMuted, marginTop: Spacing.sm }]}>
+                                    PayPal:
+                                </Text>
+                                <Text style={[styles.paymentValue, { color: colors.text }]}>
+                                    {PAYMENT_INFO.paypal}
+                                </Text>
+                            </View>
+
+                            <View style={styles.step}>
+                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
+                                    <Text style={styles.stepNumberText}>2</Text>
+                                </View>
+                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>
+                                    Envía el comprobante por WhatsApp
+                                </Text>
+                            </View>
+
+                            <View style={styles.step}>
+                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
+                                    <Text style={styles.stepNumberText}>3</Text>
+                                </View>
+                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>
+                                    Recibirás un código de activación por email
+                                </Text>
+                            </View>
+
+                            <TouchableOpacity
+                                style={[styles.contactButton, { borderColor: colors.primary }]}
+                                onPress={handleContactSupport}
+                            >
+                                <FontAwesome name="whatsapp" size={18} color={colors.primary} />
+                                <Text style={[styles.contactButtonText, { color: colors.primary }]}>
+                                    Contactar por WhatsApp
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                        <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-                            Envía el comprobante por email a {PAYMENT_INFO.email}
-                        </Text>
-                    </View>
 
-                    <View style={styles.step}>
-                        <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                            <Text style={styles.stepNumberText}>3</Text>
+                        {/* Code Input (Android only) */}
+                        <View style={[styles.codeCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                ¿Ya tienes un código?
+                            </Text>
+                            <TextInput
+                                style={[styles.codeInput, {
+                                    backgroundColor: colors.background,
+                                    borderColor: colors.border,
+                                    color: colors.text
+                                }]}
+                                placeholder="XXXX-XXXX-XXXX"
+                                placeholderTextColor={colors.textMuted}
+                                value={code}
+                                onChangeText={setCode}
+                                autoCapitalize="characters"
+                                autoCorrect={false}
+                            />
+                            <TouchableOpacity
+                                style={[styles.redeemButton, { backgroundColor: colors.primary }]}
+                                onPress={handleRedeemCode}
+                                disabled={redeeming}
+                            >
+                                {redeeming ? (
+                                    <ActivityIndicator color="#FFF" />
+                                ) : (
+                                    <>
+                                        <FontAwesome name="unlock" size={18} color="#FFF" />
+                                        <Text style={styles.redeemButtonText}>Activar Código</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
                         </View>
-                        <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-                            Recibirás un código de activación por email
-                        </Text>
-                    </View>
-
-                    <TouchableOpacity
-                        style={[styles.contactButton, { borderColor: colors.primary }]}
-                        onPress={handleContactSupport}
-                    >
-                        <FontAwesome name="envelope" size={18} color={colors.primary} />
-                        <Text style={[styles.contactButtonText, { color: colors.primary }]}>
-                            Contactar Soporte
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Code Input */}
-                <View style={[styles.codeCard, { backgroundColor: colors.surface }, Shadows.sm]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        ¿Ya tienes un código?
-                    </Text>
-                    <TextInput
-                        style={[styles.codeInput, {
-                            backgroundColor: colors.background,
-                            borderColor: colors.border,
-                            color: colors.text
-                        }]}
-                        placeholder="XXXX-XXXX-XXXX"
-                        placeholderTextColor={colors.textMuted}
-                        value={code}
-                        onChangeText={setCode}
-                        autoCapitalize="characters"
-                        autoCorrect={false}
-                    />
-                    <TouchableOpacity
-                        style={[styles.redeemButton, { backgroundColor: colors.primary }]}
-                        onPress={handleRedeemCode}
-                        disabled={redeeming}
-                    >
-                        {redeeming ? (
-                            <ActivityIndicator color="#FFF" />
-                        ) : (
-                            <>
-                                <FontAwesome name="unlock" size={18} color="#FFF" />
-                                <Text style={styles.redeemButtonText}>Activar Código</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                    </>
+                )}
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -357,3 +392,5 @@ const styles = StyleSheet.create({
     premiumBadgeText: { color: '#FFF', ...Typography.title, marginTop: Spacing.md },
     premiumUntil: { color: 'rgba(255,255,255,0.8)', ...Typography.body, marginTop: Spacing.xs },
 });
+
+

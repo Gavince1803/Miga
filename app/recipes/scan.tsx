@@ -1,12 +1,14 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useInventory } from '@/hooks/useInventory';
+import { useSubscription } from '@/hooks/useSubscription';
 import { extractTextFromImage } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -22,9 +24,15 @@ export default function ScanRecipeScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
     const { showAlert } = useAlert();
+    const { isPremium } = useSubscription();
+    const { inventory, fetchInventory } = useInventory();
 
     const [image, setImage] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        fetchInventory();
+    }, []);
 
     const pickImage = async (source: 'camera' | 'library') => {
         try {
@@ -64,11 +72,33 @@ export default function ScanRecipeScreen() {
 
     const processImage = async () => {
         if (!image) return;
+
+        // Premium gate: OCR is a Premium-only feature
+        if (!isPremium) {
+            showAlert({
+                title: 'Función Premium',
+                message: 'El escaneo de recetas con IA es exclusivo para usuarios Premium.\n\nSuscríbete para convertir fotos en recetas automáticamente.',
+                type: 'warning',
+                buttons: [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                ]
+            });
+            return;
+        }
+
         setProcessing(true);
 
         try {
             // Call real OCR via Supabase Edge Function
-            const extractedText = await extractTextFromImage(image);
+            // Pass inventory to allow matching
+            const simplifiedInventory = inventory.map(item => ({
+                id: item.id,
+                name: item.name,
+                unit: item.unit
+            }));
+
+            const extractedText = await extractTextFromImage(image, simplifiedInventory);
 
             if (!extractedText) {
                 showAlert({
