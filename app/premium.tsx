@@ -2,6 +2,7 @@ import Confetti from '@/components/Confetti';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAlert } from '@/context/AlertContext';
 import { FREE_TIER_LIMITS, useSubscription } from '@/hooks/useSubscription';
+import { restorePurchases } from '@/lib/revenuecat';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -17,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/Colors';
 
 const PREMIUM_FEATURES = [
@@ -29,27 +31,71 @@ const PREMIUM_FEATURES = [
 ];
 
 const PAYMENT_INFO = {
-    whatsapp: '34652522076',  // Phone with country code, no +
+    whatsapp: '34652522076',
     pagoMovil: {
         banco: 'BNC',
         telefono: '0424-5796664',
         cedula: 'V-30221439'
     },
-    // zelle: 'tu-email@example.com',  // Para más adelante
     paypal: 'sonicvincenzo@gmail.com',
-    precio: '$4/mes'
+    precio: '$3.99/mes'
 };
 
 export default function PremiumScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
-    const { isPremium, premiumUntil, redeemCode, loading } = useSubscription();
+    const { isPremium, premiumUntil, redeemCode, refreshStatus, loading: subLoading } = useSubscription();
     const { showAlert } = useAlert();
+
+    const [purchasing, setPurchasing] = useState(false);
 
     const [code, setCode] = useState('');
     const [redeeming, setRedeeming] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+
+    const handlePresentPaywall = async () => {
+        try {
+            const paywallResult = await RevenueCatUI.presentPaywall();
+
+            if (paywallResult === PAYWALL_RESULT.PURCHASED || paywallResult === PAYWALL_RESULT.RESTORED) {
+                await refreshStatus(); // Refresh local hook state
+                setShowConfetti(true);
+                setTimeout(() => {
+                    showAlert({
+                        title: '🎉 ¡Premium Activado!',
+                        message: '¡Felicidades! Tu suscripción Premium ha sido activada con éxito.',
+                        type: 'success',
+                        buttons: [{ text: '¡Genial!', onPress: () => router.back() }]
+                    });
+                }, 500);
+            }
+        } catch (e: any) {
+            console.error('Error presenting paywall', e);
+        }
+    };
+
+    const handleManageSubscription = async () => {
+        try {
+            await RevenueCatUI.presentCustomerCenter();
+        } catch (e) {
+            console.error('Error presenting Customer Center', e);
+            showAlert({ title: 'Aviso', message: 'No se pudo abrir el centro de clientes.', type: 'info' });
+        }
+    };
+
+    const handleRestore = async () => {
+        setPurchasing(true);
+        const restored = await restorePurchases();
+        setPurchasing(false);
+
+        if (restored) {
+            await refreshStatus();
+            showAlert({ title: 'Compras Restauradas', message: 'Tus compras han sido restauradas con éxito.', type: 'success' });
+        } else {
+            showAlert({ title: 'Aviso', message: 'No se encontraron compras anteriores para restaurar.', type: 'info' });
+        }
+    };
 
     const handleRedeemCode = async () => {
         if (!code.trim()) {
@@ -64,8 +110,6 @@ export default function PremiumScreen() {
         if (result.success) {
             setShowConfetti(true);
             setCode('');
-
-            // Delay the alert slightly so confetti starts first
             setTimeout(() => {
                 showAlert({
                     title: '🎉 ¡Premium Activado!',
@@ -84,7 +128,7 @@ export default function PremiumScreen() {
         Linking.openURL(`https://wa.me/${PAYMENT_INFO.whatsapp}?text=${message}`);
     };
 
-    if (loading) {
+    if (subLoading) {
         return (
             <View style={[styles.container, { backgroundColor: colors.background }]}>
                 <Stack.Screen options={{ title: 'Miga Premium' }} />
@@ -107,21 +151,38 @@ export default function PremiumScreen() {
                                 Válido hasta: {premiumUntil.toLocaleDateString('es-ES')}
                             </Text>
                         )}
+                        <Text style={[styles.premiumUntil, { marginTop: 4, fontStyle: 'italic' }]}>
+                            (Las suscripciones de Apple App Store se renuevan automáticamente)
+                        </Text>
                     </View>
 
                     <View style={[styles.featuresCard, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                            Tus beneficios activos:
-                        </Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Tus beneficios activos:</Text>
                         {PREMIUM_FEATURES.map((feature, index) => (
                             <View key={index} style={styles.featureRow}>
                                 <FontAwesome name={feature.icon as any} size={18} color={colors.success} />
-                                <Text style={[styles.featureLabel, { color: colors.text }]}>
-                                    {feature.label}
-                                </Text>
+                                <Text style={[styles.featureLabel, { color: colors.text }]}>{feature.label}</Text>
                                 <FontAwesome name="check" size={16} color={colors.success} />
                             </View>
                         ))}
+                    </View>
+
+                    {/* Add Manage/Restore Buttons */}
+                    <View style={{ gap: Spacing.md, marginTop: Spacing.xl }}>
+                        {Platform.OS === 'ios' && (
+                            <TouchableOpacity
+                                style={[styles.iapButton, { backgroundColor: colors.surfaceSecondary }]}
+                                onPress={handleManageSubscription}
+                            >
+                                <View style={styles.iapButtonContent}>
+                                    <Text style={[styles.iapButtonTitle, { color: colors.text }]}>Administrar Suscripción de Apple</Text>
+                                    <FontAwesome name="apple" size={20} color={colors.text} />
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity style={{ padding: 16, alignItems: 'center' }} onPress={handleRestore}>
+                            <Text style={{ color: colors.textSecondary, textDecorationLine: 'underline' }}>Forzar Sincronización de Compras</Text>
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </View>
@@ -145,124 +206,77 @@ export default function PremiumScreen() {
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                         Desbloquea todo el potencial de tu negocio
                     </Text>
-                    <Text style={[styles.price, { color: colors.primary }]}>{PAYMENT_INFO.precio}</Text>
                 </View>
 
                 {/* Features */}
                 <View style={[styles.featuresCard, { backgroundColor: colors.surface }, Shadows.sm]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        ¿Qué obtienes?
-                    </Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>¿Qué obtienes?</Text>
                     {PREMIUM_FEATURES.map((feature, index) => (
                         <View key={index} style={[styles.featureRow, { borderBottomColor: colors.border }]}>
                             <FontAwesome name={feature.icon as any} size={18} color={colors.primary} />
                             <View style={styles.featureText}>
-                                <Text style={[styles.featureLabel, { color: colors.text }]}>
-                                    {feature.label}
-                                </Text>
-                                <Text style={[styles.freeLimit, { color: colors.textMuted }]}>
-                                    Gratis: {feature.free}
-                                </Text>
+                                <Text style={[styles.featureLabel, { color: colors.text }]}>{feature.label}</Text>
+                                <Text style={[styles.freeLimit, { color: colors.textMuted }]}>Gratis: {feature.free}</Text>
                             </View>
                             <FontAwesome name="check-circle" size={20} color={colors.success} />
                         </View>
                     ))}
                 </View>
 
+                {/* Official In-App Purchases (RevenueCat Paywall) */}
+                <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text, textAlign: 'center', marginBottom: Spacing.lg }]}>
+                        Ofertas y Planes
+                    </Text>
 
-                {/* iOS Compliance: Hide manual payments and codes conform to Guideline 3.1.1 */}
-                {Platform.OS === 'ios' ? (
-                    <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                            ¿Cómo obtener Premium?
-                        </Text>
-                        <Text style={[styles.paymentValue, { color: colors.textSecondary, lineHeight: 22 }]}>
-                            Para gestionar tu suscripción a Miga Premium, por favor visita nuestra página web o contacta a nuestro soporte técnico.
-                        </Text>
-                    </View>
-                ) : (
+                    <TouchableOpacity
+                        style={[styles.iapButton, { backgroundColor: colors.primary }]}
+                        onPress={handlePresentPaywall}
+                    >
+                        <View style={styles.iapButtonContent}>
+                            <Text style={styles.iapButtonTitle}>Ver Planes y Suscribirse</Text>
+                            <FontAwesome name="chevron-right" size={16} color="#FFF" />
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.restoreButton}
+                        onPress={handleRestore}
+                        disabled={purchasing}
+                    >
+                        <Text style={[styles.restoreButtonText, { color: colors.primary }]}>¿Ya la compraste? Restaurar Compras</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Alternative Payments (Hidden on iOS Production to comply with App Store guidelines) */}
+                {(Platform.OS !== 'ios' || __DEV__) && (
                     <>
-                        {/* Payment Info (Android only) */}
                         <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                                Cómo activar Premium
-                            </Text>
-
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Medios Alternativos (Solo Venezuela)</Text>
+                            {/* ... (Payment info similar to before) */}
                             <View style={styles.step}>
-                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.stepNumberText}>1</Text>
-                                </View>
-                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-                                    Realiza el pago por Pago Móvil o PayPal:
-                                </Text>
+                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>1</Text></View>
+                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>Realiza el pago por Pago Móvil o PayPal:</Text>
                             </View>
 
                             <View style={[styles.paymentDetails, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                                 <Text style={[styles.paymentLabel, { color: colors.textMuted }]}>Pago Móvil:</Text>
-                                <Text style={[styles.paymentValue, { color: colors.text }]}>
-                                    {PAYMENT_INFO.pagoMovil.banco} | {PAYMENT_INFO.pagoMovil.telefono}
-                                </Text>
-                                <Text style={[styles.paymentValue, { color: colors.text }]}>
-                                    C.I.: {PAYMENT_INFO.pagoMovil.cedula}
-                                </Text>
-
-                                {/* Zelle - habilitado más adelante
-                        <Text style={[styles.paymentLabel, { color: colors.textMuted, marginTop: Spacing.sm }]}>
-                            Zelle:
-                        </Text>
-                        <Text style={[styles.paymentValue, { color: colors.text }]}>
-                            {PAYMENT_INFO.zelle}
-                        </Text>
-                        */}
-
-                                <Text style={[styles.paymentLabel, { color: colors.textMuted, marginTop: Spacing.sm }]}>
-                                    PayPal:
-                                </Text>
-                                <Text style={[styles.paymentValue, { color: colors.text }]}>
-                                    {PAYMENT_INFO.paypal}
-                                </Text>
+                                <Text style={[styles.paymentValue, { color: colors.text }]}>{PAYMENT_INFO.pagoMovil.banco} | {PAYMENT_INFO.pagoMovil.telefono}</Text>
+                                <Text style={[styles.paymentValue, { color: colors.text }]}>C.I.: {PAYMENT_INFO.pagoMovil.cedula}</Text>
+                                <Text style={[styles.paymentLabel, { color: colors.textMuted, marginTop: Spacing.sm }]}>PayPal:</Text>
+                                <Text style={[styles.paymentValue, { color: colors.text }]}>{PAYMENT_INFO.paypal}</Text>
                             </View>
 
-                            <View style={styles.step}>
-                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.stepNumberText}>2</Text>
-                                </View>
-                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-                                    Envía el comprobante por WhatsApp
-                                </Text>
-                            </View>
-
-                            <View style={styles.step}>
-                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.stepNumberText}>3</Text>
-                                </View>
-                                <Text style={[styles.stepText, { color: colors.textSecondary }]}>
-                                    Recibirás un código de activación por email
-                                </Text>
-                            </View>
-
-                            <TouchableOpacity
-                                style={[styles.contactButton, { borderColor: colors.primary }]}
-                                onPress={handleContactSupport}
-                            >
+                            <TouchableOpacity style={[styles.contactButton, { borderColor: colors.primary }]} onPress={handleContactSupport}>
                                 <FontAwesome name="whatsapp" size={18} color={colors.primary} />
-                                <Text style={[styles.contactButtonText, { color: colors.primary }]}>
-                                    Contactar por WhatsApp
-                                </Text>
+                                <Text style={[styles.contactButtonText, { color: colors.primary }]}>Contactar por WhatsApp</Text>
                             </TouchableOpacity>
                         </View>
 
-                        {/* Code Input (Android only) */}
                         <View style={[styles.codeCard, { backgroundColor: colors.surface }, Shadows.sm]}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                                ¿Ya tienes un código?
-                            </Text>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>¿Tienes un código?</Text>
                             <TextInput
-                                style={[styles.codeInput, {
-                                    backgroundColor: colors.background,
-                                    borderColor: colors.border,
-                                    color: colors.text
-                                }]}
+                                style={[styles.codeInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                                 placeholder="XXXX-XXXX-XXXX"
                                 placeholderTextColor={colors.textMuted}
                                 value={code}
@@ -270,24 +284,12 @@ export default function PremiumScreen() {
                                 autoCapitalize="characters"
                                 autoCorrect={false}
                             />
-                            <TouchableOpacity
-                                style={[styles.redeemButton, { backgroundColor: colors.primary }]}
-                                onPress={handleRedeemCode}
-                                disabled={redeeming}
-                            >
-                                {redeeming ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <>
-                                        <FontAwesome name="unlock" size={18} color="#FFF" />
-                                        <Text style={styles.redeemButtonText}>Activar Código</Text>
-                                    </>
-                                )}
+                            <TouchableOpacity style={[styles.redeemButton, { backgroundColor: colors.primary }]} onPress={handleRedeemCode} disabled={redeeming}>
+                                {redeeming ? <ActivityIndicator color="#FFF" /> : <><FontAwesome name="unlock" size={18} color="#FFF" /><Text style={styles.redeemButtonText}>Activar Código</Text></>}
                             </TouchableOpacity>
                         </View>
                     </>
                 )}
-
                 <View style={{ height: 40 }} />
             </ScrollView>
         </KeyboardAvoidingView>
@@ -391,6 +393,40 @@ const styles = StyleSheet.create({
     },
     premiumBadgeText: { color: '#FFF', ...Typography.title, marginTop: Spacing.md },
     premiumUntil: { color: 'rgba(255,255,255,0.8)', ...Typography.body, marginTop: Spacing.xs },
+    iapButton: {
+        borderRadius: BorderRadius.md,
+        padding: Spacing.md,
+        marginBottom: Spacing.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 60,
+    },
+    iapButtonContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.md,
+    },
+    iapButtonTitle: {
+        color: '#FFF',
+        ...Typography.bodyBold,
+        fontSize: 16,
+    },
+    iapButtonPrice: {
+        color: '#FFF',
+        ...Typography.title,
+        fontSize: 18,
+    },
+    restoreButton: {
+        alignItems: 'center',
+        paddingVertical: Spacing.sm,
+        marginTop: Spacing.sm,
+    },
+    restoreButtonText: {
+        ...Typography.body,
+        textDecorationLine: 'underline',
+    }
 });
 
 

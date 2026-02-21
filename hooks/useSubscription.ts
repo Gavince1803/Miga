@@ -1,3 +1,4 @@
+import { getPremiumStatus } from '@/lib/revenuecat';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
@@ -47,23 +48,29 @@ export function useSubscription() {
 
     const checkPremiumStatus = useCallback(async () => {
         try {
+            // Check Supabase (Manual Codes)
             const { data, error } = await supabase.rpc('check_premium_status');
 
+            // Check RevenueCat (IAP)
+            const isRevenueCatPremium = await getPremiumStatus();
+
             if (error) {
-                console.error('Error checking premium status:', error);
-                // If we haven't loaded cache yet, stop loading anyway
-                setStatus(prev => ({ ...prev, loading: false }));
-                return;
+                console.error('Error checking Supabase premium status:', error);
             }
 
+            const isSupabasePremium = data?.is_premium ?? false;
+
+            // User is premium if EITHER Supabase says so OR RevenueCat says so
+            const isPremium = isSupabasePremium || isRevenueCatPremium;
+
             const newStatus = {
-                isPremium: data?.is_premium ?? false,
-                planType: data?.plan_type ?? 'free',
+                isPremium,
+                planType: isPremium ? 'premium' : 'free',
                 premiumUntil: data?.premium_until ? new Date(data.premium_until) : null,
                 loading: false,
             };
 
-            setStatus(newStatus);
+            setStatus(newStatus as SubscriptionStatus);
 
             // Update Cache
             AsyncStorage.setItem(CACHE_KEY, JSON.stringify(newStatus));

@@ -109,7 +109,12 @@ export default function Confetti({ active, duration = 3000 }: ConfettiProps) {
             ]);
         });
 
-        Animated.parallel(animations).start();
+        const parallelAnim = Animated.parallel(animations);
+        parallelAnim.start();
+
+        return () => {
+            parallelAnim.stop();
+        };
     }, [active, duration]);
 
     if (!active) return null;

@@ -96,6 +96,7 @@ export default function SettingsScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
     const { showAlert } = useAlert();
+    const [isNavigating, setIsNavigating] = useState(false);
 
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [dailyReminders, setDailyReminders] = useState(true);
@@ -198,7 +199,12 @@ export default function SettingsScreen() {
             {/* Premium Section */}
             <TouchableOpacity
                 style={[styles.premiumBanner, { backgroundColor: isPremium ? colors.success : colors.primary }, Shadows.md]}
-                onPress={() => router.push('/premium')}
+                onPress={() => {
+                    if (isNavigating) return;
+                    setIsNavigating(true);
+                    router.push('/premium');
+                    setTimeout(() => setIsNavigating(false), 1000);
+                }}
             >
                 <FontAwesome name="star" size={24} color="#FFF" />
                 <View style={styles.premiumBannerText}>
