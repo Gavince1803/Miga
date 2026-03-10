@@ -49,12 +49,34 @@ export default function PremiumScreen() {
     const { showAlert } = useAlert();
 
     const [purchasing, setPurchasing] = useState(false);
+    const [isPresenting, setIsPresenting] = useState(false);
 
     const [code, setCode] = useState('');
     const [redeeming, setRedeeming] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
 
+    // Easter egg for testers: 7 quick taps to show code input
+    const [tapCount, setTapCount] = useState(0);
+    const [showDevMenu, setShowDevMenu] = useState(false);
+    const tapTimeout = React.useRef<ReturnType<typeof setTimeout>>();
+
+    const handleSecretTap = () => {
+        setTapCount(prev => {
+            const next = prev + 1;
+            if (next >= 7) {
+                setShowDevMenu(true);
+                return 0;
+            }
+            return next;
+        });
+
+        if (tapTimeout.current) clearTimeout(tapTimeout.current);
+        tapTimeout.current = setTimeout(() => setTapCount(0), 1000);
+    };
+
     const handlePresentPaywall = async () => {
+        if (isPresenting) return;
+        setIsPresenting(true);
         try {
             const paywallResult = await RevenueCatUI.presentPaywall();
 
@@ -72,6 +94,8 @@ export default function PremiumScreen() {
             }
         } catch (e: any) {
             console.error('Error presenting paywall', e);
+        } finally {
+            setIsPresenting(false);
         }
     };
 
@@ -197,11 +221,11 @@ export default function PremiumScreen() {
             <Stack.Screen options={{ title: 'Miga Premium' }} />
             <Confetti active={showConfetti} />
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Header */}
+                {/* Header with Secret Gesture on the Icon */}
                 <View style={styles.header}>
-                    <View style={[styles.iconContainer, { backgroundColor: colors.primary }]}>
+                    <TouchableOpacity activeOpacity={0.8} onPress={handleSecretTap} style={[styles.iconContainer, { backgroundColor: colors.primary }]}>
                         <FontAwesome name="star" size={32} color="#FFF" />
-                    </View>
+                    </TouchableOpacity>
                     <Text style={[styles.title, { color: colors.text }]}>Miga Premium</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                         Desbloquea todo el potencial de tu negocio
@@ -230,12 +254,17 @@ export default function PremiumScreen() {
                     </Text>
 
                     <TouchableOpacity
-                        style={[styles.iapButton, { backgroundColor: colors.primary }]}
+                        style={[styles.iapButton, { backgroundColor: colors.primary, opacity: isPresenting ? 0.7 : 1 }]}
                         onPress={handlePresentPaywall}
+                        disabled={isPresenting}
                     >
                         <View style={styles.iapButtonContent}>
                             <Text style={styles.iapButtonTitle}>Ver Planes y Suscribirse</Text>
-                            <FontAwesome name="chevron-right" size={16} color="#FFF" />
+                            {isPresenting ? (
+                                <ActivityIndicator color="#FFF" size="small" />
+                            ) : (
+                                <FontAwesome name="chevron-right" size={16} color="#FFF" />
+                            )}
                         </View>
                     </TouchableOpacity>
 
@@ -248,8 +277,8 @@ export default function PremiumScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Alternative Payments (Hidden on iOS Production to comply with App Store guidelines) */}
-                {(Platform.OS !== 'ios' || __DEV__) && (
+                {/* Alternative Payments (Hidden behind developer gesture) */}
+                {showDevMenu && (
                     <>
                         <View style={[styles.paymentCard, { backgroundColor: colors.surfaceSecondary }]}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Medios Alternativos (Solo Venezuela)</Text>
@@ -290,6 +319,21 @@ export default function PremiumScreen() {
                         </View>
                     </>
                 )}
+                {/* Legal Links (Apple Guideline 3.1.2 Requirement) */}
+                <View style={{ marginTop: 24, paddingHorizontal: 16, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginBottom: 8 }}>
+                        El pago se cargará a tu cuenta de Apple ID en la confirmación de la compra. La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período actual.
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                            <Text style={{ fontSize: 13, color: colors.primary, textDecorationLine: 'underline' }}>Términos de Uso (EULA)</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/privacy/')}>
+                            <Text style={{ fontSize: 13, color: colors.primary, textDecorationLine: 'underline' }}>Política de Privacidad</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
                 <View style={{ height: 40 }} />
             </ScrollView>
         </KeyboardAvoidingView>

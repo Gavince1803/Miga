@@ -14,9 +14,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://egycrispcqalbpbcfltv.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVneWNyaXNwY3FhbGJwYmNmbHR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDUwMDMsImV4cCI6MjA4MzQ4MTAwM30.VQ4rYVsERZkvcsxmv4qxrvktK-4eDBSBa-zpfQ3jEIs"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     }
   },
