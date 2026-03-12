@@ -468,7 +468,7 @@ export default function OrderDetailScreen() {
                     <DetailRow
                         icon={order.paymentMethod === 'efectivo' ? 'money' : order.paymentMethod === 'pago_movil' ? 'mobile-phone' : 'bank'}
                         label="Forma de pago"
-                        value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : 'Zelle'}
+                        value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : order.paymentMethod === 'transferencia' ? 'Transferencia' : 'Zelle'}
                         colors={colors}
                     />
                 </View>

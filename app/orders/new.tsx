@@ -11,7 +11,7 @@ import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
 import { useOrders } from '@/hooks/useOrders';
 import { useSubscription } from '@/hooks/useSubscription';
-import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
+import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
@@ -579,7 +579,7 @@ export default function NewOrderScreen() {
 
                     <FormField label="Forma de Pago (del abono)" colors={colors}>
                         <View style={styles.paymentOptions}>
-                            {PAYMENT_METHOD_OPTIONS.map((option) => (
+                            {getPaymentMethodOptions(currency).map((option) => (
                                 <TouchableOpacity
                                     key={option.value}
                                     onPress={() => setPaymentMethod(option.value)}

@@ -7,7 +7,7 @@ import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
-import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
+import { PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -409,7 +409,7 @@ export default function EditOrderScreen() {
 
                     <FormField label="Forma de Pago" colors={colors}>
                         <View style={styles.paymentOptions}>
-                            {PAYMENT_METHOD_OPTIONS.map((option) => (
+                            {getPaymentMethodOptions(currency).map((option) => (
                                 <TouchableOpacity
                                     key={option.value}
                                     onPress={() => setPaymentMethod(option.value)}
