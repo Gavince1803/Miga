@@ -1,3 +1,4 @@
+import { useSettings } from '@/context/SettingsContext';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
@@ -20,6 +21,7 @@ type DolarApiResponse = {
 };
 
 export function useExchangeRates() {
+    const { currency } = useSettings();
     const [rates, setRates] = useState<ExchangeRates>({
         bcv: 0,
         parallel: 0,
@@ -46,6 +48,19 @@ export function useExchangeRates() {
                     throw error;
                 }
             };
+
+            // SHORT-CIRCUIT: If user doesn't use VES, skip all external calls to save API usage and speed up app
+            if (currency !== 'VES') {
+                setRates({
+                    bcv: 1, // Treat base currency as 1:1 internally if needed, or simply 0 since it will be hidden
+                    parallel: 1,
+                    euro: 1,
+                    lastUpdated: new Date(),
+                    loading: false,
+                    error: null,
+                });
+                return;
+            }
 
             let bcvRate = 0;
             let parallelRate = 0;
@@ -119,10 +134,10 @@ export function useExchangeRates() {
         }
     }, []);
 
-    // Initial fetch
+    // Initial fetch / When currency changes
     useEffect(() => {
         fetchRates();
-    }, [fetchRates]);
+    }, [fetchRates, currency]);
 
     // Refetch on app foreground
     useEffect(() => {

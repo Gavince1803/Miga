@@ -58,7 +58,7 @@ export default function PremiumScreen() {
     // Easter egg for testers: 7 quick taps to show code input
     const [tapCount, setTapCount] = useState(0);
     const [showDevMenu, setShowDevMenu] = useState(false);
-    const tapTimeout = React.useRef<ReturnType<typeof setTimeout>>();
+    const tapTimeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const handleSecretTap = () => {
         setTapCount(prev => {

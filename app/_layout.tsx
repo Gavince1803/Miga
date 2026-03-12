@@ -52,6 +52,8 @@ const BakeryDarkTheme = {
   },
 };
 
+import { SettingsProvider } from '@/context/SettingsContext';
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -76,7 +78,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AlertProvider>
-        <RootLayoutNav />
+        <SettingsProvider>
+          <RootLayoutNav />
+        </SettingsProvider>
       </AlertProvider>
     </AuthProvider>
   );

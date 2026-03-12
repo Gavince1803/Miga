@@ -5,6 +5,7 @@ import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProduc
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
@@ -146,6 +147,9 @@ export default function NewOrderScreen() {
     const { setItemsForOrder } = useOrderItems();
     const { showAlert } = useAlert();
     const { isPremium } = useSubscription(); // Import this hook
+    const { currency } = useSettings();
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
+
     const { bcv, parallel, euro } = useExchangeRates();
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const [submitting, setSubmitting] = useState(false);
@@ -486,7 +490,7 @@ export default function NewOrderScreen() {
                         <View style={{ flex: 1, marginRight: Spacing.sm }}>
                             <FormField label="Precio Total" colors={colors}>
                                 <View style={styles.priceInput}>
-                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                                     <TextInput
                                         style={[styles.input, styles.priceField, { color: colors.text }]}
                                         placeholder="0"
@@ -501,7 +505,7 @@ export default function NewOrderScreen() {
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
                             <FormField label="Abonado" colors={colors}>
                                 <View style={styles.priceInput}>
-                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                                     <TextInput
                                         style={[styles.input, styles.priceField, { color: colors.primary }]}
                                         placeholder="0"
@@ -515,49 +519,51 @@ export default function NewOrderScreen() {
                         </View>
                     </View>
 
-                    {/* Rate Selector & Helper - Moved outside the row for better alignment */}
-                    <View style={{ marginTop: 8, marginBottom: 8 }}>
-                        <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                            {[
-                                { id: 'bcv', label: 'BCV' },
-                                { id: 'parallel', label: 'Paralelo' },
-                                { id: 'euro', label: 'Euro' }
-                            ].map((rate) => (
-                                <TouchableOpacity
-                                    key={rate.id}
-                                    onPress={() => setSelectedRateType(rate.id as any)}
-                                    style={{
-                                        paddingHorizontal: 12,
-                                        paddingVertical: 6,
-                                        borderRadius: 12,
-                                        backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
-                                        borderWidth: 1,
-                                        borderColor: selectedRateType === rate.id ? colors.primary : colors.border
-                                    }}>
-                                    <Text style={{ fontSize: 11, fontWeight: '500', color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
-                                        {rate.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                    {/* Rate Selector & Helper (Only for VES) */}
+                    {currency === 'VES' && (
+                        <View style={{ marginTop: 8, marginBottom: 8 }}>
+                            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                                {[
+                                    { id: 'bcv', label: 'BCV' },
+                                    { id: 'parallel', label: 'Paralelo' },
+                                    { id: 'euro', label: 'Euro' }
+                                ].map((rate) => (
+                                    <TouchableOpacity
+                                        key={rate.id}
+                                        onPress={() => setSelectedRateType(rate.id as any)}
+                                        style={{
+                                            paddingHorizontal: 12,
+                                            paddingVertical: 6,
+                                            borderRadius: 12,
+                                            backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
+                                            borderWidth: 1,
+                                            borderColor: selectedRateType === rate.id ? colors.primary : colors.border
+                                        }}>
+                                        <Text style={{ fontSize: 11, fontWeight: '500', color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
+                                            {rate.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
 
-                        {totalPrice ? (
-                            <Text style={{ fontSize: 13, color: colors.textSecondary, marginLeft: 2 }}>
-                                ≈ Bs. {(parseFloat(totalPrice) * (
-                                    selectedRateType === 'bcv' ? bcv :
-                                        selectedRateType === 'parallel' ? parallel :
-                                            (euro || 0)
-                                )).toFixed(2)}
-                            </Text>
-                        ) : null}
-                    </View>
+                            {totalPrice ? (
+                                <Text style={{ fontSize: 13, color: colors.textSecondary, marginLeft: 2 }}>
+                                    ≈ Bs. {(parseFloat(totalPrice) * (
+                                        selectedRateType === 'bcv' ? bcv :
+                                            selectedRateType === 'parallel' ? parallel :
+                                                (euro || 0)
+                                    )).toFixed(2)}
+                                </Text>
+                            ) : null}
+                        </View>
+                    )}
 
                     {/* Balance Info */}
                     <View style={[styles.balanceContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                         <View style={styles.balanceRow}>
                             <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Restante a Pagar:</Text>
                             <Text style={[styles.balanceValue, { color: remaining > 0 ? colors.error : colors.success }]}>
-                                ${remaining.toFixed(2)}
+                                {currencySymbol}{remaining.toFixed(2)}
                             </Text>
                         </View>
                         <View style={styles.balanceRow}>

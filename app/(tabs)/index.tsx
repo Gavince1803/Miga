@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
@@ -120,6 +121,8 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const { orders, onRefresh } = useOrders();
   const { inventory, onRefresh: onRefreshInventory } = useInventory();
+  const { currency } = useSettings();
+  const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
   // Get first name or business name
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
@@ -162,7 +165,14 @@ export default function HomeScreen() {
     .reduce((sum, o) => sum + ((o.totalPrice || 0) - (o.depositAmount || 0)), 0);
 
   // Format currency
-  const formatMoney = (amount: number) => `$${amount.toLocaleString('es-ES')}`;
+  const formatMoney = (amount: number) => {
+    // Para Bolívares usamos coma decimal y punto de miles (típico en VE y LA)
+    if (currency === 'VES') {
+      return `${currencySymbol}${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    // Para el resto (como Dólares), típicamente es punto decimal y coma de miles
+    return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   // Recent/Upcoming - Sort by date and take first 3
   // Show ALL future orders in upcoming list for now if the list is short, or keep top 3 but make it clear

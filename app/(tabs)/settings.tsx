@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, Currency, useSettings } from '@/context/SettingsContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { requestNotificationPermissions } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
@@ -188,7 +189,29 @@ export default function SettingsScreen() {
         });
     };
 
+    const handleCurrencyEdit = () => {
+        showAlert({
+            title: 'Moneda Principal',
+            message: 'Selecciona la moneda en la que prefieres ver tus precios',
+            buttons: [
+                ...Object.entries(CURRENCIES).map(([key, val]) => ({
+                    text: val.label,
+                    onPress: async () => {
+                        try {
+                            await updateCurrency(key as Currency);
+                            showAlert({ title: 'Moneda Actualizada', message: `Tu moneda ahora es ${val.label}`, type: 'success' });
+                        } catch (e) {
+                            showAlert({ title: 'Error', message: 'No se pudo cambiar la moneda.', type: 'error' });
+                        }
+                    }
+                })),
+                { text: 'Cancelar', style: 'cancel' }
+            ]
+        });
+    };
+
     const { isPremium, premiumUntil } = useSubscription();
+    const { currency, updateCurrency } = useSettings();
 
     return (
         <ScrollView
@@ -238,6 +261,22 @@ export default function SettingsScreen() {
                         label="Teléfono"
                         value="+58 412 123 4567"
                         onPress={handlePhoneEdit}
+                        colors={colors}
+                    />
+                </View>
+            </View>
+
+            {/* Preferences Section */}
+            <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                    PREFERENCIAS
+                </Text>
+                <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                    <SettingRow
+                        icon="money"
+                        label="Moneda Principal"
+                        value={CURRENCIES[currency]?.label || 'Cargando...'}
+                        onPress={handleCurrencyEdit}
                         colors={colors}
                     />
                 </View>
