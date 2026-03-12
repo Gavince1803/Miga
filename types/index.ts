@@ -197,7 +197,6 @@ export const getPaymentMethodOptions = (currency: string) => {
             { label: 'Efectivo', value: 'efectivo' as PaymentMethod },
             { label: 'Pago Móvil', value: 'pago_movil' as PaymentMethod },
             { label: 'Zelle', value: 'zelle' as PaymentMethod },
-            { label: 'Transferencia', value: 'transferencia' as PaymentMethod },
         ];
     }
     return [
