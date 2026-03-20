@@ -259,7 +259,7 @@ export default function PremiumScreen() {
                         disabled={isPresenting}
                     >
                         <View style={styles.iapButtonContent}>
-                            <Text style={styles.iapButtonTitle}>Ver Planes y Suscribirse</Text>
+                            <Text style={styles.iapButtonTitle}>Probar 7 días gratis</Text>
                             {isPresenting ? (
                                 <ActivityIndicator color="#FFF" size="small" />
                             ) : (

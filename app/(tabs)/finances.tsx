@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useFinances } from '@/hooks/useFinances';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -33,10 +34,15 @@ export default function FinancesScreen() {
     const { showAlert } = useAlert();
     const haptics = useHaptics();
     const { isPremium, loading: isAuthLoading } = useSubscription();
+    const { currency } = useSettings();
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
-    const formatCurrency = (amount: number) => {
-        return `$${amount.toFixed(2)}`;
-    };
+    const formatCurrency = React.useCallback((amount: number) => {
+        if (currency === 'VES') {
+            return `${currencySymbol}${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }, [currency, currencySymbol]);
 
     const changeMonth = (increment: number) => {
         const newDate = new Date(currentDate);
@@ -116,7 +122,14 @@ export default function FinancesScreen() {
                 </Text>
             ),
         }));
-    }, [recentTransactions, colors]);
+    }, [recentTransactions, colors, formatCurrency]);
+
+    const chartMaxValue = useMemo(() => {
+        if (chartData.length === 0) return 100;
+        const max = Math.max(...chartData.map(d => d.value));
+        // Add 25% headroom so top labels are never clipped
+        return Math.ceil((max * 1.25) / 10) * 10;
+    }, [chartData]);
 
     // Premium gate: Show upsell screen for free users
     if (isAuthLoading) {
@@ -247,7 +260,7 @@ export default function FinancesScreen() {
                                     yAxisThickness={0}
                                     yAxisTextStyle={{ color: colors.textMuted, fontSize: 10 }}
                                     noOfSections={3}
-                                    maxValue={100} // Dynamic? No, let auto calc
+                                    maxValue={chartMaxValue}
                                     isAnimated
                                     animationDuration={500}
                                     width={width - 80} // screen padding

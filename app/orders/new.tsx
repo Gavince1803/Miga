@@ -210,7 +210,7 @@ export default function NewOrderScreen() {
 
     const handleSave = async () => {
         // Validate required fields
-        if (!clientName.trim() || !clientPhone.trim()) {
+        if (!clientName.trim()) {
             haptics.error();
             showAlert({ title: 'Error', message: 'Por favor completa todos los campos marcados con *', type: 'error' });
             return;
@@ -337,10 +337,10 @@ export default function NewOrderScreen() {
                         />
                     </FormField>
 
-                    <FormField label="Teléfono" required colors={colors}>
+                    <FormField label="Teléfono" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
-                            placeholder="Ej: +58 412 123 4567"
+                            placeholder="Ej: +58 412 123 4567 (opcional)"
                             placeholderTextColor={colors.textMuted}
                             value={clientPhone}
                             onChangeText={setClientPhone}
@@ -472,11 +472,8 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Products with Recipes */}
-                <FormSection title="PRODUCTOS DEL PEDIDO" colors={colors}>
+                <FormSection title="¿QUÉ VAS A PREPARAR?" colors={colors}>
                     <View style={{ paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm }}>
-                        <Text style={[styles.helperText, { color: colors.textSecondary, marginBottom: Spacing.sm }]}>
-                            Agrega productos y vincula recetas para el descuento automático de inventario.
-                        </Text>
                         <OrderProductsSelector
                             products={orderProducts}
                             onProductsChange={setOrderProducts}

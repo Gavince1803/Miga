@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Linking } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -92,16 +93,47 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
 
+  // Handle deep links for password recovery (both cold start and foreground/background)
+  useEffect(() => {
+    function parseUrlTokens(url: string): Record<string, string> {
+      const result: Record<string, string> = {};
+      const hashIndex = url.indexOf('#');
+      const queryIndex = url.indexOf('?');
+      if (queryIndex !== -1) {
+        const end = hashIndex > queryIndex ? hashIndex : undefined;
+        new URLSearchParams(url.slice(queryIndex + 1, end)).forEach((v, k) => { result[k] = v; });
+      }
+      if (hashIndex !== -1) {
+        new URLSearchParams(url.slice(hashIndex + 1)).forEach((v, k) => { if (!result[k]) result[k] = v; });
+      }
+      return result;
+    }
+
+    const handleDeepLink = (url: string | null) => {
+      if (!url) return;
+      const tokens = parseUrlTokens(url);
+      if (tokens.access_token || tokens.code) {
+        const qs = new URLSearchParams(tokens).toString();
+        router.replace((`/auth/reset-password?${qs}`) as any);
+      }
+    };
+
+    Linking.getInitialURL().then(handleDeepLink);
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => sub.remove();
+  }, []);
+
   useEffect(() => {
     if (loading) return;
 
-    // Cast segments to bypass strict type checking for now
     const inAuthGroup = (segments[0] as string) === 'auth';
+    // Don't redirect away from reset-password — it manages its own session setup
+    const isResetPassword = (segments as string[])[1] === 'reset-password';
 
     if (!session && !inAuthGroup) {
       // Redirect to the sign-in page.
       router.replace('/auth/login' as any);
-    } else if (session && inAuthGroup) {
+    } else if (session && inAuthGroup && !isResetPassword) {
       // Redirect away from the sign-in page.
       router.replace('/(tabs)');
     }
@@ -123,6 +155,8 @@ function RootLayoutNav() {
         <Stack.Screen name="premium" options={{ title: 'Miga Premium', presentation: 'modal' }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/reset-password" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

@@ -5,7 +5,7 @@ import { CURRENCIES, Currency } from '@/context/SettingsContext';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,14 +22,33 @@ export default function RegisterScreen() {
     const [currency, setCurrency] = useState<Currency>('VES');
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [businessNameExists, setBusinessNameExists] = useState(false);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleFullNameChange = (text: string) => {
+        setFullName(text);
+        setBusinessNameExists(false);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        if (text.trim().length < 2) return;
+        debounceRef.current = setTimeout(async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id')
+                .ilike('full_name', text.trim())
+                .limit(1);
+            setBusinessNameExists(!!data && data.length > 0);
+        }, 600);
+    };
 
     async function signUp() {
+        if (loading) return;
+        setLoading(true);
+
         if (!email || !password || !fullName) {
             showAlert({ title: 'Campos requeridos', message: 'Por favor completa al menos Nombre, Correo y Contraseña.', type: 'warning' });
+            setLoading(false);
             return;
         }
-
-        setLoading(true);
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -84,12 +103,17 @@ export default function RegisterScreen() {
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Nombre o Negocio *</Text>
                             <TextInput
-                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                onChangeText={setFullName}
+                                style={[styles.input, { color: colors.text, borderColor: businessNameExists ? colors.warning ?? '#F59E0B' : colors.border }]}
+                                onChangeText={handleFullNameChange}
                                 value={fullName}
                                 placeholder="Ej: Marcela Bollería"
                                 placeholderTextColor={colors.textMuted}
                             />
+                            {businessNameExists && (
+                                <Text style={{ color: colors.warning ?? '#F59E0B', fontSize: 12, marginTop: 4 }}>
+                                    Ya existe un negocio con este nombre. ¿Ya tienes cuenta?
+                                </Text>
+                            )}
                         </View>
 
                         <View style={styles.inputGroup}>

@@ -6,7 +6,7 @@ export type Currency = 'VES' | 'USD' | 'MXN' | 'ARS' | 'COP' | 'CLP';
 
 // Monedas soportadas con su símbolo local
 export const CURRENCIES: Record<Currency, { symbol: string, label: string }> = {
-    VES: { symbol: 'Bs', label: 'Bolívares (VES)' },
+    VES: { symbol: '$', label: 'Bolívares (VES)' },
     USD: { symbol: '$', label: 'Dólares (USD)' },
     MXN: { symbol: '$', label: 'Pesos Mexicanos (MXN)' },
     ARS: { symbol: '$', label: 'Pesos Argentinos (ARS)' },

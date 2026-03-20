@@ -162,7 +162,7 @@ export default function EditOrderScreen() {
 
     const handleSave = async () => {
         // Validate required fields
-        if (!clientName.trim() || !clientPhone.trim()) {
+        if (!clientName.trim()) {
             showAlert({ title: 'Error', message: 'Por favor completa todos los campos requeridos (*)', type: 'error' });
             return;
         }
@@ -240,12 +240,14 @@ export default function EditOrderScreen() {
                         />
                     </FormField>
 
-                    <FormField label="Teléfono" required colors={colors}>
+                    <FormField label="Teléfono" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             value={clientPhone}
                             onChangeText={setClientPhone}
                             keyboardType="phone-pad"
+                            placeholder="Opcional"
+                            placeholderTextColor={colors.textMuted}
                         />
                     </FormField>
 

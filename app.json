@@ -2,21 +2,21 @@
   "expo": {
     "name": "Miga",
     "slug": "agenda-repostera",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "miga",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FDF8F3"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.agendarepostera.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Miga usa tu cámara para escanear recetas físicas para digitalizarlas y para tomar fotos de tus ingredientes y productos para el inventario."
@@ -28,7 +28,7 @@
         "backgroundColor": "#FDF8F3"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.agendarepostera.app",
+      "package": "com.miga",
       "versionCode": 1
     },
     "web": {

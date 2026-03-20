@@ -347,9 +347,19 @@ export default function HomeScreen() {
           </Link>
         </View>
 
-        {upcomingOrders.map((order) => (
-          <UpcomingOrderCard key={order.id} order={order} colors={colors} />
-        ))}
+        {upcomingOrders.length === 0 ? (
+          <View style={[styles.emptyUpcoming, { backgroundColor: colors.surface }]}>
+            <FontAwesome name="calendar-check-o" size={32} color={colors.textMuted} />
+            <Text style={[styles.emptyUpcomingTitle, { color: colors.text }]}>Todo al día</Text>
+            <Text style={[styles.emptyUpcomingText, { color: colors.textSecondary }]}>
+              No tienes pedidos próximos pendientes
+            </Text>
+          </View>
+        ) : (
+          upcomingOrders.map((order) => (
+            <UpcomingOrderCard key={order.id} order={order} colors={colors} />
+          ))
+        )}
       </View>
 
       {/* Bottom padding for tab bar */}
@@ -487,5 +497,19 @@ const styles = StyleSheet.create({
   },
   orderTime: {
     ...Typography.small,
+  },
+  emptyUpcoming: {
+    borderRadius: BorderRadius.md,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  emptyUpcomingTitle: {
+    ...Typography.bodyBold,
+    marginTop: Spacing.xs,
+  },
+  emptyUpcomingText: {
+    ...Typography.body,
+    textAlign: 'center',
   },
 });

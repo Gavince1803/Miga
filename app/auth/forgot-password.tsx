@@ -5,28 +5,41 @@ import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { showAlert } = useAlert();
     const router = useRouter();
 
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    async function signInWithEmail() {
-        setLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+    async function handleResetPassword() {
+        if (loading) return;
+        if (!email.trim()) {
+            showAlert({ title: 'Campo requerido', message: 'Por favor ingresa tu correo electrónico.', type: 'warning' });
+            return;
+        }
 
-        if (error) showAlert({ title: 'Error', message: error.message, type: 'error' });
+        setLoading(true);
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+            redirectTo: 'miga://auth/reset-password',
+        });
         setLoading(false);
+
+        if (error) {
+            showAlert({ title: 'Error', message: error.message, type: 'error' });
+        } else {
+            showAlert({
+                title: 'Correo enviado',
+                message: 'Revisa tu correo y haz clic en el enlace para restablecer tu contraseña.',
+                type: 'success',
+                buttons: [{ text: 'OK', onPress: () => router.back() }],
+            });
+        }
     }
 
     return (
@@ -34,7 +47,6 @@ export default function LoginScreen() {
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ScrollView
                     contentContainerStyle={styles.container}
@@ -42,29 +54,19 @@ export default function LoginScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.header}>
+                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                            <FontAwesome name="arrow-left" size={20} color={colors.text} />
+                        </TouchableOpacity>
                         <View style={styles.logoContainer}>
-                            <Image
-                                source={require('@/assets/images/icon.png')}
-                                style={{ width: 90, height: 90, borderRadius: 45 }}
-                                resizeMode="cover"
-                            />
+                            <FontAwesome name="lock" size={32} color={colors.primary} />
                         </View>
-                        <Text style={[styles.title, { color: colors.text }]}>Miga</Text>
+                        <Text style={[styles.title, { color: colors.text }]}>Recuperar Contraseña</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                            Gestiona tus pedidos e inventario
+                            Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
                         </Text>
                     </View>
 
                     <View style={[styles.formContainer, { backgroundColor: colors.surface }, Shadows.md]}>
-                        <View style={styles.modeToggle}>
-                            <Text style={[styles.formTitle, { color: colors.text }]}>
-                                Bienvenido de Nuevo
-                            </Text>
-                            <Text style={[styles.formSubtitle, { color: colors.textSecondary }]}>
-                                Ingresa tus credenciales para continuar
-                            </Text>
-                        </View>
-
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Correo Electrónico</Text>
                             <TextInput
@@ -75,19 +77,7 @@ export default function LoginScreen() {
                                 placeholderTextColor={colors.textMuted}
                                 autoCapitalize="none"
                                 keyboardType="email-address"
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: colors.text }]}>Contraseña</Text>
-                            <TextInput
-                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                onChangeText={setPassword}
-                                value={password}
-                                secureTextEntry={true}
-                                placeholder="Ingresa tu contraseña"
-                                placeholderTextColor={colors.textMuted}
-                                autoCapitalize="none"
+                                autoFocus
                             />
                         </View>
 
@@ -101,39 +91,26 @@ export default function LoginScreen() {
                                     shadowOpacity: 0.3,
                                     shadowRadius: 5,
                                     elevation: 5,
-                                }
+                                    opacity: loading ? 0.7 : 1,
+                                },
                             ]}
-                            onPress={signInWithEmail}
+                            onPress={handleResetPassword}
                             disabled={loading}
                         >
                             <Text style={styles.buttonText}>
-                                {loading ? 'Procesando...' : 'INICIAR SESIÓN'}
+                                {loading ? 'Enviando...' : 'ENVIAR ENLACE'}
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={{ alignItems: 'center', paddingTop: Spacing.md }}
-                            onPress={() => router.push('/auth/forgot-password')}
-                        >
-                            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-                                ¿Olvidé mi contraseña?
-                            </Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.divider}>
-                            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                        </View>
-
-                        <TouchableOpacity
-                            style={{ alignItems: 'center', padding: Spacing.sm }}
-                            onPress={() => router.push('/auth/register')}
+                            style={{ alignItems: 'center', padding: Spacing.sm, marginTop: Spacing.sm }}
+                            onPress={() => router.back()}
                         >
                             <Text style={{ color: colors.textSecondary }}>
-                                ¿No tienes cuenta? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Regístrate aquí</Text>
+                                Volver a <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Iniciar Sesión</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={{ height: 40 }} />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -143,43 +120,42 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         paddingBottom: Spacing.xl,
-        justifyContent: 'center',
+        paddingHorizontal: Spacing.md,
     },
     header: {
         alignItems: 'center',
-        marginBottom: Spacing.xl,
-        marginTop: Spacing.xl,
+        marginVertical: Spacing.xl,
+        position: 'relative',
+    },
+    backButton: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        padding: Spacing.sm,
     },
     logoContainer: {
         marginBottom: Spacing.md,
+        backgroundColor: '#FAF5EF',
+        padding: Spacing.md,
+        borderRadius: BorderRadius.full,
+        width: 64,
+        height: 64,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     title: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 'bold',
-        fontFamily: 'Nunito', // Assuming standard font if Nunito fail, but style is nice
         marginBottom: Spacing.xs,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
+        textAlign: 'center',
+        paddingHorizontal: Spacing.md,
     },
     formContainer: {
         padding: Spacing.lg,
         borderRadius: BorderRadius.lg,
-        marginHorizontal: Spacing.sm,
-    },
-    modeToggle: {
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
-    },
-    formTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        marginBottom: 4,
-        textAlign: 'center',
-    },
-    formSubtitle: {
-        fontSize: 14,
-        textAlign: 'center',
     },
     inputGroup: {
         marginBottom: Spacing.md,
@@ -195,7 +171,6 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         paddingHorizontal: Spacing.md,
         fontSize: 16,
-        textAlignVertical: 'center',
     },
     button: {
         height: 52,
@@ -208,30 +183,5 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         fontSize: 16,
         fontWeight: 'bold',
-    },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: Spacing.lg,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-    },
-    dividerText: {
-        paddingHorizontal: Spacing.md,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    switchButton: {
-        height: 52,
-        borderRadius: BorderRadius.md,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-    },
-    switchText: {
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
