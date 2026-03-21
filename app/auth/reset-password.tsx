@@ -40,7 +40,6 @@ export default function ResetPasswordScreen() {
     const resolved = useRef(false);
     // Store tokens without creating a session yet — session is only set on save
     const pendingTokens = useRef<{ code?: string; access_token?: string; refresh_token?: string }>({});
-    const [debugInfo, setDebugInfo] = useState('...');
 
     useEffect(() => {
         if (resolved.current) return;
@@ -51,20 +50,13 @@ export default function ResetPasswordScreen() {
                 if (typeof v === 'string') tokens[k] = v;
             });
 
-            let initialUrl = '';
             if (!tokens.code && !tokens.access_token) {
                 try {
                     const url = await Linking.getInitialURL();
-                    initialUrl = url || '';
                     if (url) tokens = { ...parseUrlTokens(url), ...tokens };
                 } catch {}
             }
 
-            setDebugInfo(
-                `params: ${JSON.stringify(params)}\n` +
-                `initialUrl: ${initialUrl}\n` +
-                `tokens: ${JSON.stringify(tokens)}`
-            );
 
             const { code, access_token, refresh_token, error_code } = tokens;
 
@@ -177,10 +169,7 @@ export default function ResetPasswordScreen() {
                 <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: Spacing.sm }}>
                     Solicita un nuevo enlace de recuperación.
                 </Text>
-                {/* DEBUG INFO — remove before release */}
-                <Text selectable style={{ color: colors.textMuted, fontSize: 10, marginTop: Spacing.lg, textAlign: 'left', width: '100%', fontFamily: 'monospace' }}>
-                    {debugInfo}
-                </Text>
+
                 <TouchableOpacity
                     style={[styles.button, { backgroundColor: colors.primary, marginTop: Spacing.xl }]}
                     onPress={() => router.replace('/auth/forgot-password')}
