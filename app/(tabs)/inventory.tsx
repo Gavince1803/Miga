@@ -10,8 +10,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import React, { useCallback, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+    Animated,
     FlatList,
     KeyboardAvoidingView,
     Modal,
@@ -24,6 +26,164 @@ import {
     View
 } from 'react-native';
 import * as XLSX from 'xlsx';
+
+const TUTORIAL_KEY = 'miga_inventory_tutorial_seen';
+
+const TUTORIAL_STEPS = [
+    { icon: 'cubes', color: '#D4A574', label: 'Agrega tus ingredientes aquí con cantidad y unidad' },
+    { icon: 'book', color: '#E8B4B8', label: 'En Recetas, vincula cada receta con sus ingredientes' },
+    { icon: 'shopping-bag', color: '#A8D5BA', label: 'Al crear un pedido, selecciona las recetas incluidas' },
+    { icon: 'check-circle', color: '#FFB74D', label: 'Al marcar el pedido como Pagado, Miga descuenta el inventario automáticamente ✨' },
+] as const;
+
+function InventoryTutorialBanner({
+    colors,
+    onDismiss,
+}: {
+    colors: typeof Colors.light;
+    onDismiss: () => void;
+}) {
+    const fadeAnim = React.useRef(new Animated.Value(1)).current;
+
+    const handleDismiss = () => {
+        Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+        }).start(onDismiss);
+    };
+
+    return (
+        <Animated.View
+            style={[
+                tutorialStyles.banner,
+                {
+                    backgroundColor: colors.primary + '12',
+                    borderColor: colors.primary + '35',
+                    opacity: fadeAnim,
+                },
+                Shadows.sm,
+            ]}
+        >
+            {/* Header */}
+            <View style={tutorialStyles.header}>
+                <View style={tutorialStyles.headerLeft}>
+                    <View style={[tutorialStyles.iconBadge, { backgroundColor: colors.primary + '25' }]}>
+                        <FontAwesome name="magic" size={14} color={colors.primary} />
+                    </View>
+                    <Text style={[tutorialStyles.title, { color: colors.text }]}>
+                        Descuento automático de stock
+                    </Text>
+                </View>
+                <TouchableOpacity onPress={handleDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <FontAwesome name="times" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+            </View>
+
+            {/* Steps */}
+            <View style={tutorialStyles.steps}>
+                {TUTORIAL_STEPS.map((step, i) => (
+                    <View key={i} style={tutorialStyles.step}>
+                        <View style={tutorialStyles.stepLeft}>
+                            <View style={[tutorialStyles.stepIconWrap, { backgroundColor: step.color + '22' }]}>
+                                <FontAwesome name={step.icon} size={13} color={step.color} />
+                            </View>
+                            {i < TUTORIAL_STEPS.length - 1 && (
+                                <View style={[tutorialStyles.stepLine, { backgroundColor: colors.border }]} />
+                            )}
+                        </View>
+                        <Text style={[tutorialStyles.stepText, { color: colors.textSecondary }]}>
+                            {step.label}
+                        </Text>
+                    </View>
+                ))}
+            </View>
+
+            {/* Dismiss link */}
+            <TouchableOpacity onPress={handleDismiss} style={tutorialStyles.dismissRow}>
+                <Text style={[tutorialStyles.dismissText, { color: colors.textMuted }]}>
+                    Entendido, no volver a mostrar
+                </Text>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+}
+
+const tutorialStyles = StyleSheet.create({
+    banner: {
+        marginHorizontal: Spacing.md,
+        marginTop: Spacing.sm,
+        marginBottom: Spacing.xs,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1,
+        padding: Spacing.md,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: Spacing.md,
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        flex: 1,
+    },
+    iconBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: BorderRadius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: 14,
+        fontWeight: '700',
+        flex: 1,
+    },
+    steps: {
+        gap: 0,
+    },
+    step: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: Spacing.sm,
+        minHeight: 36,
+    },
+    stepLeft: {
+        alignItems: 'center',
+        width: 28,
+    },
+    stepIconWrap: {
+        width: 28,
+        height: 28,
+        borderRadius: BorderRadius.full,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    stepLine: {
+        width: 1.5,
+        flex: 1,
+        minHeight: 8,
+        marginVertical: 2,
+    },
+    stepText: {
+        fontSize: 13,
+        lineHeight: 18,
+        flex: 1,
+        paddingTop: 5,
+        paddingBottom: Spacing.sm,
+    },
+    dismissRow: {
+        alignItems: 'center',
+        marginTop: Spacing.xs,
+    },
+    dismissText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+});
 
 // Unit Options for selection
 const UNIT_OPTIONS = [
@@ -166,6 +326,18 @@ export default function InventoryScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const { showAlert } = useAlert();
     const { isPremium } = useSubscription();
+    const [showTutorial, setShowTutorial] = useState(false);
+
+    useEffect(() => {
+        AsyncStorage.getItem(TUTORIAL_KEY).then(val => {
+            if (val !== 'true') setShowTutorial(true);
+        });
+    }, []);
+
+    const dismissTutorial = async () => {
+        await AsyncStorage.setItem(TUTORIAL_KEY, 'true');
+        setShowTutorial(false);
+    };
 
     // Add Item Modal State
     const [showAddModal, setShowAddModal] = useState(false);
@@ -599,6 +771,11 @@ export default function InventoryScreen() {
                         onEditQuantity={openEditModal}
                     />
                 )}
+                ListHeaderComponent={
+                    showTutorial ? (
+                        <InventoryTutorialBanner colors={colors} onDismiss={dismissTutorial} />
+                    ) : null
+                }
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 refreshing={refreshing}

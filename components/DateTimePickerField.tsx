@@ -70,11 +70,6 @@ export function DateTimePickerField({
                 <Text style={[styles.valueText, { color: colors.text }]}>
                     {formatDate(value)}
                 </Text>
-                <FontAwesome
-                    name={mode === 'time' ? "clock-o" : "calendar"}
-                    size={16}
-                    color={colors.textSecondary}
-                />
             </TouchableOpacity>
 
             {/* Android Picker */}
@@ -139,18 +134,16 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.sm,
     },
     inputButton: {
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
+        justifyContent: 'center',
         paddingHorizontal: Spacing.md,
         borderWidth: 1,
-        borderRadius: 8, // Fixed border radius
-        height: 48, // Fixed height to prevent jumping
+        borderRadius: 8,
+        height: 48,
     },
     valueText: {
-        ...Typography.body,
         fontSize: 16,
+        textAlign: 'center',
     },
     modalOverlay: {
         flex: 1,

@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Linking } from 'react-native';
 import 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
@@ -126,28 +127,40 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
-    const inAuthGroup = (segments[0] as string) === 'auth';
-    // Don't redirect away from reset-password — it manages its own session setup
-    const isResetPassword = (segments as string[])[1] === 'reset-password';
+    const runNavigation = async () => {
+      const val = await AsyncStorage.getItem('miga_onboarding_completed');
+      const onboardingDone = val === 'true';
 
-    if (!session && !inAuthGroup) {
-      // Redirect to the sign-in page.
-      router.replace('/auth/login' as any);
-    } else if (session && inAuthGroup && !isResetPassword) {
-      // Redirect away from the sign-in page.
-      router.replace('/(tabs)');
-    }
+      const inAuthGroup = (segments[0] as string) === 'auth';
+      const inOnboarding = (segments[0] as string) === 'onboarding';
+      // Don't redirect away from reset-password — it manages its own session setup
+      const isResetPassword = (segments as string[])[1] === 'reset-password';
 
-    // Request notification permissions if logged in
-    if (session) {
-      requestNotificationPermissions();
-    }
+      if (!session && !inAuthGroup) {
+        router.replace('/auth/login' as any);
+      } else if (session && inAuthGroup && !isResetPassword) {
+        if (!onboardingDone) {
+          router.replace('/onboarding' as any);
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else if (session && !inAuthGroup && !inOnboarding && !onboardingDone) {
+        router.replace('/onboarding' as any);
+      }
+
+      if (session) {
+        requestNotificationPermissions();
+      }
+    };
+
+    runNavigation();
   }, [session, loading, segments]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? BakeryDarkTheme : BakeryLightTheme}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerBackTitle: '' }}>
+        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="inventory" options={{ headerShown: false }} />
         <Stack.Screen name="orders" options={{ headerShown: false }} />

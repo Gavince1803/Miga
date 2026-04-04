@@ -252,11 +252,16 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.modalOverlay}
                 >
+                    <TouchableOpacity
+                        style={styles.modalDismiss}
+                        activeOpacity={1}
+                        onPress={() => { setShowModal(false); resetForm(); }}
+                    />
                     <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
                         {/* Header */}
                         <View style={styles.modalHeader}>
-                            <Text style={[styles.modalTitle, { color: colors.text }]}>
-                                {(selectedRecipe || addingWithoutRecipe) ? 'Detalles de la Preparación' : '¿Qué vas a preparar?'}
+                            <Text style={[styles.modalTitle, { color: colors.text, fontSize: (selectedRecipe || addingWithoutRecipe) ? 20 : 28 }]}>
+                                {(selectedRecipe || addingWithoutRecipe) ? 'Cantidad y detalles' : '¿Qué vas a preparar?'}
                             </Text>
                             <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}>
                                 <FontAwesome name="times" size={24} color={colors.textMuted} />
@@ -264,56 +269,54 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                         </View>
 
                         {(selectedRecipe || addingWithoutRecipe) ? (
-                            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing.xl }}>
+                                {/* Compact recipe badge */}
                                 {selectedRecipe && selectedRecipe.id && (
-                                    <View style={[styles.selectedRecipeCard, { backgroundColor: colors.primary + '10' }]}>
-                                        <FontAwesome name="book" size={20} color={colors.primary} />
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[styles.selectedRecipeName, { color: colors.text }]}>
-                                                {selectedRecipe.title}
-                                            </Text>
-                                            <Text style={[styles.selectedRecipeHint, { color: colors.textMuted }]}>
-                                                Los ingredientes se descontarán automáticamente
-                                            </Text>
-                                        </View>
+                                    <View style={[styles.selectedRecipePill, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
+                                        <FontAwesome name="book" size={12} color={colors.primary} />
+                                        <Text style={[styles.selectedRecipePillText, { color: colors.primary }]} numberOfLines={1}>
+                                            {selectedRecipe.title}
+                                        </Text>
+                                        <FontAwesome name="magic" size={11} color={colors.primary} style={{ marginLeft: 'auto' }} />
                                     </View>
                                 )}
 
                                 {addingWithoutRecipe && (
-                                    <View style={[styles.selectedRecipeCard, { backgroundColor: colors.warning + '10' }]}>
-                                        <FontAwesome name="warning" size={20} color={colors.warning} />
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[styles.selectedRecipeName, { color: colors.text }]}>
-                                                Producto sin receta
-                                            </Text>
-                                            <Text style={[styles.selectedRecipeHint, { color: colors.textMuted }]}>
-                                                El inventario no se descontará automáticamente
-                                            </Text>
-                                        </View>
+                                    <View style={[styles.selectedRecipePill, { backgroundColor: colors.warning + '15', borderColor: colors.warning + '30' }]}>
+                                        <FontAwesome name="warning" size={12} color={colors.warning} />
+                                        <Text style={[styles.selectedRecipePillText, { color: colors.warning }]}>
+                                            Sin receta · sin descuento automático
+                                        </Text>
                                     </View>
                                 )}
 
-                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre del producto</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                                    value={productName}
-                                    onChangeText={setProductName}
-                                    placeholder="Ej: Torta de Chocolate 20 personas"
-                                    placeholderTextColor={colors.textMuted}
-                                />
+                                {/* Nombre + Cantidad en la misma fila */}
+                                <View style={styles.inputRow}>
+                                    <View style={{ flex: 2, marginRight: Spacing.sm }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre</Text>
+                                        <TextInput
+                                            style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                            value={productName}
+                                            onChangeText={setProductName}
+                                            placeholder="Ej: Torta de Chocolate"
+                                            placeholderTextColor={colors.textMuted}
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cantidad</Text>
+                                        <TextInput
+                                            style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, textAlign: 'center' }]}
+                                            value={quantity}
+                                            onChangeText={setQuantity}
+                                            keyboardType="numeric"
+                                            placeholder="1"
+                                            placeholderTextColor={colors.textMuted}
+                                            autoFocus
+                                        />
+                                    </View>
+                                </View>
 
-                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cantidad</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-                                    value={quantity}
-                                    onChangeText={setQuantity}
-                                    keyboardType="numeric"
-                                    placeholder="1"
-                                    placeholderTextColor={colors.textMuted}
-                                    autoFocus // Keep keyboard up by focusing this immediately
-                                />
-
-                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Notas (opcional)</Text>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: Spacing.sm }]}>Notas (opcional)</Text>
                                 <TextInput
                                     style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                                     value={notes}
@@ -323,14 +326,22 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 />
 
                                 <TouchableOpacity
-                                    style={[styles.confirmButton, { backgroundColor: colors.primary }]}
+                                    style={[styles.confirmButton, {
+                                        backgroundColor: colors.primary,
+                                        shadowColor: colors.primary,
+                                        shadowOffset: { width: 0, height: 4 },
+                                        shadowOpacity: 0.3,
+                                        shadowRadius: 8,
+                                        elevation: 5,
+                                    }]}
                                     onPress={handleAddProduct}
                                 >
+                                    <FontAwesome name="check" size={15} color="#fff" style={{ marginRight: Spacing.sm }} />
                                     <Text style={styles.confirmButtonText}>Agregar al Pedido</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                    style={styles.backButton}
+                                    style={[styles.backButton, { borderColor: colors.border }]}
                                     onPress={() => {
                                         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                                         setSelectedRecipe(null);
@@ -338,8 +349,9 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                         setProductName('');
                                     }}
                                 >
-                                    <Text style={[styles.backButtonText, { color: colors.textMuted }]}>
-                                        ← Volver a buscar
+                                    <FontAwesome name="arrow-left" size={13} color={colors.textSecondary} />
+                                    <Text style={[styles.backButtonText, { color: colors.textSecondary }]}>
+                                        Volver a buscar
                                     </Text>
                                 </TouchableOpacity>
                             </ScrollView>
@@ -505,14 +517,16 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'flex-end',
     },
+    modalDismiss: {
+        flex: 1,
+    },
     modalContent: {
         borderTopLeftRadius: BorderRadius.xl,
         borderTopRightRadius: BorderRadius.xl,
         paddingHorizontal: Spacing.lg,
         paddingTop: Spacing.lg,
-        paddingBottom: Spacing.xxl,
+        paddingBottom: Spacing.xl,
         maxHeight: '85%',
-        minHeight: 500, // Enforce a minimum height to prevent "jumping" from bottom
     },
     modalHeader: {
         flexDirection: 'row',
@@ -639,50 +653,64 @@ const styles = StyleSheet.create({
     detailsForm: {
         gap: Spacing.sm,
     },
-    selectedRecipeCard: {
+    selectedRecipePill: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: Spacing.md,
-        padding: Spacing.md,
-        borderRadius: BorderRadius.md,
+        gap: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.sm,
+        borderRadius: BorderRadius.full,
+        borderWidth: 1,
         marginBottom: Spacing.md,
     },
-    selectedRecipeName: {
-        ...Typography.bodyBold,
+    selectedRecipePillText: {
+        fontSize: 13,
+        fontWeight: '600',
+        flex: 1,
     },
-    selectedRecipeHint: {
-        ...Typography.small,
-        marginTop: 2,
-    },
-
-    inputLabel: {
-        ...Typography.small,
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
         marginTop: Spacing.sm,
     },
+    inputLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: Spacing.xs,
+    },
     input: {
-        ...Typography.body,
+        fontSize: 15,
         paddingHorizontal: Spacing.md,
-        paddingVertical: 12, // Use padding for vertical centering instead of fixed height
+        height: 44,
         borderRadius: BorderRadius.md,
         borderWidth: 1,
-        // height: 48, // Removed fixed height
         textAlignVertical: 'center',
     },
     confirmButton: {
-        padding: Spacing.md,
+        height: 54,
         borderRadius: BorderRadius.md,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         marginTop: Spacing.lg,
     },
     confirmButtonText: {
         color: '#FFFFFF',
-        ...Typography.bodyBold,
+        fontSize: 16,
+        fontWeight: '700',
     },
     backButton: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.sm,
         marginTop: Spacing.md,
+        height: 44,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
     },
     backButtonText: {
-        ...Typography.body,
+        fontSize: 15,
+        fontWeight: '500',
     },
 });

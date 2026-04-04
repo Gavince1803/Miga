@@ -640,12 +640,12 @@ const styles = StyleSheet.create({
     sectionCard: {
         marginHorizontal: Spacing.md,
         borderRadius: BorderRadius.md,
-        padding: Spacing.xs, // Reduced padding for cleaner look
+        paddingHorizontal: Spacing.sm,
         overflow: 'hidden',
     },
     field: {
         paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.md,
+        paddingHorizontal: Spacing.lg,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     fieldLabel: {
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
-        paddingHorizontal: Spacing.md,
+        paddingHorizontal: 0,
     },
     chipContainer: {
         flexDirection: 'row',
