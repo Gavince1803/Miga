@@ -164,18 +164,21 @@ function RootLayoutNav() {
         router.replace('/onboarding' as any);
       }
 
-      if (session) {
-        requestNotificationPermissions();
-        getTrialInfo().then(({ isOnTrial, expirationDate }) => {
-          if (isOnTrial && expirationDate) {
-            scheduleTrialNotifications(expirationDate);
-          }
-        });
-      }
     };
 
     runNavigation();
   }, [session, loading, segments]);
+
+  // Trial notifications: run only when session appears, not on every navigation
+  useEffect(() => {
+    if (!session) return;
+    requestNotificationPermissions();
+    getTrialInfo().then(({ isOnTrial, expirationDate }) => {
+      if (isOnTrial && expirationDate) {
+        scheduleTrialNotifications(expirationDate);
+      }
+    });
+  }, [session]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? BakeryDarkTheme : BakeryLightTheme}>

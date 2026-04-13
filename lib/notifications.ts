@@ -174,6 +174,8 @@ export async function scheduleTrialNotifications(expirationDate: Date): Promise<
             },
         ];
 
+        let scheduledCount = 0;
+
         for (const reminder of reminders) {
             const triggerDate = new Date(expirationDate);
             triggerDate.setDate(triggerDate.getDate() - reminder.daysBeforeExpiry);
@@ -198,10 +200,14 @@ export async function scheduleTrialNotifications(expirationDate: Date): Promise<
                 identifier: reminder.identifier,
             });
 
+            scheduledCount++;
             console.log(`Trial notification scheduled: ${reminder.identifier} at ${triggerDate.toISOString()}`);
         }
 
-        await AsyncStorage.setItem(storageKey, 'true');
+        // Only mark as done if at least one notification was actually scheduled
+        if (scheduledCount > 0) {
+            await AsyncStorage.setItem(storageKey, 'true');
+        }
     } catch (error) {
         console.error('Error scheduling trial notifications:', error);
     }
