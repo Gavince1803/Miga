@@ -1,3 +1,4 @@
+import ReEngagementBanner from '@/components/ReEngagementBanner';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
@@ -331,6 +332,9 @@ export default function HomeScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </Link>
+
+      {/* Re-engagement Banner */}
+      <ReEngagementBanner ordersCount={orders.length} inventoryCount={inventory.length} />
 
       {/* Upcoming Orders Section */}
       <View style={styles.section}>

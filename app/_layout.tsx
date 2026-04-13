@@ -3,7 +3,8 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
+import { useEffect, useRef } from 'react';
 import { Linking } from 'react-native';
 import 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,7 +20,8 @@ export {
 // Auth
 import { AlertProvider } from '@/context/AlertContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { requestNotificationPermissions } from '@/lib/notifications';
+import { requestNotificationPermissions, scheduleTrialNotifications } from '@/lib/notifications';
+import { getTrialInfo } from '@/lib/revenuecat';
 import { Stack, useRouter, useSegments } from 'expo-router';
 
 export const unstable_settings = {
@@ -93,6 +95,20 @@ function RootLayoutNav() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const notificationResponseListener = useRef<Notifications.EventSubscription>();
+
+  // Open paywall when user taps any trial notification
+  useEffect(() => {
+    notificationResponseListener.current = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as Record<string, unknown>;
+        if (data?.type === 'trial_expiry') {
+          router.push('/premium' as any);
+        }
+      }
+    );
+    return () => notificationResponseListener.current?.remove();
+  }, []);
 
   // Handle deep links for password recovery (both cold start and foreground/background)
   useEffect(() => {
@@ -150,6 +166,11 @@ function RootLayoutNav() {
 
       if (session) {
         requestNotificationPermissions();
+        getTrialInfo().then(({ isOnTrial, expirationDate }) => {
+          if (isOnTrial && expirationDate) {
+            scheduleTrialNotifications(expirationDate);
+          }
+        });
       }
     };
 

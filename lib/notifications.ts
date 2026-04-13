@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 
 // Configure how notifications behave when app is in foreground
@@ -133,6 +134,76 @@ export async function scheduleOrderNotification(order: {
 
     } catch (error) {
         console.error('Error scheduling notification:', error);
+    }
+}
+
+/**
+ * Schedules trial expiration notifications (5 days, 2 days, last day).
+ * Only schedules once per trial period using the expiration date as key.
+ */
+export async function scheduleTrialNotifications(expirationDate: Date): Promise<void> {
+    try {
+        const hasPermission = await requestNotificationPermissions();
+        if (!hasPermission) return;
+
+        // Use expiration date as part of the key so a new trial would re-schedule
+        const storageKey = `trial_notifs_scheduled_${expirationDate.toISOString().split('T')[0]}`;
+        const alreadyScheduled = await AsyncStorage.getItem(storageKey);
+        if (alreadyScheduled === 'true') return;
+
+        const now = new Date();
+
+        const reminders = [
+            {
+                daysBeforeExpiry: 5,
+                identifier: `trial_reminder_5d`,
+                title: 'Tu prueba gratuita termina en 5 días 🧁',
+                body: 'No pierdas acceso a tus reportes y recetario.',
+            },
+            {
+                daysBeforeExpiry: 2,
+                identifier: `trial_reminder_2d`,
+                title: 'Te quedan 2 días de Miga Premium',
+                body: 'Sigue gestionando tus pedidos sin límites.',
+            },
+            {
+                daysBeforeExpiry: 0,
+                identifier: `trial_reminder_last`,
+                title: 'Hoy termina tu prueba gratuita ✨',
+                body: 'Suscríbete por $4/mes y mantén todo tu historial.',
+            },
+        ];
+
+        for (const reminder of reminders) {
+            const triggerDate = new Date(expirationDate);
+            triggerDate.setDate(triggerDate.getDate() - reminder.daysBeforeExpiry);
+            triggerDate.setHours(10, 0, 0, 0);
+
+            if (triggerDate.getTime() <= now.getTime()) continue;
+
+            await Notifications.cancelScheduledNotificationAsync(reminder.identifier).catch(() => {});
+
+            await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: reminder.title,
+                    body: reminder.body,
+                    sound: true,
+                    data: { type: 'trial_expiry' },
+                    subtitle: 'Miga Premium',
+                },
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.DATE,
+                    date: triggerDate,
+                },
+                identifier: reminder.identifier,
+            });
+
+            console.log(`Trial notification scheduled: ${reminder.identifier} at ${triggerDate.toISOString()}`);
+        }
+
+        await AsyncStorage.setItem(storageKey, 'true');
+    } catch (error) {
+        console.error('Error scheduling trial notifications:', error);
     }
 }
 
