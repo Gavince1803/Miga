@@ -14,7 +14,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -119,6 +119,7 @@ export default function NewOrderScreen() {
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
     const [address, setAddress] = useState('');
+    const [clientSelected, setClientSelected] = useState(false);
 
     // Date Objects for Picker
     const [deliveryDateObj, setDeliveryDateObj] = useState(new Date());
@@ -143,7 +144,36 @@ export default function NewOrderScreen() {
 
 
 
-    const { createOrder, getDictionaryOptions, orders } = useOrders(); // Destructure orders
+    const { createOrder, getDictionaryOptions, orders } = useOrders();
+
+    // Unique known clients from order history (most recent data wins on dedup)
+    const knownClients = useMemo(() => {
+        const map = new Map<string, { name: string; phone: string; address: string }>();
+        [...orders].reverse().forEach(o => {
+            const key = o.clientName.toLowerCase().trim();
+            if (!map.has(key)) {
+                map.set(key, {
+                    name: o.clientName,
+                    phone: o.clientPhone || '',
+                    address: o.address || '',
+                });
+            }
+        });
+        return Array.from(map.values());
+    }, [orders]);
+
+    const clientSuggestions = useMemo(() => {
+        if (clientSelected || clientName.trim().length < 1) return [];
+        const q = clientName.toLowerCase().trim();
+        return knownClients.filter(c => c.name.toLowerCase().includes(q)).slice(0, 5);
+    }, [clientName, clientSelected, knownClients]);
+
+    const handleSelectClient = (client: { name: string; phone: string; address: string }) => {
+        setClientName(client.name);
+        setClientPhone(client.phone);
+        setAddress(client.address);
+        setClientSelected(true);
+    };
     const { setItemsForOrder } = useOrderItems();
     const { showAlert } = useAlert();
     const { isPremium } = useSubscription(); // Import this hook
@@ -332,9 +362,42 @@ export default function NewOrderScreen() {
                             placeholder="Ej: María García"
                             placeholderTextColor={colors.textMuted}
                             value={clientName}
-                            onChangeText={setClientName}
+                            onChangeText={(text) => {
+                                setClientName(text);
+                                setClientSelected(false);
+                            }}
                             autoCapitalize="words"
                         />
+                        {clientSuggestions.length > 0 && (
+                            <View style={[styles.suggestionsContainer, { borderColor: colors.border }]}>
+                                {clientSuggestions.map((client, index) => (
+                                    <TouchableOpacity
+                                        key={client.name}
+                                        onPress={() => handleSelectClient(client)}
+                                        style={[
+                                            styles.suggestionRow,
+                                            {
+                                                borderBottomColor: colors.border,
+                                                borderBottomWidth: index < clientSuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
+                                            },
+                                        ]}
+                                    >
+                                        <FontAwesome name="user-o" size={13} color={colors.primary} style={{ marginTop: 2 }} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.suggestionName, { color: colors.text }]}>
+                                                {client.name}
+                                            </Text>
+                                            {client.phone ? (
+                                                <Text style={[styles.suggestionPhone, { color: colors.textMuted }]}>
+                                                    {client.phone}
+                                                </Text>
+                                            ) : null}
+                                        </View>
+                                        <FontAwesome name="chevron-right" size={11} color={colors.textMuted} />
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </FormField>
 
                     <FormField label="Teléfono" colors={colors}>
@@ -770,5 +833,26 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         ...Typography.bodyBold,
         fontSize: 17,
+    },
+    suggestionsContainer: {
+        marginTop: Spacing.xs,
+        borderWidth: 1,
+        borderRadius: BorderRadius.sm,
+        overflow: 'hidden',
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingVertical: 10,
+        paddingHorizontal: Spacing.sm,
+    },
+    suggestionName: {
+        ...Typography.caption,
+        fontWeight: '600',
+    },
+    suggestionPhone: {
+        fontSize: 12,
+        marginTop: 1,
     },
 });
