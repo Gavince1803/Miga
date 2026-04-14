@@ -156,8 +156,8 @@ const createShadow = (
 };
 
 export const Shadows = {
-  sm: createShadow('#5D4037', 1, 0.08, 2, 1),
-  md: createShadow('#5D4037', 2, 0.1, 8, 3),
-  lg: createShadow('#5D4037', 4, 0.12, 16, 5),
+  sm: createShadow('#5D4037', 1, 0.06, 3, 3),
+  md: createShadow('#5D4037', 2, 0.09, 8, 6),
+  lg: createShadow('#5D4037', 4, 0.12, 16, 10),
 };
 

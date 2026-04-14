@@ -67,6 +67,17 @@ export default function OnboardingScreen() {
             ],
         },
         {
+            id: 'recipes',
+            icon: null,
+            title: 'Calcula el coste\nde tus recetas',
+            subtitle: 'Añade ingredientes con sus precios reales y Miga calcula automáticamente cuánto te cuesta cada porción — y a cuánto deberías venderla.',
+            features: [
+                { icon: 'cutlery', text: 'Ingredientes con coste real por unidad' },
+                { icon: 'pie-chart', text: 'Coste por porción calculado al instante' },
+                { icon: 'tag', text: 'Precio de venta sugerido con tu margen' },
+            ],
+        },
+        {
             id: 'cta',
             icon: null,
             title: '¡Todo listo para\nempezar!',
@@ -265,6 +276,14 @@ function SlideItem({ item, index, colors, scrollX }: SlideItemProps) {
             <View style={[styles.iconCircle, { backgroundColor: colors.secondary + '30' }]}>
                 <View style={[styles.iconCircleInner, { backgroundColor: colors.secondary + '60' }]}>
                     <FontAwesome name="bell" size={52} color={colors.secondary} />
+                </View>
+            </View>
+        );
+    } else if (item.id === 'recipes') {
+        illustration = (
+            <View style={[styles.iconCircle, { backgroundColor: colors.success + '25' }]}>
+                <View style={[styles.iconCircleInner, { backgroundColor: colors.success + '50' }]}>
+                    <FontAwesome name="calculator" size={52} color={colors.success} />
                 </View>
             </View>
         );
