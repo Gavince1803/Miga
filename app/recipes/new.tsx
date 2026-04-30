@@ -11,7 +11,8 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { parseRecipeText } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import BackButton from '@/components/BackButton';
 import React from 'react';
 import {
     ActivityIndicator,
@@ -228,6 +229,7 @@ export default function NewRecipeScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         >
+            <Stack.Screen options={{ headerLeft: () => <BackButton /> }} />
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                 {/* Title Section */}

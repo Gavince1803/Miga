@@ -2,7 +2,7 @@
   "expo": {
     "name": "Miga",
     "slug": "agenda-repostera",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "miga",
@@ -28,7 +28,7 @@
         "backgroundColor": "#FDF8F3"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.miga",
+      "package": "com.agendarepostera.app",
       "versionCode": 1
     },
     "web": {

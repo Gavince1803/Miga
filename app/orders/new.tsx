@@ -246,15 +246,18 @@ export default function NewOrderScreen() {
             return;
         }
 
-        // Check Premium Limit (Max 10 active orders)
+        // Check Free Limit (Max 10 orders per calendar month)
         if (!isPremium) {
-            // Active orders: Not completed or cancelled
-            const activeOrders = orders.filter(o => o.status !== 'completado' && o.status !== 'cancelado').length;
-            if (activeOrders >= 10) {
+            const now = new Date();
+            const ordersThisMonth = orders.filter(o => {
+                const created = new Date(o.createdAt);
+                return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+            }).length;
+            if (ordersThisMonth >= 10) {
                 haptics.error();
                 showAlert({
-                    title: 'Límite Alcanzado',
-                    message: 'Tienes 10 pedidos activos (límite gratuito).\n\nCompleta o cancela pedidos existentes, o suscríbete a Premium para pedidos ilimitados.',
+                    title: 'Límite Mensual Alcanzado',
+                    message: 'Alcanzaste los 10 pedidos gratuitos de este mes.\n\nSuscríbete a Premium para pedidos ilimitados.',
                     type: 'warning',
                     buttons: [
                         { text: 'Cancelar', style: 'cancel' },
