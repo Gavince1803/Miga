@@ -5,15 +5,16 @@ import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProduc
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
 import { useOrders } from '@/hooks/useOrders';
 import { useSubscription } from '@/hooks/useSubscription';
-import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
+import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -118,6 +119,7 @@ export default function NewOrderScreen() {
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
     const [address, setAddress] = useState('');
+    const [clientSelected, setClientSelected] = useState(false);
 
     // Date Objects for Picker
     const [deliveryDateObj, setDeliveryDateObj] = useState(new Date());
@@ -142,10 +144,42 @@ export default function NewOrderScreen() {
 
 
 
-    const { createOrder, getDictionaryOptions, orders } = useOrders(); // Destructure orders
+    const { createOrder, getDictionaryOptions, orders } = useOrders();
+
+    // Unique known clients from order history (most recent data wins on dedup)
+    const knownClients = useMemo(() => {
+        const map = new Map<string, { name: string; phone: string; address: string }>();
+        [...orders].reverse().forEach(o => {
+            const key = o.clientName.toLowerCase().trim();
+            if (!map.has(key)) {
+                map.set(key, {
+                    name: o.clientName,
+                    phone: o.clientPhone || '',
+                    address: o.address || '',
+                });
+            }
+        });
+        return Array.from(map.values());
+    }, [orders]);
+
+    const clientSuggestions = useMemo(() => {
+        if (clientSelected || clientName.trim().length < 1) return [];
+        const q = clientName.toLowerCase().trim();
+        return knownClients.filter(c => c.name.toLowerCase().includes(q)).slice(0, 5);
+    }, [clientName, clientSelected, knownClients]);
+
+    const handleSelectClient = (client: { name: string; phone: string; address: string }) => {
+        setClientName(client.name);
+        setClientPhone(client.phone);
+        setAddress(client.address);
+        setClientSelected(true);
+    };
     const { setItemsForOrder } = useOrderItems();
     const { showAlert } = useAlert();
     const { isPremium } = useSubscription(); // Import this hook
+    const { currency } = useSettings();
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
+
     const { bcv, parallel, euro } = useExchangeRates();
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const [submitting, setSubmitting] = useState(false);
@@ -206,21 +240,24 @@ export default function NewOrderScreen() {
 
     const handleSave = async () => {
         // Validate required fields
-        if (!clientName.trim() || !clientPhone.trim()) {
+        if (!clientName.trim()) {
             haptics.error();
             showAlert({ title: 'Error', message: 'Por favor completa todos los campos marcados con *', type: 'error' });
             return;
         }
 
-        // Check Premium Limit (Max 10 active orders)
+        // Check Free Limit (Max 10 orders per calendar month)
         if (!isPremium) {
-            // Active orders: Not completed or cancelled
-            const activeOrders = orders.filter(o => o.status !== 'completado' && o.status !== 'cancelado').length;
-            if (activeOrders >= 10) {
+            const now = new Date();
+            const ordersThisMonth = orders.filter(o => {
+                const created = new Date(o.createdAt);
+                return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+            }).length;
+            if (ordersThisMonth >= 10) {
                 haptics.error();
                 showAlert({
-                    title: 'Límite Alcanzado',
-                    message: 'Tienes 10 pedidos activos (límite gratuito).\n\nCompleta o cancela pedidos existentes, o suscríbete a Premium para pedidos ilimitados.',
+                    title: 'Límite Mensual Alcanzado',
+                    message: 'Alcanzaste los 10 pedidos gratuitos de este mes.\n\nSuscríbete a Premium para pedidos ilimitados.',
                     type: 'warning',
                     buttons: [
                         { text: 'Cancelar', style: 'cancel' },
@@ -328,15 +365,48 @@ export default function NewOrderScreen() {
                             placeholder="Ej: María García"
                             placeholderTextColor={colors.textMuted}
                             value={clientName}
-                            onChangeText={setClientName}
+                            onChangeText={(text) => {
+                                setClientName(text);
+                                setClientSelected(false);
+                            }}
                             autoCapitalize="words"
                         />
+                        {clientSuggestions.length > 0 && (
+                            <View style={[styles.suggestionsContainer, { borderColor: colors.border }]}>
+                                {clientSuggestions.map((client, index) => (
+                                    <TouchableOpacity
+                                        key={client.name}
+                                        onPress={() => handleSelectClient(client)}
+                                        style={[
+                                            styles.suggestionRow,
+                                            {
+                                                borderBottomColor: colors.border,
+                                                borderBottomWidth: index < clientSuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
+                                            },
+                                        ]}
+                                    >
+                                        <FontAwesome name="user-o" size={13} color={colors.primary} style={{ marginTop: 2 }} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.suggestionName, { color: colors.text }]}>
+                                                {client.name}
+                                            </Text>
+                                            {client.phone ? (
+                                                <Text style={[styles.suggestionPhone, { color: colors.textMuted }]}>
+                                                    {client.phone}
+                                                </Text>
+                                            ) : null}
+                                        </View>
+                                        <FontAwesome name="chevron-right" size={11} color={colors.textMuted} />
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </FormField>
 
-                    <FormField label="Teléfono" required colors={colors}>
+                    <FormField label="Teléfono" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
-                            placeholder="Ej: +58 412 123 4567"
+                            placeholder="Ej: +58 412 123 4567 (opcional)"
                             placeholderTextColor={colors.textMuted}
                             value={clientPhone}
                             onChangeText={setClientPhone}
@@ -468,11 +538,8 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Products with Recipes */}
-                <FormSection title="PRODUCTOS DEL PEDIDO" colors={colors}>
+                <FormSection title="¿QUÉ VAS A PREPARAR?" colors={colors}>
                     <View style={{ paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm }}>
-                        <Text style={[styles.helperText, { color: colors.textSecondary, marginBottom: Spacing.sm }]}>
-                            Agrega productos y vincula recetas para el descuento automático de inventario.
-                        </Text>
                         <OrderProductsSelector
                             products={orderProducts}
                             onProductsChange={setOrderProducts}
@@ -486,7 +553,7 @@ export default function NewOrderScreen() {
                         <View style={{ flex: 1, marginRight: Spacing.sm }}>
                             <FormField label="Precio Total" colors={colors}>
                                 <View style={styles.priceInput}>
-                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                                     <TextInput
                                         style={[styles.input, styles.priceField, { color: colors.text }]}
                                         placeholder="0"
@@ -501,7 +568,7 @@ export default function NewOrderScreen() {
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
                             <FormField label="Abonado" colors={colors}>
                                 <View style={styles.priceInput}>
-                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                                    <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                                     <TextInput
                                         style={[styles.input, styles.priceField, { color: colors.primary }]}
                                         placeholder="0"
@@ -515,49 +582,51 @@ export default function NewOrderScreen() {
                         </View>
                     </View>
 
-                    {/* Rate Selector & Helper - Moved outside the row for better alignment */}
-                    <View style={{ marginTop: 8, marginBottom: 8 }}>
-                        <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                            {[
-                                { id: 'bcv', label: 'BCV' },
-                                { id: 'parallel', label: 'Paralelo' },
-                                { id: 'euro', label: 'Euro' }
-                            ].map((rate) => (
-                                <TouchableOpacity
-                                    key={rate.id}
-                                    onPress={() => setSelectedRateType(rate.id as any)}
-                                    style={{
-                                        paddingHorizontal: 12,
-                                        paddingVertical: 6,
-                                        borderRadius: 12,
-                                        backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
-                                        borderWidth: 1,
-                                        borderColor: selectedRateType === rate.id ? colors.primary : colors.border
-                                    }}>
-                                    <Text style={{ fontSize: 11, fontWeight: '500', color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
-                                        {rate.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                    {/* Rate Selector & Helper (Only for VES) */}
+                    {currency === 'VES' && (
+                        <View style={{ marginTop: 8, marginBottom: 8 }}>
+                            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                                {[
+                                    { id: 'bcv', label: 'BCV' },
+                                    { id: 'parallel', label: 'Paralelo' },
+                                    { id: 'euro', label: 'Euro' }
+                                ].map((rate) => (
+                                    <TouchableOpacity
+                                        key={rate.id}
+                                        onPress={() => setSelectedRateType(rate.id as any)}
+                                        style={{
+                                            paddingHorizontal: 12,
+                                            paddingVertical: 6,
+                                            borderRadius: 12,
+                                            backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
+                                            borderWidth: 1,
+                                            borderColor: selectedRateType === rate.id ? colors.primary : colors.border
+                                        }}>
+                                        <Text style={{ fontSize: 11, fontWeight: '500', color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
+                                            {rate.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
 
-                        {totalPrice ? (
-                            <Text style={{ fontSize: 13, color: colors.textSecondary, marginLeft: 2 }}>
-                                ≈ Bs. {(parseFloat(totalPrice) * (
-                                    selectedRateType === 'bcv' ? bcv :
-                                        selectedRateType === 'parallel' ? parallel :
-                                            (euro || 0)
-                                )).toFixed(2)}
-                            </Text>
-                        ) : null}
-                    </View>
+                            {totalPrice ? (
+                                <Text style={{ fontSize: 13, color: colors.textSecondary, marginLeft: 2 }}>
+                                    ≈ Bs. {(parseFloat(totalPrice) * (
+                                        selectedRateType === 'bcv' ? bcv :
+                                            selectedRateType === 'parallel' ? parallel :
+                                                (euro || 0)
+                                    )).toFixed(2)}
+                                </Text>
+                            ) : null}
+                        </View>
+                    )}
 
                     {/* Balance Info */}
                     <View style={[styles.balanceContainer, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
                         <View style={styles.balanceRow}>
                             <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>Restante a Pagar:</Text>
                             <Text style={[styles.balanceValue, { color: remaining > 0 ? colors.error : colors.success }]}>
-                                ${remaining.toFixed(2)}
+                                {currencySymbol}{remaining.toFixed(2)}
                             </Text>
                         </View>
                         <View style={styles.balanceRow}>
@@ -573,7 +642,7 @@ export default function NewOrderScreen() {
 
                     <FormField label="Forma de Pago (del abono)" colors={colors}>
                         <View style={styles.paymentOptions}>
-                            {PAYMENT_METHOD_OPTIONS.map((option) => (
+                            {getPaymentMethodOptions(currency).map((option) => (
                                 <TouchableOpacity
                                     key={option.value}
                                     onPress={() => setPaymentMethod(option.value)}
@@ -637,12 +706,12 @@ const styles = StyleSheet.create({
     sectionCard: {
         marginHorizontal: Spacing.md,
         borderRadius: BorderRadius.md,
-        padding: Spacing.xs, // Reduced padding for cleaner look
+        paddingHorizontal: Spacing.sm,
         overflow: 'hidden',
     },
     field: {
         paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.md,
+        paddingHorizontal: Spacing.lg,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     fieldLabel: {
@@ -665,7 +734,7 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
-        paddingHorizontal: Spacing.md,
+        paddingHorizontal: 0,
     },
     chipContainer: {
         flexDirection: 'row',
@@ -767,5 +836,26 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         ...Typography.bodyBold,
         fontSize: 17,
+    },
+    suggestionsContainer: {
+        marginTop: Spacing.xs,
+        borderWidth: 1,
+        borderRadius: BorderRadius.sm,
+        overflow: 'hidden',
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingVertical: 10,
+        paddingHorizontal: Spacing.sm,
+    },
+    suggestionName: {
+        ...Typography.caption,
+        fontWeight: '600',
+    },
+    suggestionPhone: {
+        fontSize: 12,
+        marginTop: 1,
     },
 });

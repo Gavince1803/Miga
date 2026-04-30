@@ -1,12 +1,18 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
+import { useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export function ExchangeRateTicker() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const { currency } = useSettings();
     const { bcv, parallel, euro, loading, error, refreshRates } = useExchangeRates();
+
+    if (currency !== 'VES') {
+        return null;
+    }
 
     if (error) {
         return (

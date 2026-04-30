@@ -7,6 +7,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -39,6 +40,7 @@ export default function AddItemScreen() {
     const [unit, setUnit] = useState('kg');
     const [price, setPrice] = useState('');
     const [minStock, setMinStock] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const costPerUnit = (() => {
         const q = parseFloat(quantity.replace(',', '.'));
@@ -50,6 +52,8 @@ export default function AddItemScreen() {
     })();
 
     const handleSave = async () => {
+        if (isSubmitting) return;
+
         if (!name.trim()) {
             showAlert({ title: 'Error', message: 'El nombre es requerido', type: 'error' });
             return;
@@ -72,6 +76,7 @@ export default function AddItemScreen() {
         const q = parseFloat(quantity.replace(',', '.')) || 0;
         const min = parseFloat(minStock.replace(',', '.')) || undefined;
 
+        setIsSubmitting(true);
         const success = await addItem({
             name: name.trim(),
             quantity: q,
@@ -83,6 +88,8 @@ export default function AddItemScreen() {
 
         if (success) {
             router.back();
+        } else {
+            setIsSubmitting(false);
         }
     };
 
@@ -208,11 +215,18 @@ export default function AddItemScreen() {
                 {/* Save Button */}
                 <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                     <TouchableOpacity
-                        style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                        style={[styles.saveButton, { backgroundColor: isSubmitting ? colors.border : colors.primary }]}
                         onPress={handleSave}
+                        disabled={isSubmitting}
                     >
-                        <FontAwesome name="check" size={20} color="#FFF" />
-                        <Text style={styles.saveButtonText}>Agregar Ingrediente</Text>
+                        {isSubmitting ? (
+                            <ActivityIndicator color="#FFF" size="small" />
+                        ) : (
+                            <>
+                                <FontAwesome name="check" size={20} color="#FFF" />
+                                <Text style={styles.saveButtonText}>Agregar Ingrediente</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>

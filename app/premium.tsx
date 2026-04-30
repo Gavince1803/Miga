@@ -22,7 +22,7 @@ import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/Colors';
 
 const PREMIUM_FEATURES = [
-    { icon: 'plus-circle', label: 'Pedidos ilimitados', free: `Hasta ${FREE_TIER_LIMITS.maxOrders}` },
+    { icon: 'plus-circle', label: 'Pedidos ilimitados por mes', free: `Hasta ${FREE_TIER_LIMITS.maxOrders} al mes` },
     { icon: 'cubes', label: 'Inventario ilimitado', free: `Hasta ${FREE_TIER_LIMITS.maxInventoryItems} items` },
     { icon: 'book', label: 'Recetas ilimitadas', free: `Hasta ${FREE_TIER_LIMITS.maxRecipes}` },
     { icon: 'camera', label: 'OCR Escaneo de Recetas', free: 'No disponible' },
@@ -58,7 +58,7 @@ export default function PremiumScreen() {
     // Easter egg for testers: 7 quick taps to show code input
     const [tapCount, setTapCount] = useState(0);
     const [showDevMenu, setShowDevMenu] = useState(false);
-    const tapTimeout = React.useRef<ReturnType<typeof setTimeout>>();
+    const tapTimeout = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const handleSecretTap = () => {
         setTapCount(prev => {
@@ -259,7 +259,7 @@ export default function PremiumScreen() {
                         disabled={isPresenting}
                     >
                         <View style={styles.iapButtonContent}>
-                            <Text style={styles.iapButtonTitle}>Ver Planes y Suscribirse</Text>
+                            <Text style={styles.iapButtonTitle}>Empezar 1 mes gratis</Text>
                             {isPresenting ? (
                                 <ActivityIndicator color="#FFF" size="small" />
                             ) : (

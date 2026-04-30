@@ -19,6 +19,7 @@ import {
     View,
 } from 'react-native';
 
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 
 function CurrencyConversions({ amount, colors }: { amount: number, colors: typeof Colors.light }) {
@@ -92,6 +93,8 @@ export default function OrderDetailScreen() {
     const { id } = useLocalSearchParams();
     const { updateOrderStatus, getOrdersByClient } = useOrders();
     const { showAlert } = useAlert();
+    const { currency } = useSettings();
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
@@ -453,17 +456,19 @@ export default function OrderDetailScreen() {
                     <View style={styles.priceRow}>
                         <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
                         <Text style={[styles.priceValue, { color: colors.primary }]}>
-                            ${order.totalPrice.toFixed(2)}
+                            {currencySymbol}{order.totalPrice.toFixed(2)}
                         </Text>
                     </View>
 
-                    <CurrencyConversions amount={order.totalPrice} colors={colors} />
+                    {currency === 'VES' && (
+                        <CurrencyConversions amount={order.totalPrice} colors={colors} />
+                    )}
 
                     <View style={{ height: Spacing.sm }} />
                     <DetailRow
                         icon={order.paymentMethod === 'efectivo' ? 'money' : order.paymentMethod === 'pago_movil' ? 'mobile-phone' : 'bank'}
                         label="Forma de pago"
-                        value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : 'Zelle'}
+                        value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : order.paymentMethod === 'transferencia' ? 'Transferencia' : 'Zelle'}
                         colors={colors}
                     />
                 </View>
@@ -524,7 +529,7 @@ export default function OrderDetailScreen() {
                                 <View style={[styles.summaryDivider, { backgroundColor: colors.primary + '30' }]} />
                                 <View style={styles.summaryItem}>
                                     <Text style={[styles.summaryNumber, { color: colors.primary }]}>
-                                        ${(clientTotalSpent + order.totalPrice).toFixed(2)}
+                                        {currencySymbol}{(clientTotalSpent + order.totalPrice).toFixed(2)}
                                     </Text>
                                     <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Total gastado</Text>
                                 </View>
@@ -553,7 +558,7 @@ export default function OrderDetailScreen() {
                                         📅 {formatDate(order.deliveryDate)}
                                     </Text>
                                     <Text style={[styles.historyPrice, { color: colors.text }]}>
-                                        ${order.totalPrice.toFixed(2)}
+                                        {currencySymbol}{order.totalPrice.toFixed(2)}
                                     </Text>
                                 </View>
                             </View>
@@ -591,7 +596,7 @@ export default function OrderDetailScreen() {
                                                     📅 {formatDate(pastOrder.deliveryDate)}
                                                 </Text>
                                                 <Text style={[styles.historyPrice, { color: colors.text }]}>
-                                                    ${pastOrder.totalPrice.toFixed(2)}
+                                                    {currencySymbol}{pastOrder.totalPrice.toFixed(2)}
                                                 </Text>
                                             </View>
                                         </TouchableOpacity>

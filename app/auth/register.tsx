@@ -1,11 +1,12 @@
 import { useColorScheme } from '@/components/useColorScheme';
-import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/Colors';
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, Currency } from '@/context/SettingsContext';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RegisterScreen() {
@@ -18,15 +19,36 @@ export default function RegisterScreen() {
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [currency, setCurrency] = useState<Currency>('VES');
+    const [showCurrencyModal, setShowCurrencyModal] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [businessNameExists, setBusinessNameExists] = useState(false);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleFullNameChange = (text: string) => {
+        setFullName(text);
+        setBusinessNameExists(false);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        if (text.trim().length < 2) return;
+        debounceRef.current = setTimeout(async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id')
+                .ilike('full_name', text.trim())
+                .limit(1);
+            setBusinessNameExists(!!data && data.length > 0);
+        }, 600);
+    };
 
     async function signUp() {
+        if (loading) return;
+        setLoading(true);
+
         if (!email || !password || !fullName) {
             showAlert({ title: 'Campos requeridos', message: 'Por favor completa al menos Nombre, Correo y Contraseña.', type: 'warning' });
+            setLoading(false);
             return;
         }
-
-        setLoading(true);
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -34,6 +56,7 @@ export default function RegisterScreen() {
                 data: {
                     full_name: fullName,
                     phone: phone,
+                    currency: currency,
                 }
             }
         });
@@ -80,12 +103,17 @@ export default function RegisterScreen() {
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Nombre o Negocio *</Text>
                             <TextInput
-                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                onChangeText={setFullName}
+                                style={[styles.input, { color: colors.text, borderColor: businessNameExists ? colors.warning ?? '#F59E0B' : colors.border }]}
+                                onChangeText={handleFullNameChange}
                                 value={fullName}
                                 placeholder="Ej: Marcela Bollería"
                                 placeholderTextColor={colors.textMuted}
                             />
+                            {businessNameExists && (
+                                <Text style={{ color: colors.warning ?? '#F59E0B', fontSize: 12, marginTop: 4 }}>
+                                    Ya existe un negocio con este nombre. ¿Ya tienes cuenta?
+                                </Text>
+                            )}
                         </View>
 
                         <View style={styles.inputGroup}>
@@ -126,6 +154,23 @@ export default function RegisterScreen() {
                             />
                         </View>
 
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: colors.text }]}>Moneda Principal *</Text>
+                            <TouchableOpacity
+                                style={[styles.input, { justifyContent: 'center', borderColor: colors.border }]}
+                                onPress={() => setShowCurrencyModal(true)}
+                            >
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                        <Text style={{ fontSize: 16, color: colors.text }}>
+                                            {CURRENCIES[currency].label}
+                                        </Text>
+                                    </View>
+                                    <FontAwesome name="chevron-down" size={14} color={colors.textMuted} />
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+
                         <TouchableOpacity
                             style={[
                                 styles.button,
@@ -162,6 +207,56 @@ export default function RegisterScreen() {
                     <View style={{ height: 40 }} />
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {/* Currency Selector Modal */}
+            <Modal
+                visible={showCurrencyModal}
+                transparent={true}
+                animationType="slide"
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowCurrencyModal(false)}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>Selecciona tu moneda</Text>
+                            <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
+                                <FontAwesome name="times" size={20} color={colors.textMuted} />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={Object.entries(CURRENCIES)}
+                            keyExtractor={([key]) => key}
+                            renderItem={({ item: [key, val] }) => (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.currencyOption,
+                                        { borderBottomColor: colors.border },
+                                        currency === key && { backgroundColor: colors.primary + '15' }
+                                    ]}
+                                    onPress={() => {
+                                        setCurrency(key as Currency);
+                                        setShowCurrencyModal(false);
+                                    }}
+                                >
+                                    <Text style={[
+                                        styles.currencyLabel,
+                                        { color: colors.text },
+                                        currency === key && { color: colors.primary, fontWeight: 'bold' }
+                                    ]}>
+                                        {val.label}
+                                    </Text>
+                                    {currency === key && (
+                                        <FontAwesome name="check" size={16} color={colors.primary} />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -240,5 +335,39 @@ const styles = StyleSheet.create({
     dividerLine: {
         flex: 1,
         height: 1,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        borderTopLeftRadius: BorderRadius.xl,
+        borderTopRightRadius: BorderRadius.xl,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: Spacing.lg,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#E5E5E5',
+    },
+    modalTitle: {
+        ...Typography.bodyBold,
+        fontSize: 18,
+    },
+    currencyOption: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: Spacing.lg,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+    },
+    currencyLabel: {
+        ...Typography.body,
+        fontSize: 16,
     },
 });
