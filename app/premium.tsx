@@ -22,7 +22,7 @@ import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/Colors';
 
 const PREMIUM_FEATURES = [
-    { icon: 'plus-circle', label: 'Pedidos ilimitados', free: `Hasta ${FREE_TIER_LIMITS.maxOrders}` },
+    { icon: 'plus-circle', label: 'Pedidos ilimitados por mes', free: `Hasta ${FREE_TIER_LIMITS.maxOrders} al mes` },
     { icon: 'cubes', label: 'Inventario ilimitado', free: `Hasta ${FREE_TIER_LIMITS.maxInventoryItems} items` },
     { icon: 'book', label: 'Recetas ilimitadas', free: `Hasta ${FREE_TIER_LIMITS.maxRecipes}` },
     { icon: 'camera', label: 'OCR Escaneo de Recetas', free: 'No disponible' },
