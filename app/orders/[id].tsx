@@ -7,9 +7,12 @@ import { supabase } from '@/lib/supabase';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     Linking,
     Modal,
     ScrollView,
@@ -98,6 +101,7 @@ export default function OrderDetailScreen() {
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [clientHistoryVisible, setClientHistoryVisible] = useState(false);
     const [clientOrders, setClientOrders] = useState<Order[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
@@ -141,6 +145,7 @@ export default function OrderDetailScreen() {
                     paymentStatus: data.payment_status,
                     reminderDays: data.reminder_days || 0,
                     customReminderDays: data.custom_reminder_days || 0,
+                    decorationImageUrl: data.decoration_image_url || undefined,
                 });
             }
         } catch (error) {
@@ -305,6 +310,82 @@ export default function OrderDetailScreen() {
                         }
                     }
                 },
+            ]
+        });
+    };
+
+    const handlePickPhoto = async (useCamera: boolean) => {
+        try {
+            let result: ImagePicker.ImagePickerResult;
+            if (useCamera) {
+                const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                if (status !== 'granted') {
+                    showAlert({ title: 'Permiso necesario', message: 'Necesitamos acceso a la cámara', type: 'warning' });
+                    return;
+                }
+                result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 0.8 });
+            } else {
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== 'granted') {
+                    showAlert({ title: 'Permiso necesario', message: 'Necesitamos acceso a tu galería', type: 'warning' });
+                    return;
+                }
+                result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8 });
+            }
+            if (result.canceled) return;
+
+            setUploadingPhoto(true);
+            const compressed = await ImageManipulator.manipulateAsync(
+                result.assets[0].uri,
+                [{ resize: { width: 1200 } }],
+                { compress: 0.75, format: ImageManipulator.SaveFormat.JPEG }
+            );
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            const fileName = `${session.user.id}/${order!.id}_${Date.now()}.jpg`;
+            const res = await fetch(compressed.uri);
+            const blob = await res.blob();
+
+            const { error: uploadError } = await supabase.storage
+                .from('order-photos')
+                .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabase.storage.from('order-photos').getPublicUrl(fileName);
+
+            const { error: updateError } = await supabase
+                .from('orders')
+                .update({ decoration_image_url: urlData.publicUrl })
+                .eq('id', order!.id);
+            if (updateError) throw updateError;
+
+            setOrder(prev => prev ? { ...prev, decorationImageUrl: urlData.publicUrl } : null);
+        } catch (err) {
+            console.error('Photo upload error:', err);
+            showAlert({ title: 'Error', message: 'No se pudo subir la foto', type: 'error' });
+        } finally {
+            setUploadingPhoto(false);
+        }
+    };
+
+    const handlePhotoOptions = () => {
+        showAlert({
+            title: 'Foto del resultado',
+            message: order?.decorationImageUrl ? '¿Qué deseas hacer?' : 'Agrega una foto del pedido terminado',
+            buttons: [
+                { text: 'Cámara', onPress: () => handlePickPhoto(true) },
+                { text: 'Galería', onPress: () => handlePickPhoto(false) },
+                ...(order?.decorationImageUrl ? [{
+                    text: 'Eliminar foto',
+                    style: 'destructive' as const,
+                    onPress: async () => {
+                        await supabase.from('orders').update({ decoration_image_url: null }).eq('id', order!.id);
+                        setOrder(prev => prev ? { ...prev, decorationImageUrl: undefined } : null);
+                    }
+                }] : []),
+                { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } },
             ]
         });
     };
@@ -491,6 +572,44 @@ export default function OrderDetailScreen() {
                         value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : order.paymentMethod === 'transferencia' ? 'Transferencia' : 'Zelle'}
                         colors={colors}
                     />
+                </View>
+
+                {/* Photo Section */}
+                <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        <FontAwesome name="camera" size={16} /> Foto del Resultado
+                    </Text>
+                    {order.decorationImageUrl ? (
+                        <TouchableOpacity onPress={handlePhotoOptions} activeOpacity={0.85}>
+                            <Image
+                                source={{ uri: order.decorationImageUrl }}
+                                style={styles.photoPreview}
+                                resizeMode="cover"
+                            />
+                            <View style={[styles.photoChangeHint, { backgroundColor: colors.primary + '20' }]}>
+                                <FontAwesome name="camera" size={13} color={colors.primary} />
+                                <Text style={[styles.photoChangeText, { color: colors.primary }]}>Cambiar foto</Text>
+                            </View>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={[styles.photoPlaceholder, { borderColor: colors.border, backgroundColor: colors.background }]}
+                            onPress={handlePhotoOptions}
+                            disabled={uploadingPhoto}
+                            activeOpacity={0.7}
+                        >
+                            {uploadingPhoto ? (
+                                <ActivityIndicator color={colors.primary} />
+                            ) : (
+                                <>
+                                    <FontAwesome name="camera" size={28} color={colors.textMuted} />
+                                    <Text style={[styles.photoPlaceholderText, { color: colors.textSecondary }]}>
+                                        Agregar foto del resultado
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Delete Button */}
@@ -969,5 +1088,36 @@ const styles = StyleSheet.create({
     reorderButtonText: {
         ...Typography.small,
         fontWeight: '600',
+    },
+    photoPreview: {
+        width: '100%',
+        height: 220,
+        borderRadius: BorderRadius.md,
+        marginBottom: Spacing.sm,
+    },
+    photoChangeHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        alignSelf: 'flex-start',
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 5,
+        borderRadius: BorderRadius.sm,
+    },
+    photoChangeText: {
+        ...Typography.small,
+        fontWeight: '600',
+    },
+    photoPlaceholder: {
+        height: 140,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: Spacing.sm,
+    },
+    photoPlaceholderText: {
+        ...Typography.body,
     },
 });

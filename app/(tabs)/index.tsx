@@ -10,7 +10,7 @@ import { Order } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { isToday } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -29,22 +29,31 @@ function StatCard({
   label,
   value,
   color,
-  colors
+  colors,
+  onPress,
 }: {
   icon: string;
   label: string;
   value: number | string;
   color: string;
   colors: typeof Colors.light;
+  onPress?: () => void;
 }) {
   return (
-    <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+    <TouchableOpacity
+      style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
       <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
         <FontAwesome name={icon as any} size={20} color={color} />
       </View>
       <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
-    </View>
+      {onPress && (
+        <FontAwesome name="chevron-right" size={9} color={color} style={{ marginTop: 3 }} />
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -285,6 +294,7 @@ export default function HomeScreen() {
           value={todayOrdersCount}
           color={colors.urgentToday}
           colors={colors}
+          onPress={() => router.push('/agenda' as any)}
         />
         <StatCard
           icon="money"
