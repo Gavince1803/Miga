@@ -104,8 +104,6 @@ export function useOrders() {
             // Save custom size
             if (orderData.size) saveToDictionary('size', orderData.size);
 
-            if (orderData.size) saveToDictionary('size', orderData.size);
-
             console.log('Sending Order to DB:', {
                 cakeType: orderData.cakeType,
                 clientId: session.user.id
@@ -344,6 +342,7 @@ export function useOrders() {
      * Fetch all orders from a specific client (case-insensitive match)
      */
     const getOrdersByClient = async (clientName: string): Promise<Order[]> => {
+        if (!clientName?.trim()) return [];
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return [];
@@ -371,6 +370,7 @@ export function useOrders() {
                 servings: item.servings,
                 filling: item.filling,
                 cover: item.cover,
+                cakeType: item.cake_type,
                 occasion: item.occasion,
                 description: item.description,
                 totalPrice: item.total_price,

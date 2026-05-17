@@ -13,7 +13,7 @@ import { useOrders } from '@/hooks/useOrders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -115,30 +115,48 @@ export default function NewOrderScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
 
+    const params = useLocalSearchParams<{
+        clientName?: string;
+        clientPhone?: string;
+        address?: string;
+        cakeType?: string;
+        size?: string;
+        filling?: string;
+        cover?: string;
+        totalPrice?: string;
+    }>();
+
+    const initialSize = (() => {
+        const s = params.size?.trim();
+        if (!s) return { size: '20 cm', custom: '', showCustom: false };
+        if (SIZE_OPTIONS.includes(s as any)) return { size: s, custom: '', showCustom: false };
+        return { size: 'Otro', custom: s, showCustom: true };
+    })();
+
     // Form state
-    const [clientName, setClientName] = useState('');
-    const [clientPhone, setClientPhone] = useState('');
-    const [address, setAddress] = useState('');
-    const [clientSelected, setClientSelected] = useState(false);
+    const [clientName, setClientName] = useState(params.clientName || '');
+    const [clientPhone, setClientPhone] = useState(params.clientPhone || '');
+    const [address, setAddress] = useState(params.address || '');
+    const [clientSelected, setClientSelected] = useState(!!params.clientName);
 
     // Date Objects for Picker
     const [deliveryDateObj, setDeliveryDateObj] = useState(new Date());
     const [deliveryTimeObj, setDeliveryTimeObj] = useState(new Date());
 
     // Size Helper
-    const [size, setSize] = useState('20 cm');
-    const [customSize, setCustomSize] = useState('');
-    const [showCustomSize, setShowCustomSize] = useState(false);
+    const [size, setSize] = useState(initialSize.size);
+    const [customSize, setCustomSize] = useState(initialSize.custom);
+    const [showCustomSize, setShowCustomSize] = useState(initialSize.showCustom);
 
     const [servings, setServings] = useState('');
-    const [filling, setFilling] = useState('');
-    const [cakeType, setCakeType] = useState('');
-    const [cover, setCover] = useState('');
+    const [filling, setFilling] = useState(params.filling || '');
+    const [cakeType, setCakeType] = useState(params.cakeType || '');
+    const [cover, setCover] = useState(params.cover || '');
     const [occasion, setOccasion] = useState('');
     const [description, setDescription] = useState('');
 
     // Payment State
-    const [totalPrice, setTotalPrice] = useState('');
+    const [totalPrice, setTotalPrice] = useState(params.totalPrice || '');
     const [depositAmount, setDepositAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 

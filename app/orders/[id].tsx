@@ -249,6 +249,26 @@ export default function OrderDetailScreen() {
     };
 
     const clientTotalSpent = clientOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+    const allClientOrders = [order, ...clientOrders];
+    const paidCount = allClientOrders.filter(o => o.status === 'pagado' || o.paymentStatus === 'pagado').length;
+    const pendingCount = allClientOrders.length - paidCount;
+    const favoriteCake = (() => {
+        const map = new Map<string, { count: number; date: string }>();
+        allClientOrders.forEach(o => {
+            if (!o.cakeType) return;
+            const date = o.deliveryDate || o.createdAt || '';
+            const existing = map.get(o.cakeType);
+            if (!existing) {
+                map.set(o.cakeType, { count: 1, date });
+            } else {
+                map.set(o.cakeType, { count: existing.count + 1, date: date > existing.date ? date : existing.date });
+            }
+        });
+        if (map.size === 0) return '—';
+        return Array.from(map.entries()).sort((a, b) =>
+            b[1].count !== a[1].count ? b[1].count - a[1].count : b[1].date.localeCompare(a[1].date)
+        )[0][0];
+    })();
 
     const getStatusColor = (status: string) => {
         const option = ORDER_STATUS_OPTIONS.find(s => s.value === status);
@@ -323,7 +343,7 @@ export default function OrderDetailScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity onPress={handleClientHistory} style={styles.clientNameRow}>
+                    <TouchableOpacity onPress={handleClientHistory} disabled={loadingHistory} style={styles.clientNameRow}>
                         <Text style={[styles.clientName, { color: colors.text }]}>
                             {order.clientName}
                         </Text>
@@ -518,20 +538,41 @@ export default function OrderDetailScreen() {
                         </View>
                     ) : (
                         <ScrollView contentContainerStyle={styles.modalContent}>
-                            {/* Summary Card */}
-                            <View style={[styles.summaryCard, { backgroundColor: colors.primary + '10' }]}>
-                                <View style={styles.summaryItem}>
-                                    <Text style={[styles.summaryNumber, { color: colors.primary }]}>
-                                        {clientOrders.length + 1}
-                                    </Text>
-                                    <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Pedidos totales</Text>
+                            {/* Stats Grid 2x2 */}
+                            <View style={{ gap: Spacing.sm, marginBottom: Spacing.lg }}>
+                                <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+                                    <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                                        <View style={[styles.clientStatIcon, { backgroundColor: colors.primary + '15' }]}>
+                                            <FontAwesome name="shopping-bag" size={13} color={colors.primary} />
+                                        </View>
+                                        <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Total pedidos</Text>
+                                        <Text style={[styles.clientStatValue, { color: colors.primary }]}>{allClientOrders.length}</Text>
+                                    </View>
+                                    <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                                        <View style={[styles.clientStatIcon, { backgroundColor: colors.success + '15' }]}>
+                                            <FontAwesome name="money" size={13} color={colors.success} />
+                                        </View>
+                                        <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Total gastado</Text>
+                                        <Text style={[styles.clientStatValue, { color: colors.success }]} numberOfLines={1}>
+                                            {currencySymbol}{(clientTotalSpent + order.totalPrice).toFixed(2)}
+                                        </Text>
+                                    </View>
                                 </View>
-                                <View style={[styles.summaryDivider, { backgroundColor: colors.primary + '30' }]} />
-                                <View style={styles.summaryItem}>
-                                    <Text style={[styles.summaryNumber, { color: colors.primary }]}>
-                                        {currencySymbol}{(clientTotalSpent + order.totalPrice).toFixed(2)}
-                                    </Text>
-                                    <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Total gastado</Text>
+                                <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+                                    <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                                        <View style={[styles.clientStatIcon, { backgroundColor: colors.success + '15' }]}>
+                                            <FontAwesome name="check-circle" size={13} color={colors.success} />
+                                        </View>
+                                        <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Pag. / Pend.</Text>
+                                        <Text style={[styles.clientStatValue, { color: colors.text }]}>{paidCount} / {pendingCount}</Text>
+                                    </View>
+                                    <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                                        <View style={[styles.clientStatIcon, { backgroundColor: colors.secondary + '20' }]}>
+                                            <FontAwesome name="birthday-cake" size={13} color={colors.primary} />
+                                        </View>
+                                        <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Torta favorita</Text>
+                                        <Text style={[styles.clientStatValue, { color: colors.text }]} numberOfLines={1}>{favoriteCake}</Text>
+                                    </View>
                                 </View>
                             </View>
 
@@ -599,6 +640,28 @@ export default function OrderDetailScreen() {
                                                     {currencySymbol}{pastOrder.totalPrice.toFixed(2)}
                                                 </Text>
                                             </View>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    setClientHistoryVisible(false);
+                                                    router.push({
+                                                        pathname: '/orders/new',
+                                                        params: {
+                                                            clientName: pastOrder.clientName || '',
+                                                            clientPhone: pastOrder.clientPhone || '',
+                                                            address: pastOrder.address || '',
+                                                            cakeType: pastOrder.cakeType || '',
+                                                            size: pastOrder.size || '',
+                                                            filling: pastOrder.filling || '',
+                                                            cover: pastOrder.cover || '',
+                                                            totalPrice: String(pastOrder.totalPrice || ''),
+                                                        }
+                                                    });
+                                                }}
+                                                style={[styles.reorderButton, { backgroundColor: colors.primary + '15' }]}
+                                            >
+                                                <FontAwesome name="refresh" size={11} color={colors.primary} />
+                                                <Text style={[styles.reorderButtonText, { color: colors.primary }]}>Pedir de nuevo</Text>
+                                            </TouchableOpacity>
                                         </TouchableOpacity>
                                     ))}
                                 </>
@@ -871,5 +934,40 @@ const styles = StyleSheet.create({
     emptyHistoryText: {
         ...Typography.body,
         textAlign: 'center',
+    },
+    clientStatCard: {
+        flex: 1,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+    },
+    clientStatIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: Spacing.sm,
+    },
+    clientStatLabel: {
+        ...Typography.small,
+        marginBottom: 2,
+    },
+    clientStatValue: {
+        ...Typography.bodyBold,
+        fontSize: 18,
+    },
+    reorderButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        alignSelf: 'flex-start',
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 5,
+        borderRadius: BorderRadius.sm,
+        marginTop: Spacing.sm,
+    },
+    reorderButtonText: {
+        ...Typography.small,
+        fontWeight: '600',
     },
 });
