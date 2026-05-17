@@ -82,6 +82,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Clientes - Client portfolio */}
+      <Tabs.Screen
+        name="clients"
+        options={{
+          title: 'Clientes',
+          headerTitle: 'Mis Clientes',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="users" color={color} focused={focused} />
+          ),
+        }}
+      />
+
       {/* Calendario - Calendar View */}
       <Tabs.Screen
         name="calendar"
