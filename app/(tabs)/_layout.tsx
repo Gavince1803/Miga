@@ -144,6 +144,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Analytics - Premium stats */}
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          headerTitle: 'Analytics',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="bar-chart" color={color} focused={focused} />
+          ),
+        }}
+      />
+
       {/* Ajustes - Settings */}
       <Tabs.Screen
         name="settings"
