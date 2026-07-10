@@ -95,7 +95,7 @@ function RootLayoutNav() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const notificationResponseListener = useRef<Notifications.EventSubscription>();
+  const notificationResponseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
 
   // Open paywall when user taps any trial notification
   useEffect(() => {

@@ -494,7 +494,7 @@ export default function NewOrderScreen() {
                         )}
                     </FormField>
 
-                    <FormField label="Cantidad de Personas" colors={colors}>
+                    <FormField label="Cantidad (personas o unidades)" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             placeholder="Ej: 20"

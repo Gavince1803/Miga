@@ -349,7 +349,7 @@ export default function EditOrderScreen() {
                         />
                     </FormField>
 
-                    <FormField label="Cantidad de Personas" colors={colors}>
+                    <FormField label="Cantidad (personas o unidades)" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             value={servings}
