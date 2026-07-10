@@ -85,7 +85,7 @@ function OrderCard({
                 </Text>
 
                 <Text style={[styles.orderDescription, { color: colors.textSecondary }]} numberOfLines={1}>
-                    {order.description || `${order.size} - ${order.servings} personas`}
+                    {order.description || `${order.size} - ${order.servings}`}
                 </Text>
 
                 <View style={styles.orderFooter}>

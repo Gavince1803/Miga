@@ -36,6 +36,32 @@ export async function getPremiumStatus(): Promise<boolean> {
     }
 }
 
+export interface TrialInfo {
+    isOnTrial: boolean;
+    expirationDate: Date | null;
+}
+
+export async function getTrialInfo(): Promise<TrialInfo> {
+    try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
+
+        if (!entitlement) {
+            return { isOnTrial: false, expirationDate: null };
+        }
+
+        const isOnTrial = entitlement.periodType === 'TRIAL';
+        const expirationDate = entitlement.expirationDate
+            ? new Date(entitlement.expirationDate)
+            : null;
+
+        return { isOnTrial, expirationDate };
+    } catch (e) {
+        console.error('Error al obtener info del trial:', e);
+        return { isOnTrial: false, expirationDate: null };
+    }
+}
+
 export async function restorePurchases(): Promise<boolean> {
     try {
         const customerInfo = await Purchases.restorePurchases();

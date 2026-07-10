@@ -3,13 +3,14 @@ import { EditableDropdown } from '@/components/EditableDropdown';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
-import { PAYMENT_METHOD_OPTIONS, PaymentMethod, SIZE_OPTIONS } from '@/types';
+import { PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -75,8 +76,11 @@ export default function EditOrderScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
-    const { updateOrder } = useOrders();
+    const { updateOrder, orders } = useOrders();
     const { bcv, parallel, euro } = useExchangeRates();
+    const { currency } = useSettings();
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
+
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const { showAlert } = useAlert();
 
@@ -87,6 +91,35 @@ export default function EditOrderScreen() {
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
     const [address, setAddress] = useState('');
+    const [clientSelected, setClientSelected] = useState(true); // true by default since editing existing
+
+    const knownClients = useMemo(() => {
+        const map = new Map<string, { name: string; phone: string; address: string }>();
+        [...orders].reverse().forEach(o => {
+            const key = o.clientName.toLowerCase().trim();
+            if (!map.has(key)) {
+                map.set(key, {
+                    name: o.clientName,
+                    phone: o.clientPhone || '',
+                    address: o.address || '',
+                });
+            }
+        });
+        return Array.from(map.values());
+    }, [orders]);
+
+    const clientSuggestions = useMemo(() => {
+        if (clientSelected || clientName.trim().length < 1) return [];
+        const q = clientName.toLowerCase().trim();
+        return knownClients.filter(c => c.name.toLowerCase().includes(q)).slice(0, 5);
+    }, [clientName, clientSelected, knownClients]);
+
+    const handleSelectClient = (client: { name: string; phone: string; address: string }) => {
+        setClientName(client.name);
+        setClientPhone(client.phone);
+        setAddress(client.address);
+        setClientSelected(true);
+    };
     const [deliveryDateObj, setDeliveryDateObj] = useState(new Date());
     const [deliveryTimeObj, setDeliveryTimeObj] = useState(new Date());
 
@@ -158,7 +191,7 @@ export default function EditOrderScreen() {
 
     const handleSave = async () => {
         // Validate required fields
-        if (!clientName.trim() || !clientPhone.trim()) {
+        if (!clientName.trim()) {
             showAlert({ title: 'Error', message: 'Por favor completa todos los campos requeridos (*)', type: 'error' });
             return;
         }
@@ -232,16 +265,51 @@ export default function EditOrderScreen() {
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             value={clientName}
-                            onChangeText={setClientName}
+                            onChangeText={(text) => {
+                                setClientName(text);
+                                setClientSelected(false);
+                            }}
                         />
+                        {clientSuggestions.length > 0 && (
+                            <View style={[styles.suggestionsContainer, { borderColor: colors.border }]}>
+                                {clientSuggestions.map((client, index) => (
+                                    <TouchableOpacity
+                                        key={client.name}
+                                        onPress={() => handleSelectClient(client)}
+                                        style={[
+                                            styles.suggestionRow,
+                                            {
+                                                borderBottomColor: colors.border,
+                                                borderBottomWidth: index < clientSuggestions.length - 1 ? StyleSheet.hairlineWidth : 0,
+                                            },
+                                        ]}
+                                    >
+                                        <FontAwesome name="user-o" size={13} color={colors.primary} style={{ marginTop: 2 }} />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.suggestionName, { color: colors.text }]}>
+                                                {client.name}
+                                            </Text>
+                                            {client.phone ? (
+                                                <Text style={[styles.suggestionPhone, { color: colors.textMuted }]}>
+                                                    {client.phone}
+                                                </Text>
+                                            ) : null}
+                                        </View>
+                                        <FontAwesome name="chevron-right" size={11} color={colors.textMuted} />
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </FormField>
 
-                    <FormField label="Teléfono" required colors={colors}>
+                    <FormField label="Teléfono" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             value={clientPhone}
                             onChangeText={setClientPhone}
                             keyboardType="phone-pad"
+                            placeholder="Opcional"
+                            placeholderTextColor={colors.textMuted}
                         />
                     </FormField>
 
@@ -281,7 +349,7 @@ export default function EditOrderScreen() {
                         />
                     </FormField>
 
-                    <FormField label="Cantidad de Personas" colors={colors}>
+                    <FormField label="Cantidad (personas o unidades)" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             value={servings}
@@ -340,7 +408,7 @@ export default function EditOrderScreen() {
                 <FormSection title="PAGO" colors={colors}>
                     <FormField label="Precio Total" colors={colors}>
                         <View style={styles.priceInput}>
-                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
                                 value={totalPrice}
@@ -349,44 +417,49 @@ export default function EditOrderScreen() {
                             />
                         </View>
                         <View style={{ marginTop: 8 }}>
-                            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                                {[
-                                    { id: 'bcv', label: 'BCV' },
-                                    { id: 'parallel', label: 'Paralelo' },
-                                    { id: 'euro', label: 'Euro' }
-                                ].map((rate) => (
-                                    <TouchableOpacity
-                                        key={rate.id}
-                                        onPress={() => setSelectedRateType(rate.id as any)}
-                                        style={{
-                                            paddingHorizontal: 8,
-                                            paddingVertical: 4,
-                                            borderRadius: 12,
-                                            backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
-                                            borderWidth: 1,
-                                            borderColor: selectedRateType === rate.id ? colors.primary : colors.border
-                                        }}>
-                                        <Text style={{ fontSize: 10, color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
-                                            {rate.label}
+                            {/* Rate Selector & Helper (Only for VES) */}
+                            {currency === 'VES' && (
+                                <>
+                                    <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                                        {[
+                                            { id: 'bcv', label: 'BCV' },
+                                            { id: 'parallel', label: 'Paralelo' },
+                                            { id: 'euro', label: 'Euro' }
+                                        ].map((rate) => (
+                                            <TouchableOpacity
+                                                key={rate.id}
+                                                onPress={() => setSelectedRateType(rate.id as any)}
+                                                style={{
+                                                    paddingHorizontal: 8,
+                                                    paddingVertical: 4,
+                                                    borderRadius: 12,
+                                                    backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
+                                                    borderWidth: 1,
+                                                    borderColor: selectedRateType === rate.id ? colors.primary : colors.border
+                                                }}>
+                                                <Text style={{ fontSize: 10, color: selectedRateType === rate.id ? '#FFF' : colors.textSecondary }}>
+                                                    {rate.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                    {totalPrice ? (
+                                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                                            ≈ Bs. {(parseFloat(totalPrice) * (
+                                                selectedRateType === 'bcv' ? bcv :
+                                                    selectedRateType === 'parallel' ? parallel :
+                                                        (euro || 0)
+                                            )).toFixed(2)}
                                         </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            {totalPrice ? (
-                                <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                                    ≈ Bs. {(parseFloat(totalPrice) * (
-                                        selectedRateType === 'bcv' ? bcv :
-                                            selectedRateType === 'parallel' ? parallel :
-                                                (euro || 0)
-                                    )).toFixed(2)}
-                                </Text>
-                            ) : null}
+                                    ) : null}
+                                </>
+                            )}
                         </View>
                     </FormField>
 
                     <FormField label="Abono" colors={colors}>
                         <View style={styles.priceInput}>
-                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>$</Text>
+                            <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
                                 value={deposit}
@@ -400,7 +473,7 @@ export default function EditOrderScreen() {
 
                     <FormField label="Forma de Pago" colors={colors}>
                         <View style={styles.paymentOptions}>
-                            {PAYMENT_METHOD_OPTIONS.map((option) => (
+                            {getPaymentMethodOptions(currency).map((option) => (
                                 <TouchableOpacity
                                     key={option.value}
                                     onPress={() => setPaymentMethod(option.value)}
@@ -565,5 +638,26 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         ...Typography.bodyBold,
         fontSize: 17,
+    },
+    suggestionsContainer: {
+        marginTop: Spacing.xs,
+        borderWidth: 1,
+        borderRadius: BorderRadius.sm,
+        overflow: 'hidden',
+    },
+    suggestionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingVertical: 10,
+        paddingHorizontal: Spacing.sm,
+    },
+    suggestionName: {
+        ...Typography.caption,
+        fontWeight: '600',
+    },
+    suggestionPhone: {
+        fontSize: 12,
+        marginTop: 1,
     },
 });

@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     Dimensions,
     ScrollView,
@@ -77,6 +77,8 @@ export default function CalendarScreen() {
     const [currentMonth, setCurrentMonth] = useState(today.getMonth());
     const [currentYear, setCurrentYear] = useState(today.getFullYear());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const scrollViewRef = useRef<ScrollView>(null);
+    const selectedSectionY = useRef<number>(0);
 
     // Group orders by date
     const ordersByDate = orders.reduce((acc, order) => {
@@ -115,6 +117,13 @@ export default function CalendarScreen() {
         }
     };
 
+    const handleDayPress = (dateKey: string) => {
+        setSelectedDate(dateKey);
+        setTimeout(() => {
+            scrollViewRef.current?.scrollTo({ y: selectedSectionY.current, animated: true });
+        }, 50);
+    };
+
 
 
     const isToday = (day: number) => {
@@ -125,6 +134,7 @@ export default function CalendarScreen() {
 
     return (
         <ScrollView
+            ref={scrollViewRef}
             style={[styles.container, { backgroundColor: colors.background }]}
             showsVerticalScrollIndicator={false}
         >
@@ -178,7 +188,7 @@ export default function CalendarScreen() {
                                 hasOrders && { backgroundColor: urgencyColor, borderRadius: 8 }, // Highlight cell
                                 isSelected && [styles.selectedCell, { borderWidth: 2, borderColor: colors.text }],
                             ]}
-                            onPress={() => setSelectedDate(dateKey)}
+                            onPress={() => handleDayPress(dateKey)}
                         >
                             <Text style={[
                                 styles.dayText,
@@ -225,7 +235,10 @@ export default function CalendarScreen() {
 
             {/* Selected Date Orders */}
             {selectedDate && (
-                <View style={[styles.selectedDateSection, { backgroundColor: colors.surface }]}>
+                <View
+                    onLayout={(e) => { selectedSectionY.current = e.nativeEvent.layout.y; }}
+                    style={[styles.selectedDateSection, { backgroundColor: colors.surface }]}
+                >
                     {/* Header with close button */}
                     <View style={styles.selectedDateHeader}>
                         <View style={{ flex: 1 }}>
@@ -426,7 +439,6 @@ const styles = StyleSheet.create({
         marginTop: Spacing.md,
         padding: Spacing.md,
         borderRadius: BorderRadius.md,
-        alignItems: 'center',
     },
     selectedDateTitle: {
         ...Typography.bodyBold,

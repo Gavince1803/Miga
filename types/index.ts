@@ -16,7 +16,7 @@ export interface UserProfile {
 export type PaymentStatus = 'pendiente' | 'abonado' | 'pagado';
 
 // Payment method
-export type PaymentMethod = 'efectivo' | 'pago_movil' | 'zelle';
+export type PaymentMethod = 'efectivo' | 'pago_movil' | 'zelle' | 'transferencia';
 
 // Order status
 export type OrderStatus = 'pendiente' | 'en_proceso' | 'completado' | 'pagado' | 'cancelado';
@@ -191,11 +191,20 @@ export const SIZE_OPTIONS = [
 
 // Payment method options
 // Payment method options
-export const PAYMENT_METHOD_OPTIONS = [
-    { label: 'Efectivo', value: 'efectivo' as PaymentMethod },
-    { label: 'Pago Móvil', value: 'pago_movil' as PaymentMethod },
-    { label: 'Zelle', value: 'zelle' as PaymentMethod },
-] as const;
+export const getPaymentMethodOptions = (currency: string) => {
+    if (currency === 'VES') {
+        return [
+            { label: 'Efectivo', value: 'efectivo' as PaymentMethod },
+            { label: 'Pago Móvil', value: 'pago_movil' as PaymentMethod },
+            { label: 'Zelle', value: 'zelle' as PaymentMethod },
+        ];
+    }
+    return [
+        { label: 'Efectivo', value: 'efectivo' as PaymentMethod },
+        { label: 'Transferencia', value: 'transferencia' as PaymentMethod },
+        { label: 'Zelle', value: 'zelle' as PaymentMethod },
+    ];
+};
 
 // Order status options
 export const ORDER_STATUS_OPTIONS = [

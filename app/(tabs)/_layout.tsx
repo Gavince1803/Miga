@@ -82,6 +82,18 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Clientes - Client portfolio */}
+      <Tabs.Screen
+        name="clients"
+        options={{
+          title: 'Clientes',
+          headerTitle: 'Mis Clientes',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="users" color={color} focused={focused} />
+          ),
+        }}
+      />
+
       {/* Calendario - Calendar View */}
       <Tabs.Screen
         name="calendar"
@@ -140,6 +152,18 @@ export default function TabLayout() {
           headerTitle: 'Resumen Financiero',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="line-chart" color={color} focused={focused} />
+          ),
+        }}
+      />
+
+      {/* Analytics - Premium stats */}
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          headerTitle: 'Analytics',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="bar-chart" color={color} focused={focused} />
           ),
         }}
       />

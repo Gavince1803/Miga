@@ -1,6 +1,8 @@
+import ReEngagementBanner from '@/components/ReEngagementBanner';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
@@ -8,7 +10,7 @@ import { Order } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { isToday } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -27,22 +29,31 @@ function StatCard({
   label,
   value,
   color,
-  colors
+  colors,
+  onPress,
 }: {
   icon: string;
   label: string;
   value: number | string;
   color: string;
   colors: typeof Colors.light;
+  onPress?: () => void;
 }) {
   return (
-    <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+    <TouchableOpacity
+      style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
       <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
         <FontAwesome name={icon as any} size={20} color={color} />
       </View>
       <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
-    </View>
+      {onPress && (
+        <FontAwesome name="chevron-right" size={9} color={color} style={{ marginTop: 3 }} />
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -120,6 +131,8 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const { orders, onRefresh } = useOrders();
   const { inventory, onRefresh: onRefreshInventory } = useInventory();
+  const { currency } = useSettings();
+  const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
   // Get first name or business name
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
@@ -162,7 +175,14 @@ export default function HomeScreen() {
     .reduce((sum, o) => sum + ((o.totalPrice || 0) - (o.depositAmount || 0)), 0);
 
   // Format currency
-  const formatMoney = (amount: number) => `$${amount.toLocaleString('es-ES')}`;
+  const formatMoney = (amount: number) => {
+    // Para Bolívares usamos coma decimal y punto de miles (típico en VE y LA)
+    if (currency === 'VES') {
+      return `${currencySymbol}${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    // Para el resto (como Dólares), típicamente es punto decimal y coma de miles
+    return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   // Recent/Upcoming - Sort by date and take first 3
   // Show ALL future orders in upcoming list for now if the list is short, or keep top 3 but make it clear
@@ -274,6 +294,7 @@ export default function HomeScreen() {
           value={todayOrdersCount}
           color={colors.urgentToday}
           colors={colors}
+          onPress={() => router.push('/agenda' as any)}
         />
         <StatCard
           icon="money"
@@ -322,6 +343,9 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Link>
 
+      {/* Re-engagement Banner */}
+      <ReEngagementBanner ordersCount={orders.length} inventoryCount={inventory.length} />
+
       {/* Upcoming Orders Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -337,9 +361,19 @@ export default function HomeScreen() {
           </Link>
         </View>
 
-        {upcomingOrders.map((order) => (
-          <UpcomingOrderCard key={order.id} order={order} colors={colors} />
-        ))}
+        {upcomingOrders.length === 0 ? (
+          <View style={[styles.emptyUpcoming, { backgroundColor: colors.surface }]}>
+            <FontAwesome name="calendar-check-o" size={32} color={colors.textMuted} />
+            <Text style={[styles.emptyUpcomingTitle, { color: colors.text }]}>Todo al día</Text>
+            <Text style={[styles.emptyUpcomingText, { color: colors.textSecondary }]}>
+              No tienes pedidos próximos pendientes
+            </Text>
+          </View>
+        ) : (
+          upcomingOrders.map((order) => (
+            <UpcomingOrderCard key={order.id} order={order} colors={colors} />
+          ))
+        )}
       </View>
 
       {/* Bottom padding for tab bar */}
@@ -477,5 +511,19 @@ const styles = StyleSheet.create({
   },
   orderTime: {
     ...Typography.small,
+  },
+  emptyUpcoming: {
+    borderRadius: BorderRadius.md,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  emptyUpcomingTitle: {
+    ...Typography.bodyBold,
+    marginTop: Spacing.xs,
+  },
+  emptyUpcomingText: {
+    ...Typography.body,
+    textAlign: 'center',
   },
 });
