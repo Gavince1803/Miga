@@ -7,12 +7,15 @@ import { supabase } from '@/lib/supabase';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
+// STANDBY: foto del pedido — requiere bucket 'order-photos' en Supabase Storage
+// import * as ImageManipulator from 'expo-image-manipulator';
+// import * as ImagePicker from 'expo-image-picker';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Image,
+    // Image, // STANDBY: foto del pedido
     Linking,
     Modal,
     ScrollView,
@@ -101,7 +104,7 @@ export default function OrderDetailScreen() {
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
-    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    // const [uploadingPhoto, setUploadingPhoto] = useState(false); // STANDBY: foto del pedido
     const [clientHistoryVisible, setClientHistoryVisible] = useState(false);
     const [clientOrders, setClientOrders] = useState<Order[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
@@ -314,81 +317,130 @@ export default function OrderDetailScreen() {
         });
     };
 
-    const handlePickPhoto = async (useCamera: boolean) => {
+    const handleSharePDF = async () => {
+        if (!order) return;
         try {
-            let result: ImagePicker.ImagePickerResult;
-            if (useCamera) {
-                const { status } = await ImagePicker.requestCameraPermissionsAsync();
-                if (status !== 'granted') {
-                    showAlert({ title: 'Permiso necesario', message: 'Necesitamos acceso a la cámara', type: 'warning' });
-                    return;
-                }
-                result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 0.8 });
-            } else {
-                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                if (status !== 'granted') {
-                    showAlert({ title: 'Permiso necesario', message: 'Necesitamos acceso a tu galería', type: 'warning' });
-                    return;
-                }
-                result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8 });
-            }
-            if (result.canceled) return;
+            const statusLabel = ORDER_STATUS_OPTIONS.find(s => s.value === order.status)?.label || order.status;
+            const paymentLabel = order.paymentMethod === 'efectivo' ? 'Efectivo'
+                : order.paymentMethod === 'pago_movil' ? 'Pago Móvil'
+                : order.paymentMethod === 'transferencia' ? 'Transferencia'
+                : 'Zelle';
 
-            setUploadingPhoto(true);
-            const compressed = await ImageManipulator.manipulateAsync(
-                result.assets[0].uri,
-                [{ resize: { width: 1200 } }],
-                { compress: 0.75, format: ImageManipulator.SaveFormat.JPEG }
-            );
+            const fmt = (dateStr: string) => {
+                if (!dateStr) return '—';
+                const [y, m, d] = dateStr.split('-').map(Number);
+                return new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            };
+            const fmt12 = (time: string) => {
+                if (!time) return '—';
+                const [h, min] = time.split(':').map(Number);
+                return `${h % 12 || 12}:${String(min).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+            };
 
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            const row = (label: string, value: string) =>
+                value && value !== '-'
+                    ? `<tr><td class="lbl">${label}</td><td class="val">${value}</td></tr>`
+                    : '';
 
-            const fileName = `${session.user.id}/${order!.id}_${Date.now()}.jpg`;
-            const res = await fetch(compressed.uri);
-            const blob = await res.blob();
+            const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<style>
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #333; }
+  .header { background: #D4A574; padding: 28px 32px 22px; }
+  .header h1 { margin: 0; font-size: 26px; color: #fff; letter-spacing: 1px; }
+  .header p { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.85); }
+  .body { padding: 28px 32px; }
+  .client { font-size: 22px; font-weight: 700; color: #222; margin-bottom: 4px; }
+  .order-num { font-size: 13px; color: #D4A574; font-weight: 600; margin-bottom: 20px; }
+  .status-chip { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #D4A57420; color: #D4A574; margin-bottom: 24px; }
+  .section { margin-bottom: 24px; }
+  .section-title { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 7px 0; vertical-align: top; font-size: 14px; }
+  .lbl { color: #999; width: 42%; }
+  .val { color: #222; font-weight: 500; }
+  .price-row { display: flex; justify-content: space-between; align-items: center; background: #fdf8f4; border-radius: 10px; padding: 14px 18px; margin-top: 8px; }
+  .price-label { font-size: 14px; color: #999; }
+  .price-value { font-size: 26px; font-weight: 700; color: #D4A574; }
+  .desc-box { background: #f9f9f9; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: #444; line-height: 1.6; }
+  .footer { margin-top: 36px; border-top: 1px solid #eee; padding-top: 16px; font-size: 11px; color: #bbb; text-align: center; }
+  .photo { width: 100%; border-radius: 10px; margin-top: 12px; max-height: 280px; object-fit: cover; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎂 Miga</h1>
+  <p>Resumen de Pedido</p>
+</div>
+<div class="body">
+  <div class="client">${order.clientName}</div>
+  <div class="order-num">Pedido #${order.orderNumber}</div>
+  <div class="status-chip">${statusLabel}</div>
 
-            const { error: uploadError } = await supabase.storage
-                .from('order-photos')
-                .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
-            if (uploadError) throw uploadError;
+  <div class="section">
+    <div class="section-title">Entrega</div>
+    <table>
+      ${row('Fecha', fmt(order.deliveryDate))}
+      ${row('Hora', fmt12(order.deliveryTime))}
+      ${row('Dirección', order.address || '')}
+      ${row('Teléfono', order.clientPhone || '')}
+    </table>
+  </div>
 
-            const { data: urlData } = supabase.storage.from('order-photos').getPublicUrl(fileName);
+  <div class="section">
+    <div class="section-title">Producto</div>
+    <table>
+      ${row('Tipo', order.cakeType || '')}
+      ${row('Medida', order.size || '')}
+      ${row('Cantidad', order.servings ? `${order.servings}` : '')}
+      ${row('Relleno', order.filling || '')}
+      ${row('Cubierta', order.cover || '')}
+      ${row('Motivo', order.occasion || '')}
+    </table>
+  </div>
 
-            const { error: updateError } = await supabase
-                .from('orders')
-                .update({ decoration_image_url: urlData.publicUrl })
-                .eq('id', order!.id);
-            if (updateError) throw updateError;
+  ${order.description ? `
+  <div class="section">
+    <div class="section-title">Descripción</div>
+    <div class="desc-box">${order.description}</div>
+  </div>` : ''}
 
-            setOrder(prev => prev ? { ...prev, decorationImageUrl: urlData.publicUrl } : null);
+  <div class="section">
+    <div class="section-title">Pago</div>
+    <div class="price-row">
+      <span class="price-label">Total</span>
+      <span class="price-value">${currencySymbol}${order.totalPrice.toFixed(2)}</span>
+    </div>
+    <table style="margin-top:10px">
+      ${row('Método', paymentLabel)}
+    </table>
+  </div>
+
+  ${order.decorationImageUrl ? `
+  <div class="section">
+    <div class="section-title">Foto del Resultado</div>
+    <img src="${order.decorationImageUrl}" class="photo"/>
+  </div>` : ''}
+
+  <div class="footer">Generado con Miga · ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+</div>
+</body>
+</html>`;
+
+            const { uri } = await Print.printToFileAsync({ html, base64: false });
+            await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Pedido #${order.orderNumber}` });
         } catch (err) {
-            console.error('Photo upload error:', err);
-            showAlert({ title: 'Error', message: 'No se pudo subir la foto', type: 'error' });
-        } finally {
-            setUploadingPhoto(false);
+            console.error('PDF share error:', err);
+            showAlert({ title: 'Error', message: 'No se pudo generar el PDF', type: 'error' });
         }
     };
 
-    const handlePhotoOptions = () => {
-        showAlert({
-            title: 'Foto del resultado',
-            message: order?.decorationImageUrl ? '¿Qué deseas hacer?' : 'Agrega una foto del pedido terminado',
-            buttons: [
-                { text: 'Cámara', onPress: () => handlePickPhoto(true) },
-                { text: 'Galería', onPress: () => handlePickPhoto(false) },
-                ...(order?.decorationImageUrl ? [{
-                    text: 'Eliminar foto',
-                    style: 'destructive' as const,
-                    onPress: async () => {
-                        await supabase.from('orders').update({ decoration_image_url: null }).eq('id', order!.id);
-                        setOrder(prev => prev ? { ...prev, decorationImageUrl: undefined } : null);
-                    }
-                }] : []),
-                { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } },
-            ]
-        });
-    };
+    // STANDBY: foto del pedido — activar cuando bucket 'order-photos' esté creado en Supabase Storage
+    // const handlePickPhoto = async (useCamera: boolean) => { ... };
+    // const handlePhotoOptions = () => { ... };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -401,6 +453,11 @@ export default function OrderDetailScreen() {
                     headerStyle: { backgroundColor: colors.background },
                     headerTintColor: colors.tint,
                     headerShadowVisible: false,
+                    headerRight: () => (
+                        <TouchableOpacity onPress={handleSharePDF} style={{ padding: 8, marginRight: 4 }}>
+                            <FontAwesome name="share-alt" size={20} color={colors.primary} />
+                        </TouchableOpacity>
+                    ),
                 }}
             />
 
@@ -513,8 +570,8 @@ export default function OrderDetailScreen() {
                     />
                     <DetailRow
                         icon="users"
-                        label="Personas"
-                        value={order.servings ? `${order.servings} personas` : '-'}
+                        label="Cantidad"
+                        value={order.servings ? `${order.servings}` : '-'}
                         colors={colors}
                     />
                     <DetailRow
@@ -574,43 +631,7 @@ export default function OrderDetailScreen() {
                     />
                 </View>
 
-                {/* Photo Section */}
-                <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        <FontAwesome name="camera" size={16} /> Foto del Resultado
-                    </Text>
-                    {order.decorationImageUrl ? (
-                        <TouchableOpacity onPress={handlePhotoOptions} activeOpacity={0.85}>
-                            <Image
-                                source={{ uri: order.decorationImageUrl }}
-                                style={styles.photoPreview}
-                                resizeMode="cover"
-                            />
-                            <View style={[styles.photoChangeHint, { backgroundColor: colors.primary + '20' }]}>
-                                <FontAwesome name="camera" size={13} color={colors.primary} />
-                                <Text style={[styles.photoChangeText, { color: colors.primary }]}>Cambiar foto</Text>
-                            </View>
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity
-                            style={[styles.photoPlaceholder, { borderColor: colors.border, backgroundColor: colors.background }]}
-                            onPress={handlePhotoOptions}
-                            disabled={uploadingPhoto}
-                            activeOpacity={0.7}
-                        >
-                            {uploadingPhoto ? (
-                                <ActivityIndicator color={colors.primary} />
-                            ) : (
-                                <>
-                                    <FontAwesome name="camera" size={28} color={colors.textMuted} />
-                                    <Text style={[styles.photoPlaceholderText, { color: colors.textSecondary }]}>
-                                        Agregar foto del resultado
-                                    </Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    )}
-                </View>
+                {/* STANDBY: foto del pedido — requiere bucket 'order-photos' en Supabase Storage */}
 
                 {/* Delete Button */}
                 <TouchableOpacity
