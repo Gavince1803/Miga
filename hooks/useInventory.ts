@@ -272,11 +272,11 @@ export function useInventory() {
                     // but for "Import" usually we want to overwrite stock or at least set it.
                     // Let's assume Excel is the source of truth for Quantity if provided.
                     const updates: any = {};
-                    if (item.quantity !== undefined) updates.quantity = item.quantity;
+                    if (item.quantity !== undefined && !isNaN(item.quantity)) updates.quantity = item.quantity;
                     if (item.unit) updates.unit = item.unit;
-                    if (item.minStock !== undefined) updates.min_stock = item.minStock;
+                    if (item.minStock !== undefined && !isNaN(item.minStock)) updates.min_stock = item.minStock;
                     if (item.category) updates.category = item.category;
-                    if (item.costPerUnit !== undefined) updates.cost_per_unit = item.costPerUnit;
+                    if (item.costPerUnit !== undefined && !isNaN(item.costPerUnit)) updates.cost_per_unit = item.costPerUnit;
 
                     if (Object.keys(updates).length > 0) {
                         updates.last_updated = new Date().toISOString();
