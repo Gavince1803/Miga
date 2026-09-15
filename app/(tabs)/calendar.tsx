@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
+import { parseLocalDate } from '@/lib/dateUtils';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
@@ -22,7 +23,7 @@ const DAY_WIDTH = (width - Spacing.md * 2) / 7;
 // Helper to determine urgency color
 const getUrgencyColor = (dateStr: string, colors: any) => {
     const today = new Date();
-    const deliveryDate = new Date(dateStr);
+    const deliveryDate = parseLocalDate(dateStr);
     today.setHours(0, 0, 0, 0);
     deliveryDate.setHours(0, 0, 0, 0);
 

@@ -5,6 +5,7 @@ import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useFinances } from '@/hooks/useFinances';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useSubscription } from '@/hooks/useSubscription';
+import { parseLocalDate } from '@/lib/dateUtils';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack } from 'expo-router';
 import React, { useMemo } from 'react';
@@ -101,7 +102,7 @@ export default function FinancesScreen() {
         const daysMap = new Map<number, { income: number; expense: number }>();
 
         recentTransactions.forEach(t => {
-            const day = new Date(t.date).getDate();
+            const day = parseLocalDate(t.date).getDate();
             const current = daysMap.get(day) || { income: 0, expense: 0 };
 
             if (t.type === 'income') current.income += t.amount;
