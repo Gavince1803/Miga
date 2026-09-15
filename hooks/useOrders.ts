@@ -138,7 +138,7 @@ export function useOrders() {
                         payment_method: orderData.paymentMethod,
                         payment_status: orderData.paymentStatus,
 
-                        status: 'pendiente',
+                        status: orderData.paymentStatus === 'pagado' ? 'pagado' : 'pendiente',
                         reminder_days: orderData.reminderDays,
                     }
                 ])
@@ -146,6 +146,16 @@ export function useOrders() {
                 .single();
 
             if (error) throw error;
+
+            // If the order was already fully paid at creation time, deduct
+            // inventory immediately (mirrors the 'pagado' path in updateOrderStatus)
+            if (data && orderData.paymentStatus === 'pagado') {
+                const { deductedItems, errors } = await deductInventoryForOrder(data.id);
+                const notification = formatDeductionMessage(deductedItems, errors);
+                if (notification) {
+                    showAlert(notification);
+                }
+            }
 
             // Map snake_case data to camelCase for scheduleOrderNotification
             if (data) {
@@ -173,12 +183,18 @@ export function useOrders() {
         try {
             // If marking as 'pagado', also update the deposit to equal total (payment complete)
             if (status === 'pagado') {
-                // First get the order to know the total
+                // First get the order to know the total and current status
                 const { data: orderData } = await supabase
                     .from('orders')
-                    .select('total_price')
+                    .select('total_price, status')
                     .eq('id', id)
                     .single();
+
+                // Already paid: skip to avoid deducting inventory twice for the same order
+                if (orderData?.status === 'pagado') {
+                    await fetchOrders();
+                    return;
+                }
 
                 const updates: any = {
                     status,
