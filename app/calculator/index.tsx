@@ -111,12 +111,25 @@ export default function CostCalculatorScreen() {
             return;
         }
 
+        const quantityUsed = parseFloat(newIngUsed.replace(',', '.'));
+        const quantityBought = parseFloat(newIngBought.replace(',', '.'));
+        const priceBought = parseFloat(newIngPrice.replace(',', '.'));
+
+        if (
+            isNaN(quantityUsed) || quantityUsed < 0 ||
+            isNaN(quantityBought) || quantityBought <= 0 ||
+            isNaN(priceBought) || priceBought < 0
+        ) {
+            showAlert({ title: 'Error', message: 'Ingresa valores numéricos válidos (la cantidad comprada debe ser mayor a 0)', type: 'error' });
+            return;
+        }
+
         const newIngredient: CostIngredient = {
             id: Date.now().toString(),
             name: newIngName,
-            quantityUsed: parseFloat(newIngUsed),
-            quantityBought: parseFloat(newIngBought),
-            priceBought: parseFloat(newIngPrice),
+            quantityUsed,
+            quantityBought,
+            priceBought,
             unit: newIngUnit,
         };
 
@@ -234,7 +247,7 @@ export default function CostCalculatorScreen() {
                                     style={[styles.gridInput, { color: colors.text }]}
                                     keyboardType="numeric"
                                     value={config.laborPercentage.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, laborPercentage: parseFloat(t) || 0 })}
+                                    onChangeText={(t) => setConfig({ ...config, laborPercentage: Math.max(0, parseFloat(t) || 0) })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
@@ -243,7 +256,7 @@ export default function CostCalculatorScreen() {
                                     style={[styles.gridInput, { color: colors.text }]}
                                     keyboardType="numeric"
                                     value={config.wastePercentage.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, wastePercentage: parseFloat(t) || 0 })}
+                                    onChangeText={(t) => setConfig({ ...config, wastePercentage: Math.max(0, parseFloat(t) || 0) })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
@@ -252,7 +265,7 @@ export default function CostCalculatorScreen() {
                                     style={[styles.gridInput, { color: colors.text }]}
                                     keyboardType="numeric"
                                     value={config.utilityCost.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, utilityCost: parseFloat(t) || 0 })}
+                                    onChangeText={(t) => setConfig({ ...config, utilityCost: Math.max(0, parseFloat(t) || 0) })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
@@ -261,7 +274,7 @@ export default function CostCalculatorScreen() {
                                     style={[styles.gridInput, { color: colors.text }]}
                                     keyboardType="numeric"
                                     value={config.packagingCost.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, packagingCost: parseFloat(t) || 0 })}
+                                    onChangeText={(t) => setConfig({ ...config, packagingCost: Math.max(0, parseFloat(t) || 0) })}
                                 />
                             </View>
                         </View>
@@ -277,7 +290,7 @@ export default function CostCalculatorScreen() {
                                     style={[styles.gridInput, { color: colors.text }]}
                                     keyboardType="numeric"
                                     value={config.profitPercentage.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, profitPercentage: parseFloat(t) || 0 })}
+                                    onChangeText={(t) => setConfig({ ...config, profitPercentage: Math.max(0, parseFloat(t) || 0) })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
@@ -286,7 +299,7 @@ export default function CostCalculatorScreen() {
                                     style={[styles.gridInput, { color: colors.text }]}
                                     keyboardType="numeric"
                                     value={config.portions.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, portions: parseFloat(t) || 0 })}
+                                    onChangeText={(t) => setConfig({ ...config, portions: Math.max(0, parseFloat(t) || 0) })}
                                 />
                             </View>
                         </View>
