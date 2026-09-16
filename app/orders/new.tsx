@@ -315,7 +315,7 @@ export default function NewOrderScreen() {
                 deliveryDate: deliveryDateObj,
                 deliveryTime: formattedTime,
                 size: finalSize,
-                servings: servings ? parseInt(servings) : 0,
+                servings: servings ? (parseInt(servings) || 0) : 0,
                 filling,
                 cakeType,
                 cover,
