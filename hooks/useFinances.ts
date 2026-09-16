@@ -1,3 +1,4 @@
+import { parseLocalDate, toLocalDateString } from '@/lib/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -46,8 +47,18 @@ export function useFinances(year?: number, month?: number) {
             // Let's implement Strict Filtering as requested "Optimization". 
             // So we only fetch data for the relevant period to save bandwidth.
 
-            const startDate = new Date(targetYear, targetMonth, 1).toISOString();
-            const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999).toISOString();
+            const startOfMonth = new Date(targetYear, targetMonth, 1);
+            const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+
+            // delivery_date is a plain DATE column (no timezone): compare against
+            // bare YYYY-MM-DD strings, not ISO timestamps, to avoid shifting the
+            // effective day for users west of UTC.
+            const startDateOnly = toLocalDateString(startOfMonth);
+            const endDateOnly = toLocalDateString(endOfMonth);
+            // created_at is a TIMESTAMPTZ column: comparing against the correct
+            // UTC instant boundaries (via toISOString) is the correct approach here.
+            const startDateISO = startOfMonth.toISOString();
+            const endDateISO = endOfMonth.toISOString();
 
             // 1. Fetch Income (Orders Paid)
             // Filter by status 'pagado' OR payment_status 'pagado'
@@ -56,8 +67,8 @@ export function useFinances(year?: number, month?: number) {
                 .from('orders')
                 .select('*')
                 .or('status.eq.pagado,payment_status.eq.pagado')
-                .gte('delivery_date', startDate)
-                .lte('delivery_date', endDate)
+                .gte('delivery_date', startDateOnly)
+                .lte('delivery_date', endDateOnly)
                 .order('delivery_date', { ascending: false });
 
             if (ordersError) throw ordersError;
@@ -74,8 +85,8 @@ export function useFinances(year?: number, month?: number) {
                     )
                 `)
                 .eq('movement_type', 'agregado')
-                .gte('created_at', startDate)
-                .lte('created_at', endDate)
+                .gte('created_at', startDateISO)
+                .lte('created_at', endDateISO)
                 .order('created_at', { ascending: false });
 
             if (movementsError) throw movementsError;
@@ -132,7 +143,7 @@ export function useFinances(year?: number, month?: number) {
 
             // Merge and Sort Transactions
             const allTransactions = [...incomeTransactions, ...expenseTransactions]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                .sort((a, b) => parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime());
             // No need to slice excessively if we are already filtering by month, 
             // but for safety let's keep it reasonable or let it be full month history.
             // Let's return full month history.

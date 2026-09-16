@@ -1,3 +1,4 @@
+import { parseLocalDate } from '@/lib/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -79,7 +80,7 @@ export function useAnalytics() {
 
             // Current month summary
             const currentMonthPaid = paidOrders.filter(o => {
-                const d = new Date(o.delivery_date);
+                const d = parseLocalDate(o.delivery_date);
                 return d.getFullYear() === curYear && d.getMonth() === curMonth;
             });
             const totalRevenue = currentMonthPaid.reduce((s, o) => s + (o.total_price || 0), 0);
@@ -93,7 +94,7 @@ export function useAnalytics() {
                 monthlyMap.set(`${d.getFullYear()}-${d.getMonth()}`, 0);
             }
             paidOrders.forEach(o => {
-                const d = new Date(o.delivery_date);
+                const d = parseLocalDate(o.delivery_date);
                 const key = `${d.getFullYear()}-${d.getMonth()}`;
                 if (monthlyMap.has(key)) {
                     monthlyMap.set(key, (monthlyMap.get(key) || 0) + (o.total_price || 0));
@@ -130,7 +131,7 @@ export function useAnalytics() {
             const weekdayCount = new Array(7).fill(0);
             orders.forEach(o => {
                 if (!o.delivery_date) return;
-                weekdayCount[new Date(o.delivery_date).getDay()]++;
+                weekdayCount[parseLocalDate(o.delivery_date).getDay()]++;
             });
             const maxCount = Math.max(...weekdayCount);
             const busiestWeekday = maxCount > 0 ? WEEKDAYS[weekdayCount.indexOf(maxCount)] : '—';

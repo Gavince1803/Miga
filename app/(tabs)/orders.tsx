@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { parseLocalDate } from '@/lib/dateUtils';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link } from 'expo-router';
@@ -30,7 +31,7 @@ function OrderCard({
 
     // Calculate urgency based on delivery date
     const today = new Date();
-    const deliveryDate = new Date(order.deliveryDate);
+    const deliveryDate = parseLocalDate(order.deliveryDate);
     const daysUntil = Math.ceil((deliveryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     let urgencyColor = colors.urgentFuture;

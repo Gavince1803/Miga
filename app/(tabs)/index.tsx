@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
+import { parseLocalDate } from '@/lib/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -60,7 +61,7 @@ function StatCard({
 // Helper to determine urgency color
 const getUrgencyColor = (dateStr: string, colors: any) => {
   const today = new Date();
-  const deliveryDate = new Date(dateStr);
+  const deliveryDate = parseLocalDate(dateStr);
   today.setHours(0, 0, 0, 0);
   deliveryDate.setHours(0, 0, 0, 0);
 
@@ -82,10 +83,7 @@ function UpcomingOrderCard({
   colors: typeof Colors.light;
 }) {
   const urgencyColor = getUrgencyColor(order.deliveryDate, colors);
-
-  // Manual parse to ensure local date without timezone shifts
-  const [year, month, day] = order.deliveryDate.split('-').map(Number);
-  const dateObj = new Date(year, month - 1, day);
+  const dateObj = parseLocalDate(order.deliveryDate);
 
   const formattedDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
@@ -146,7 +144,7 @@ export default function HomeScreen() {
   );
 
   // Calculate stats
-  const todayOrdersCount = orders.filter(o => isToday(new Date(o.deliveryDate))).length;
+  const todayOrdersCount = orders.filter(o => isToday(parseLocalDate(o.deliveryDate))).length;
   // Simplified week calculation (last 7 days + next 7 days or just volume)
   // For now: active orders (pending/process)
   const activeOrdersCount = orders.filter(o => o.status === 'pendiente' || o.status === 'pagado').length; // 'pagado' orders might still be active in terms of production? Users call, sticking to status. Actually user said 'todo arreglado' regarding new statuses.
@@ -165,7 +163,7 @@ export default function HomeScreen() {
 
   const monthlyRevenue = orders
     .filter(o => {
-      const d = new Date(o.deliveryDate);
+      const d = parseLocalDate(o.deliveryDate);
       return o.status !== 'cancelado' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     })
     .reduce((sum, o) => sum + (o.depositAmount || 0), 0);
@@ -189,7 +187,7 @@ export default function HomeScreen() {
   // To avoid confusion, let's keep top 3 but maybe the label "Ver todos" handles the rest.
   const upcomingOrders = orders
     .filter(o => {
-      const isFuture = new Date(o.deliveryDate) >= new Date(new Date().setHours(0, 0, 0, 0));
+      const isFuture = parseLocalDate(o.deliveryDate) >= new Date(new Date().setHours(0, 0, 0, 0));
       const isActive = o.status !== 'cancelado' && o.status !== 'completado';
       const isUnpaid = o.paymentStatus !== 'pagado'; // User request: Paid orders should hide
       return isFuture && isActive && isUnpaid;
