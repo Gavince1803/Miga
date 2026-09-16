@@ -294,7 +294,11 @@ export default function NewOrderScreen() {
             return;
         }
 
-
+        if (total < 0 || deposit < 0) {
+            haptics.error();
+            showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
+            return;
+        }
 
 
         setSubmitting(true);

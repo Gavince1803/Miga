@@ -196,6 +196,14 @@ export default function EditOrderScreen() {
             return;
         }
 
+        const total = totalPrice ? parseFloat(totalPrice) : 0;
+        const depositVal = deposit ? parseFloat(deposit) : 0;
+
+        if (total < 0 || depositVal < 0) {
+            showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
+            return;
+        }
+
         setSubmitting(true);
 
         try {
@@ -215,8 +223,8 @@ export default function EditOrderScreen() {
                 cover,
                 occasion,
                 description,
-                totalPrice: totalPrice ? parseFloat(totalPrice) : 0,
-                depositAmount: deposit ? parseFloat(deposit) : 0,
+                totalPrice: total,
+                depositAmount: depositVal,
                 paymentMethod,
             });
 
