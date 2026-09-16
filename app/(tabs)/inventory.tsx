@@ -411,6 +411,7 @@ export default function InventoryScreen() {
     const [editCategory, setEditCategory] = useState('');
     const [editBoughtQty, setEditBoughtQty] = useState('');
     const [editBoughtPrice, setEditBoughtPrice] = useState('');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     // Archived Items State
     const [archivedItems, setArchivedItems] = useState<InventoryItem[]>([]);
@@ -472,48 +473,53 @@ export default function InventoryScreen() {
     };
 
     const handleSaveEdit = async () => {
-        if (!editingItem) return;
-        const newQty = parseInt(editQuantity);
+        if (!editingItem || isSavingEdit) return;
+        const newQty = parseFloat(editQuantity.replace(',', '.'));
 
         if (isNaN(newQty) || newQty < 0) {
             showAlert({ title: 'Error', message: 'Ingresa una cantidad válida', type: 'error' });
             return;
         }
 
-        let success = true;
-        const updates: any = {};
+        setIsSavingEdit(true);
+        try {
+            let success = true;
+            const updates: any = {};
 
-        // Check for changes
-        if (newQty !== editingItem.quantity) {
-            const qtySuccess = await setStock(editingItem.id, newQty);
-            if (!qtySuccess) success = false;
-        }
+            // Check for changes
+            if (newQty !== editingItem.quantity) {
+                const qtySuccess = await setStock(editingItem.id, newQty);
+                if (!qtySuccess) success = false;
+            }
 
-        if (editUnit !== editingItem.unit) {
-            updates.unit = editUnit;
-        }
+            if (editUnit !== editingItem.unit) {
+                updates.unit = editUnit;
+            }
 
-        if (editCategory !== (editingItem.category || '')) {
-            updates.category = editCategory;
-        }
+            if (editCategory !== (editingItem.category || '')) {
+                updates.category = editCategory;
+            }
 
-        // Calculate cost if purchase info was provided
-        const boughtQty = parseFloat(editBoughtQty.replace(',', '.'));
-        const boughtPrice = parseFloat(editBoughtPrice.replace(',', '.'));
+            // Calculate cost if purchase info was provided
+            const boughtQty = parseFloat(editBoughtQty.replace(',', '.'));
+            const boughtPrice = parseFloat(editBoughtPrice.replace(',', '.'));
 
-        if (!isNaN(boughtQty) && !isNaN(boughtPrice) && boughtQty > 0) {
-            updates.costPerUnit = boughtPrice / boughtQty;
-        }
+            if (!isNaN(boughtQty) && !isNaN(boughtPrice) && boughtQty > 0 && boughtPrice >= 0) {
+                updates.costPerUnit = boughtPrice / boughtQty;
+            }
 
-        // Save all updates together
-        if (Object.keys(updates).length > 0) {
-            const updateSuccess = await updateItemDetails(editingItem.id, updates);
-            if (!updateSuccess) success = false;
-        }
+            // Save all updates together
+            if (Object.keys(updates).length > 0) {
+                const updateSuccess = await updateItemDetails(editingItem.id, updates);
+                if (!updateSuccess) success = false;
+            }
 
-        if (success) {
-            setShowEditModal(false);
-            setEditingItem(null);
+            if (success) {
+                setShowEditModal(false);
+                setEditingItem(null);
+            }
+        } finally {
+            setIsSavingEdit(false);
         }
     };
 
@@ -1041,10 +1047,11 @@ export default function InventoryScreen() {
                                 <Text style={[styles.addButtonText, { color: colors.text }]}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.editModalButton, { backgroundColor: colors.primary }]}
+                                style={[styles.editModalButton, { backgroundColor: colors.primary, opacity: isSavingEdit ? 0.6 : 1 }]}
                                 onPress={handleSaveEdit}
+                                disabled={isSavingEdit}
                             >
-                                <Text style={styles.addButtonText}>Guardar</Text>
+                                <Text style={styles.addButtonText}>{isSavingEdit ? 'Guardando...' : 'Guardar'}</Text>
                             </TouchableOpacity>
                         </View>
 
