@@ -45,7 +45,7 @@ export default function AddItemScreen() {
     const costPerUnit = (() => {
         const q = parseFloat(quantity.replace(',', '.'));
         const p = parseFloat(price.replace(',', '.'));
-        if (!isNaN(q) && !isNaN(p) && q > 0) {
+        if (!isNaN(q) && !isNaN(p) && q > 0 && p >= 0) {
             return p / q;
         }
         return 0;
@@ -74,7 +74,13 @@ export default function AddItemScreen() {
         }
 
         const q = parseFloat(quantity.replace(',', '.')) || 0;
+        const priceVal = parseFloat(price.replace(',', '.')) || 0;
         const min = parseFloat(minStock.replace(',', '.')) || undefined;
+
+        if (q < 0 || priceVal < 0 || (min !== undefined && min < 0)) {
+            showAlert({ title: 'Error', message: 'La cantidad, el precio y el stock mínimo no pueden ser negativos', type: 'error' });
+            return;
+        }
 
         setIsSubmitting(true);
         const success = await addItem({
