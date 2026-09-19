@@ -4,7 +4,9 @@ import { useAlert } from '@/context/AlertContext';
 import { useRecipes } from '@/hooks/useRecipes';
 import { CostIngredient, RecipeCostConfig, UNIT_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as Print from 'expo-print';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React, { useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -29,6 +31,7 @@ export default function CostCalculatorScreen() {
     const [recipeName, setRecipeName] = useState(params.recipeName as string || '');
     const recipeId = params.recipeId as string | undefined;
     const [saving, setSaving] = useState(false);
+    const [sharing, setSharing] = useState(false);
     const { updateRecipePrice } = useRecipes();
 
     // State for Ingredients
@@ -157,6 +160,61 @@ export default function CostCalculatorScreen() {
         setSaving(false);
         if (success) {
             showAlert({ title: 'Éxito', message: 'Precio guardado en la receta', type: 'success' });
+        }
+    };
+
+    const handleShareQuote = async () => {
+        setSharing(true);
+        try {
+            const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<style>
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #333; }
+  .header { background: #D4A574; padding: 28px 32px 22px; }
+  .header h1 { margin: 0; font-size: 26px; color: #fff; letter-spacing: 1px; }
+  .header p { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.85); }
+  .body { padding: 28px 32px; }
+  .client { font-size: 22px; font-weight: 700; color: #222; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 7px 0; vertical-align: top; font-size: 14px; }
+  .lbl { color: #999; width: 55%; }
+  .val { color: #222; font-weight: 500; }
+  .price-row { display: flex; justify-content: space-between; align-items: center; background: #fdf8f4; border-radius: 10px; padding: 14px 18px; margin-top: 16px; }
+  .price-label { font-size: 14px; color: #999; }
+  .price-value { font-size: 26px; font-weight: 700; color: #D4A574; }
+  .footer { margin-top: 36px; border-top: 1px solid #eee; padding-top: 16px; font-size: 11px; color: #bbb; text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎂 Miga</h1>
+  <p>Cotización</p>
+</div>
+<div class="body">
+  <div class="client">${recipeName || 'Presupuesto'}</div>
+  <table>
+    <tr><td class="lbl">Porciones</td><td class="val">${config.portions}</td></tr>
+    <tr><td class="lbl">Precio por porción</td><td class="val">$${totals.pricePerPortion.toFixed(2)}</td></tr>
+  </table>
+  <div class="price-row">
+    <span class="price-label">Precio Total</span>
+    <span class="price-value">$${totals.totalSuggestedPrice.toFixed(2)}</span>
+  </div>
+  <div class="footer">Generado con Miga · ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+</div>
+</body>
+</html>`;
+
+            const { uri } = await Print.printToFileAsync({ html, base64: false });
+            await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: recipeName || 'Cotización' });
+        } catch (err) {
+            console.error('Quote share error:', err);
+            showAlert({ title: 'Error', message: 'No se pudo generar la cotización', type: 'error' });
+        } finally {
+            setSharing(false);
         }
     };
 
@@ -329,6 +387,16 @@ export default function CostCalculatorScreen() {
                             <Text style={[styles.summarySubValue, { color: colors.text }]}>${totals.pricePerPortion.toFixed(2)} / ud</Text>
                         </View>
                     </View>
+                    <TouchableOpacity
+                        style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                        onPress={handleShareQuote}
+                        disabled={sharing}
+                    >
+                        <FontAwesome name="share-alt" size={18} color="#FFF" />
+                        <Text style={styles.saveButtonText}>
+                            {sharing ? 'Generando...' : 'Compartir Cotización'}
+                        </Text>
+                    </TouchableOpacity>
                     {recipeId && (
                         <TouchableOpacity
                             style={[styles.saveButton, { backgroundColor: colors.success }]}
