@@ -79,18 +79,23 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="list-alt" color={color} focused={focused} />
           ),
+          headerRight: () => (
+            <Link href="/clients" asChild>
+              <TouchableOpacity style={{ padding: 8, marginRight: 8 }}>
+                <FontAwesome name="users" size={20} color={Colors.light.primary} />
+              </TouchableOpacity>
+            </Link>
+          ),
         }}
       />
 
-      {/* Clientes - Client portfolio */}
+      {/* Clientes - Client portfolio (reachable from Pedidos header, not its own tab) */}
       <Tabs.Screen
         name="clients"
         options={{
           title: 'Clientes',
           headerTitle: 'Mis Clientes',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="users" color={color} focused={focused} />
-          ),
+          href: null,
         }}
       />
 
@@ -115,18 +120,23 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="cubes" color={color} focused={focused} />
           ),
+          headerRight: () => (
+            <Link href="/recipes" asChild>
+              <TouchableOpacity style={{ padding: 8, marginRight: 8 }}>
+                <FontAwesome name="book" size={20} color={Colors.light.primary} />
+              </TouchableOpacity>
+            </Link>
+          ),
         }}
       />
 
-      {/* Recetario - Recipes */}
+      {/* Recetario - Recipes (reachable from Inventario header, not its own tab) */}
       <Tabs.Screen
         name="recipes"
         options={{
           title: 'Recetario',
           headerTitle: 'Mis Recetas',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="book" color={color} focused={focused} />
-          ),
+          href: null,
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 15 }}>
               <Link href="/recipes/scan" asChild>
@@ -144,38 +154,44 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Finances - Financial Dashboard */}
+      {/* Finances - Financial Dashboard (reachable from Más) */}
       <Tabs.Screen
         name="finances"
         options={{
           title: 'Finanzas',
           headerTitle: 'Resumen Financiero',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="line-chart" color={color} focused={focused} />
-          ),
+          href: null,
         }}
       />
 
-      {/* Analytics - Premium stats */}
+      {/* Analytics - Premium stats (reachable from Más) */}
       <Tabs.Screen
         name="analytics"
         options={{
           title: 'Analytics',
           headerTitle: 'Analytics',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="bar-chart" color={color} focused={focused} />
-          ),
+          href: null,
         }}
       />
 
-      {/* Ajustes - Settings */}
+      {/* Ajustes - Settings (reachable from Más) */}
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Ajustes',
           headerTitle: 'Configuración',
+          href: null,
+        }}
+      />
+
+      {/* Más - Hub for Finanzas / Analytics / Ajustes */}
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: 'Más',
+          headerTitle: 'Más',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="cog" color={color} focused={focused} />
+            <TabBarIcon name="ellipsis-h" color={color} focused={focused} />
           ),
         }}
       />
