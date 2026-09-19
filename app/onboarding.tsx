@@ -81,7 +81,7 @@ export default function OnboardingScreen() {
             id: 'cta',
             icon: null,
             title: '¡Todo listo para\nempezar!',
-            subtitle: 'Calculá el costo real de tu primera receta y descubrí a cuánto deberías venderla.',
+            subtitle: 'Calcula el costo real de tu primera receta y descubre a cuánto deberías venderla.',
         },
     ];
 
