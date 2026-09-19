@@ -81,7 +81,7 @@ export default function OnboardingScreen() {
             id: 'cta',
             icon: null,
             title: '¡Todo listo para\nempezar!',
-            subtitle: 'Crea tu primer pedido y experimenta cómo Miga organiza tu negocio con el cuidado que merece.',
+            subtitle: 'Calcula el costo real de tu primera receta y descubre a cuánto deberías venderla.',
         },
     ];
 
@@ -91,10 +91,10 @@ export default function OnboardingScreen() {
         }
     };
 
-    const handleCreateOrder = async () => {
+    const handleCalculateRecipe = async () => {
         await markOnboardingComplete();
         router.replace('/(tabs)');
-        router.push('/orders/new' as any);
+        router.push('/calculator' as any);
     };
 
     const handleSkip = async () => {
@@ -196,10 +196,10 @@ export default function OnboardingScreen() {
                                     elevation: 6,
                                 },
                             ]}
-                            onPress={handleCreateOrder}
+                            onPress={handleCalculateRecipe}
                         >
-                            <FontAwesome name="plus-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
-                            <Text style={styles.primaryButtonText}>Crear mi primer pedido</Text>
+                            <FontAwesome name="calculator" size={18} color="#fff" style={{ marginRight: 8 }} />
+                            <Text style={styles.primaryButtonText}>Calcular el costo de mi receta</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
