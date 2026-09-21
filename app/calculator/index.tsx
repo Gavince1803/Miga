@@ -2,10 +2,14 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useRecipes } from '@/hooks/useRecipes';
+import { supabase } from '@/lib/supabase';
 import { CostIngredient, RecipeCostConfig, UNIT_OPTIONS } from '@/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as Print from 'expo-print';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import * as Sharing from 'expo-sharing';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Modal,
@@ -18,6 +22,50 @@ import {
     View,
 } from 'react-native';
 
+const QUOTE_BANNER_KEY = 'miga_quote_share_announced';
+
+function QuoteFeatureBanner({ colors, onDismiss }: { colors: typeof Colors.light; onDismiss: () => void }) {
+    return (
+        <View style={[bannerStyles.banner, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '35' }]}>
+            <View style={[bannerStyles.iconBadge, { backgroundColor: colors.primary + '25' }]}>
+                <FontAwesome name="whatsapp" size={14} color={colors.primary} />
+            </View>
+            <Text style={[bannerStyles.text, { color: colors.text }]}>
+                <Text style={{ fontWeight: '700' }}>Nuevo: </Text>
+                compartí esta cotización por WhatsApp con el botón de abajo
+            </Text>
+            <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <FontAwesome name="times" size={14} color={colors.textMuted} />
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+const bannerStyles = StyleSheet.create({
+    banner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: Spacing.md,
+        marginBottom: Spacing.md,
+        padding: Spacing.sm,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+        gap: Spacing.sm,
+    },
+    iconBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: BorderRadius.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    text: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+    },
+});
+
 export default function CostCalculatorScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
@@ -28,7 +76,21 @@ export default function CostCalculatorScreen() {
     // State for Recipe Name
     const [recipeName, setRecipeName] = useState(params.recipeName as string || '');
     const recipeId = params.recipeId as string | undefined;
+    const recipeImageUrl = params.recipeImageUrl as string | undefined;
     const [saving, setSaving] = useState(false);
+    const [showQuoteBanner, setShowQuoteBanner] = useState(false);
+
+    useEffect(() => {
+        AsyncStorage.getItem(QUOTE_BANNER_KEY).then(val => {
+            if (val !== 'true') setShowQuoteBanner(true);
+        });
+    }, []);
+
+    const dismissQuoteBanner = async () => {
+        await AsyncStorage.setItem(QUOTE_BANNER_KEY, 'true');
+        setShowQuoteBanner(false);
+    };
+    const [sharing, setSharing] = useState(false);
     const { updateRecipePrice } = useRecipes();
 
     // State for Ingredients
@@ -160,6 +222,102 @@ export default function CostCalculatorScreen() {
         }
     };
 
+    const handleShareQuote = async () => {
+        setSharing(true);
+        try {
+            let businessName = 'Miga';
+            let phone = '';
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name, phone')
+                    .eq('id', session.user.id)
+                    .single();
+                if (profile?.full_name) businessName = profile.full_name;
+                if (profile?.phone) phone = profile.phone;
+            }
+
+            const issueDate = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+            const validUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+
+            const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #FFFBF7; color: #333; }
+  .header { padding: 26px 32px 18px; text-align: center; border-bottom: 3px solid #D4A574; }
+  .header h1 { margin: 0; font-family: 'Dancing Script', cursive; font-weight: 700; font-size: 40px; color: #B9895F; }
+  .header p { margin: 2px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #b9a696; }
+  .photo { width: 100%; height: 180px; object-fit: cover; display: block; }
+  .body { padding: 24px 32px 28px; }
+  .client { font-size: 20px; font-weight: 700; color: #222; margin-bottom: 2px; }
+  .issued { font-size: 11px; color: #aaa; margin-bottom: 18px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #b9a696; padding-bottom: 8px; border-bottom: 1px solid #f0e8de; }
+  th.num, td.num { text-align: right; }
+  td { padding: 10px 0; vertical-align: top; font-size: 14px; color: #333; border-bottom: 1px solid #f7f1ea; }
+  .price-row { display: flex; justify-content: space-between; align-items: center; background: #fdf3e8; border-radius: 10px; padding: 14px 18px; margin-top: 18px; }
+  .price-label { font-size: 13px; color: #a08b6f; font-weight: 600; }
+  .price-value { font-size: 26px; font-weight: 700; color: #B9895F; }
+  .valid { margin-top: 14px; font-size: 12px; color: #b9895f; text-align: center; }
+  .footer { margin-top: 22px; border-top: 1px solid #f0e8de; padding-top: 14px; font-size: 11px; color: #c2b8ab; text-align: center; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>${businessName}</h1>
+  <p>Cotización</p>
+</div>
+${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
+<div class="body">
+  <div class="client">${recipeName || 'Presupuesto'}</div>
+  <div class="issued">Emitida el ${issueDate}</div>
+  <table>
+    <tr>
+      <th>Producto</th>
+      <th class="num">Porciones</th>
+      <th class="num">Precio/porción</th>
+      <th class="num">Total</th>
+    </tr>
+    <tr>
+      <td>${recipeName || 'Presupuesto'}</td>
+      <td class="num">${config.portions}</td>
+      <td class="num">$${totals.pricePerPortion.toFixed(2)}</td>
+      <td class="num">$${totals.totalSuggestedPrice.toFixed(2)}</td>
+    </tr>
+  </table>
+  <div class="price-row">
+    <span class="price-label">PRECIO TOTAL</span>
+    <span class="price-value">$${totals.totalSuggestedPrice.toFixed(2)}</span>
+  </div>
+  <div class="valid">Cotización válida hasta el ${validUntil}</div>
+  <div class="footer">${phone ? `${phone} · ` : ''}Generado con Miga</div>
+</div>
+</body>
+</html>`;
+
+            const { uri } = await Print.printToFileAsync({
+                html,
+                base64: false,
+                width: 612,
+                height: recipeImageUrl ? 700 : 560,
+                margins: { top: 0, right: 0, bottom: 0, left: 0 },
+            });
+            await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: recipeName || 'Cotización' });
+        } catch (err) {
+            console.error('Quote share error:', err);
+            showAlert({ title: 'Error', message: 'No se pudo generar la cotización', type: 'error' });
+        } finally {
+            setSharing(false);
+        }
+    };
+
     const handleDeleteIngredient = (id: string) => {
         setIngredients(ingredients.filter(i => i.id !== id));
     };
@@ -179,6 +337,10 @@ export default function CostCalculatorScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
             >
                 <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+                    {showQuoteBanner && (
+                        <QuoteFeatureBanner colors={colors} onDismiss={dismissQuoteBanner} />
+                    )}
 
                     {/* Header Input */}
                     <View style={styles.section}>
@@ -329,6 +491,16 @@ export default function CostCalculatorScreen() {
                             <Text style={[styles.summarySubValue, { color: colors.text }]}>${totals.pricePerPortion.toFixed(2)} / ud</Text>
                         </View>
                     </View>
+                    <TouchableOpacity
+                        style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                        onPress={handleShareQuote}
+                        disabled={sharing}
+                    >
+                        <FontAwesome name="share-alt" size={18} color="#FFF" />
+                        <Text style={styles.saveButtonText}>
+                            {sharing ? 'Generando...' : 'Compartir Cotización'}
+                        </Text>
+                    </TouchableOpacity>
                     {recipeId && (
                         <TouchableOpacity
                             style={[styles.saveButton, { backgroundColor: colors.success }]}
