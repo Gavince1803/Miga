@@ -163,7 +163,7 @@ export default function RegisterScreen() {
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                         <Text style={{ fontSize: 16, color: colors.text }}>
-                                            {CURRENCIES[currency].label}
+                                            {CURRENCIES[currency].flag} {CURRENCIES[currency].label}
                                         </Text>
                                     </View>
                                     <FontAwesome name="chevron-down" size={14} color={colors.textMuted} />
@@ -246,7 +246,7 @@ export default function RegisterScreen() {
                                         { color: colors.text },
                                         currency === key && { color: colors.primary, fontWeight: 'bold' }
                                     ]}>
-                                        {val.label}
+                                        {val.flag} {val.label}
                                     </Text>
                                     {currency === key && (
                                         <FontAwesome name="check" size={16} color={colors.primary} />

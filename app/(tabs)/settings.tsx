@@ -195,7 +195,7 @@ export default function SettingsScreen() {
             message: 'Selecciona la moneda en la que prefieres ver tus precios',
             buttons: [
                 ...Object.entries(CURRENCIES).map(([key, val]) => ({
-                    text: val.label,
+                    text: `${val.flag} ${val.label}`,
                     onPress: async () => {
                         try {
                             await updateCurrency(key as Currency);
