@@ -191,6 +191,7 @@ export default function RecipeDetailScreen() {
                                         params: {
                                             recipeId: recipe.id,
                                             recipeName: recipe.title,
+                                            recipeImageUrl: recipe.imageUrl || '',
                                             initialIngredients: JSON.stringify(initialIngredients)
                                         }
                                     });
