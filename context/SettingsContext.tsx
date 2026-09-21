@@ -4,14 +4,17 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type Currency = 'VES' | 'USD' | 'MXN' | 'ARS' | 'COP' | 'CLP';
 
-// Monedas soportadas con su símbolo local
-export const CURRENCIES: Record<Currency, { symbol: string, label: string }> = {
-    VES: { symbol: '$', label: 'Bolívares (VES)' },
-    USD: { symbol: '$', label: 'Dólares (USD)' },
-    MXN: { symbol: '$', label: 'Pesos Mexicanos (MXN)' },
-    ARS: { symbol: '$', label: 'Pesos Argentinos (ARS)' },
-    COP: { symbol: '$', label: 'Pesos Colombianos (COP)' },
-    CLP: { symbol: '$', label: 'Pesos Chilenos (CLP)' },
+// Monedas soportadas con su símbolo local. El Bolívar usa "Bs.", no "$".
+// El resto sí usa "$" oficialmente, pero se antepone el código de país
+// (US$/MX$/AR$/CO$/CL$) para evitar ambigüedad entre ellas — mismo
+// criterio que usan apps como Wise o Revolut.
+export const CURRENCIES: Record<Currency, { symbol: string, label: string, flag: string }> = {
+    VES: { symbol: 'Bs.', label: 'Bolívares (VES)', flag: '🇻🇪' },
+    USD: { symbol: 'US$', label: 'Dólares (USD)', flag: '🇺🇸' },
+    MXN: { symbol: 'MX$', label: 'Pesos Mexicanos (MXN)', flag: '🇲🇽' },
+    ARS: { symbol: 'AR$', label: 'Pesos Argentinos (ARS)', flag: '🇦🇷' },
+    COP: { symbol: 'CO$', label: 'Pesos Colombianos (COP)', flag: '🇨🇴' },
+    CLP: { symbol: 'CL$', label: 'Pesos Chilenos (CLP)', flag: '🇨🇱' },
 };
 
 type SettingsContextType = {

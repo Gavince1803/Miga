@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useRecipes } from '@/hooks/useRecipes';
 import { supabase } from '@/lib/supabase';
 import { CostIngredient, RecipeCostConfig, UNIT_OPTIONS } from '@/types';
@@ -72,6 +73,8 @@ export default function CostCalculatorScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { showAlert } = useAlert();
+    const { currency } = useSettings();
+    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
     // State for Recipe Name
     const [recipeName, setRecipeName] = useState(params.recipeName as string || '');
@@ -288,13 +291,13 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
     <tr>
       <td>${recipeName || 'Presupuesto'}</td>
       <td class="num">${config.portions}</td>
-      <td class="num">$${totals.pricePerPortion.toFixed(2)}</td>
-      <td class="num">$${totals.totalSuggestedPrice.toFixed(2)}</td>
+      <td class="num">${currencySymbol}${totals.pricePerPortion.toFixed(2)}</td>
+      <td class="num">${currencySymbol}${totals.totalSuggestedPrice.toFixed(2)}</td>
     </tr>
   </table>
   <div class="price-row">
     <span class="price-label">PRECIO TOTAL</span>
-    <span class="price-value">$${totals.totalSuggestedPrice.toFixed(2)}</span>
+    <span class="price-value">${currencySymbol}${totals.totalSuggestedPrice.toFixed(2)}</span>
   </div>
   <div class="valid">Cotización válida hasta el ${validUntil}</div>
   <div class="footer">${phone ? `${phone} · ` : ''}Generado con Miga</div>
@@ -388,7 +391,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                     </View>
                                     <View style={{ alignItems: 'flex-end', marginRight: Spacing.sm }}>
                                         <Text style={[styles.ingredientCost, { color: colors.text }]}>
-                                            ${calculateIngredientCost(ing).toFixed(2)}
+                                            {currencySymbol}{calculateIngredientCost(ing).toFixed(2)}
                                         </Text>
                                     </View>
                                     <TouchableOpacity onPress={() => handleDeleteIngredient(ing.id)} style={{ padding: 4 }}>
@@ -474,11 +477,11 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                 <View style={[styles.summaryContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }, Shadows.md]}>
                     <View style={styles.summaryRow}>
                         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Costo Total</Text>
-                        <Text style={[styles.summaryValue, { color: colors.text }]}>${totals.subtotal.toFixed(2)}</Text>
+                        <Text style={[styles.summaryValue, { color: colors.text }]}>{currencySymbol}{totals.subtotal.toFixed(2)}</Text>
                     </View>
                     <View style={styles.summaryRow}>
                         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ganancia ({config.profitPercentage}%)</Text>
-                        <Text style={[styles.summaryValue, { color: colors.success }]}>${totals.profitAmount.toFixed(2)}</Text>
+                        <Text style={[styles.summaryValue, { color: colors.success }]}>{currencySymbol}{totals.profitAmount.toFixed(2)}</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryRowMain}>
@@ -487,8 +490,8 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                             <Text style={[styles.summarySubLabel, { color: colors.textMuted }]}>por porción</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={[styles.summaryMainValue, { color: colors.primary }]}>${totals.totalSuggestedPrice.toFixed(2)}</Text>
-                            <Text style={[styles.summarySubValue, { color: colors.text }]}>${totals.pricePerPortion.toFixed(2)} / ud</Text>
+                            <Text style={[styles.summaryMainValue, { color: colors.primary }]}>{currencySymbol}{totals.totalSuggestedPrice.toFixed(2)}</Text>
+                            <Text style={[styles.summarySubValue, { color: colors.text }]}>{currencySymbol}{totals.pricePerPortion.toFixed(2)} / ud</Text>
                         </View>
                     </View>
                     <TouchableOpacity
