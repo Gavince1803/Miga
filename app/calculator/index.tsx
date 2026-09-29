@@ -73,10 +73,11 @@ const bannerStyles = StyleSheet.create({
 
 // Keeps the typed text ("12," or "1.") so decimals can be entered;
 // only the parsed number goes to the calculation.
-function DecimalInput({ value, onChange, style }: {
+function DecimalInput({ value, onChange, style, testID }: {
     value: number;
     onChange: (value: number) => void;
     style: TextInputProps['style'];
+    testID?: string;
 }) {
     const [text, setText] = useState(String(value));
 
@@ -87,6 +88,7 @@ function DecimalInput({ value, onChange, style }: {
 
     return (
         <TextInput
+            testID={testID}
             style={style}
             keyboardType="decimal-pad"
             value={text}
@@ -453,6 +455,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Mano de Obra (%)</Text>
                                 <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-laborPercentage"
                                     value={config.laborPercentage}
                                     onChange={(v) => setConfig({ ...config, laborPercentage: v })}
                                 />
@@ -461,6 +464,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Merma (%)</Text>
                                 <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-wastePercentage"
                                     value={config.wastePercentage}
                                     onChange={(v) => setConfig({ ...config, wastePercentage: v })}
                                 />
@@ -469,6 +473,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Servicios ($)</Text>
                                 <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-utilityCost"
                                     value={config.utilityCost}
                                     onChange={(v) => setConfig({ ...config, utilityCost: v })}
                                 />
@@ -477,6 +482,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Empaque ($)</Text>
                                 <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-packagingCost"
                                     value={config.packagingCost}
                                     onChange={(v) => setConfig({ ...config, packagingCost: v })}
                                 />
@@ -492,6 +498,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Ganancia Deseada (%)</Text>
                                 <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-profitPercentage"
                                     value={config.profitPercentage}
                                     onChange={(v) => setConfig({ ...config, profitPercentage: v })}
                                 />
@@ -500,6 +507,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Porciones</Text>
                                 <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-portions"
                                     value={config.portions}
                                     onChange={(v) => setConfig({ ...config, portions: v })}
                                 />
