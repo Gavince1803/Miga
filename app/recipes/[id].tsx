@@ -195,17 +195,19 @@ export default function RecipeDetailScreen() {
                                     });
                                 }}
                                 style={styles.headerBtn}
+                                accessibilityRole="button"
+                                accessibilityLabel="Calcular costos"
                             >
                                 <FontAwesome name="calculator" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
 
-                            <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
+                            <TouchableOpacity onPress={handleShare} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Compartir receta">
                                 <FontAwesome name="share-alt" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)} style={styles.headerBtn}>
+                            <TouchableOpacity onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Editar receta">
                                 <FontAwesome name="pencil" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={handleDelete} style={styles.headerBtn}>
+                            <TouchableOpacity onPress={handleDelete} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Eliminar receta">
                                 <FontAwesome name="trash" size={20} color={recipe.imageUrl ? '#FFF' : colors.error} />
                             </TouchableOpacity>
                         </View>

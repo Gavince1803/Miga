@@ -62,6 +62,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
+          tabBarAccessibilityLabel: 'Inicio',
           headerTitle: 'Miga',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="home" color={color} focused={focused} />
@@ -75,13 +76,14 @@ export default function TabLayout() {
         name="orders"
         options={{
           title: 'Pedidos',
+          tabBarAccessibilityLabel: 'Pedidos',
           headerTitle: 'Mis Pedidos',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="list-alt" color={color} focused={focused} />
           ),
           headerRight: () => (
             <Link href="/clients" asChild>
-              <TouchableOpacity style={{ padding: 8, marginRight: 8 }}>
+              <TouchableOpacity style={{ padding: 8, marginRight: 8 }} accessibilityRole="button" accessibilityLabel="Clientes">
                 <FontAwesome name="users" size={20} color={Colors.light.primary} />
               </TouchableOpacity>
             </Link>
@@ -104,6 +106,7 @@ export default function TabLayout() {
         name="calendar"
         options={{
           title: 'Calendario',
+          tabBarAccessibilityLabel: 'Calendario',
           headerTitle: 'Calendario',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="calendar" color={color} focused={focused} />
@@ -116,13 +119,14 @@ export default function TabLayout() {
         name="inventory"
         options={{
           title: 'Inventario',
+          tabBarAccessibilityLabel: 'Inventario',
           headerTitle: 'Mi Inventario',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="cubes" color={color} focused={focused} />
           ),
           headerRight: () => (
             <Link href="/recipes" asChild>
-              <TouchableOpacity style={{ padding: 8, marginRight: 8 }}>
+              <TouchableOpacity style={{ padding: 8, marginRight: 8 }} accessibilityRole="button" accessibilityLabel="Recetario">
                 <FontAwesome name="book" size={20} color={Colors.light.primary} />
               </TouchableOpacity>
             </Link>
@@ -140,12 +144,12 @@ export default function TabLayout() {
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 15 }}>
               <Link href="/recipes/scan" asChild>
-                <TouchableOpacity style={{ padding: 8 }}>
+                <TouchableOpacity style={{ padding: 8 }} accessibilityRole="button" accessibilityLabel="Escanear receta con la cámara">
                   <FontAwesome name="camera" size={20} color={Colors.light.primary} />
                 </TouchableOpacity>
               </Link>
               <Link href="/recipes/new" asChild>
-                <TouchableOpacity style={{ padding: 8 }}>
+                <TouchableOpacity style={{ padding: 8 }} accessibilityRole="button" accessibilityLabel="Nueva receta">
                   <FontAwesome name="plus" size={20} color={Colors.light.primary} />
                 </TouchableOpacity>
               </Link>
@@ -189,6 +193,7 @@ export default function TabLayout() {
         name="more"
         options={{
           title: 'Más',
+          tabBarAccessibilityLabel: 'Más',
           headerTitle: 'Más',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name="ellipsis-h" color={color} focused={focused} />

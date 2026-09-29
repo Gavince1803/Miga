@@ -13,7 +13,7 @@ appId: com.agendarepostera.app
 - takeScreenshot: capturas/calc-entrada-02-calculadora
 - tapOn:
     point: "9%,9%"           # botón de volver del encabezado (en iOS `back` no hace nada)
-- tapOn: "Más, tab.*"
+- tapOn: "Más(, tab.*)?"
 - takeScreenshot: capturas/calc-entrada-03-mas
 - tapOn: ".*Calculadora de costos.*"
 - assertVisible: "Calculadora de Costos"

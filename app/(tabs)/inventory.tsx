@@ -13,6 +13,7 @@ import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Animated,
     FlatList,
     KeyboardAvoidingView,
@@ -283,12 +284,18 @@ function InventoryCard({
                         <TouchableOpacity
                             style={[styles.quickButton, { backgroundColor: colors.error + '20' }]}
                             onPress={() => onQuickAdjust(item.id, -1)}
+                            hitSlop={6}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Restar 1 ${item.unit} de ${item.name}`}
                         >
                             <FontAwesome name="minus" size={14} color={colors.error} />
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.quickButton, { backgroundColor: colors.success + '20' }]}
                             onPress={() => onQuickAdjust(item.id, 1)}
+                            hitSlop={6}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Sumar 1 ${item.unit} a ${item.name}`}
                         >
                             <FontAwesome name="plus" size={14} color={colors.success} />
                         </TouchableOpacity>
@@ -742,12 +749,16 @@ export default function InventoryScreen() {
                 <TouchableOpacity
                     style={[styles.importButton, { backgroundColor: colors.success, marginRight: 8 }]}
                     onPress={handleExportExcel}
+                    accessibilityRole="button"
+                    accessibilityLabel="Exportar inventario a Excel"
                 >
                     <FontAwesome name="download" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.importButton, { backgroundColor: colors.primary }]}
                     onPress={handleImportExcel}
+                    accessibilityRole="button"
+                    accessibilityLabel="Importar inventario desde Excel"
                 >
                     <FontAwesome name="file-excel-o" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
@@ -782,7 +793,8 @@ export default function InventoryScreen() {
                     />
                 )}
                 ListHeaderComponent={
-                    showTutorial ? (
+                    // Only while the inventory is empty: with items loaded it took half the screen
+                    showTutorial && !loading && inventory.length === 0 ? (
                         <InventoryTutorialBanner colors={colors} onDismiss={dismissTutorial} />
                     ) : null
                 }
@@ -794,12 +806,20 @@ export default function InventoryScreen() {
                     fetchArchivedItems();
                 }}
                 ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                        <FontAwesome name={showArchived ? 'archive' : 'inbox'} size={48} color={loading ? colors.primary : colors.textMuted} />
-                        <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                            {loading ? 'Cargando...' : showArchived ? 'No hay productos archivados' : 'No hay ingredientes'}
-                        </Text>
-                    </View>
+                    loading ? (
+                        // Loading used to reuse the empty state (inbox icon + "0 items"),
+                        // so it looked like the inventory had been wiped
+                        <View style={styles.emptyState}>
+                            <ActivityIndicator size="large" color={colors.primary} />
+                        </View>
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <FontAwesome name={showArchived ? 'archive' : 'inbox'} size={48} color={colors.textMuted} />
+                            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                                {showArchived ? 'No hay productos archivados' : 'No hay ingredientes'}
+                            </Text>
+                        </View>
+                    )
                 }
             />
 
@@ -810,6 +830,8 @@ export default function InventoryScreen() {
                 style={[styles.fab, { backgroundColor: colors.primary }, Shadows.lg]}
                 activeOpacity={0.85}
                 onPress={() => router.push('/inventory/add')}
+                accessibilityRole="button"
+                accessibilityLabel="Agregar ingrediente"
             >
                 <FontAwesome name="plus" size={24} color="#FFFFFF" />
             </TouchableOpacity>

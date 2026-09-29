@@ -6,7 +6,7 @@ appId: com.agendarepostera.app
 - extendedWaitUntil:
     visible: "Tu día de hoy"
     timeout: 20000
-- tapOn: "Inventario, tab.*"
+- tapOn: "Inventario(, tab.*)?"
 - extendedWaitUntil:
     notVisible: "Cargando..."
     timeout: 15000

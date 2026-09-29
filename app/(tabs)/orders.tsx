@@ -121,12 +121,30 @@ export default function OrdersScreen() {
         { key: 'cancelado', label: 'Cancelados' },
     ];
 
-    const filteredOrders = orders.filter(order => {
-        const matchesSearch = order.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            order.orderNumber.toString().includes(searchQuery);
-        const matchesFilter = activeFilter === 'todos' || order.status === activeFilter;
-        return matchesSearch && matchesFilter;
-    });
+    const query = searchQuery.toLowerCase();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const filteredOrders = orders
+        .filter(order => {
+            const matchesSearch = order.clientName.toLowerCase().includes(query) ||
+                (order.description ?? '').toLowerCase().includes(query) ||
+                order.orderNumber.toString().includes(searchQuery);
+            const matchesFilter = activeFilter === 'todos' || order.status === activeFilter;
+            return matchesSearch && matchesFilter;
+        })
+        // Upcoming first (soonest on top), then past ones (most recent first):
+        // the list used to open on January's already-delivered orders
+        .sort((a, b) => {
+            const da = parseLocalDate(a.deliveryDate).getTime();
+            const db = parseLocalDate(b.deliveryDate).getTime();
+            const aUpcoming = da >= todayStart.getTime();
+            const bUpcoming = db >= todayStart.getTime();
+            if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+            // Same day: order by delivery time ("14:30" strings compare correctly)
+            const diff = da !== db ? da - db : (a.deliveryTime ?? '').localeCompare(b.deliveryTime ?? '');
+            return aUpcoming ? diff : -diff;
+        });
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>

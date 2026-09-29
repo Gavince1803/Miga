@@ -207,6 +207,7 @@ function RootLayoutNav() {
         <Stack.Screen name="inventory" options={{ headerShown: false }} />
         <Stack.Screen name="orders" options={{ headerShown: false }} />
         <Stack.Screen name="recipes" options={{ headerShown: false }} />
+        <Stack.Screen name="clients" options={{ headerShown: false }} />
         <Stack.Screen name="premium" options={{ title: 'Miga Premium', presentation: 'modal' }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="auth/register" options={{ headerShown: false }} />
