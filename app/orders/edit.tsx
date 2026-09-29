@@ -7,6 +7,8 @@ import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
+import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
+import { useOrderItems } from '@/hooks/useOrderItems';
 import { OrderStatus, PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -133,6 +135,9 @@ export default function EditOrderScreen() {
     const [totalPrice, setTotalPrice] = useState('');
     const [deposit, setDeposit] = useState('');
     const [originalStatus, setOriginalStatus] = useState<OrderStatus>('pendiente');
+    // Products can be linked to recipes here too (the "Vincular" toast opens this screen)
+    const [orderProducts, setOrderProducts] = useState<SelectedProduct[]>([]);
+    const { getItemsForOrder, setItemsForOrder } = useOrderItems();
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 
     useEffect(() => {
@@ -178,6 +183,14 @@ export default function EditOrderScreen() {
                     setDeposit(data.deposit_amount ? data.deposit_amount.toString() : '');
                     setPaymentMethod(data.payment_method);
                     setOriginalStatus(data.status);
+                    const items = await getItemsForOrder(data.id);
+                    setOrderProducts(items.map(i => ({
+                        productName: i.productName,
+                        recipeId: i.recipeId ?? undefined,
+                        recipeName: i.recipe?.title,
+                        quantity: i.quantity,
+                        notes: i.notes ?? undefined,
+                    })));
                 }
             } catch (error) {
                 console.error(error);
@@ -211,7 +224,11 @@ export default function EditOrderScreen() {
 
         // Recalculate payment state from the amounts (same rule as new.tsx):
         // raising the total used to leave an order 'pagado'
-        const paymentStatus = (total > 0 && depositVal >= total) ? 'pagado' : depositVal > 0 ? 'abonado' : 'pendiente';
+        // With no price (total 0) the amounts say nothing: keep the order's state
+        // (e.g. an order marked Pagado by hand must stay paid)
+        const paymentStatus = total <= 0
+            ? (originalStatus === 'pagado' ? 'pagado' : depositVal > 0 ? 'abonado' : 'pendiente')
+            : depositVal >= total ? 'pagado' : depositVal > 0 ? 'abonado' : 'pendiente';
         const status: OrderStatus = originalStatus === 'cancelado' ? 'cancelado'
             : paymentStatus === 'pagado' ? 'pagado'
             : originalStatus === 'pagado' ? 'pendiente'
@@ -222,6 +239,15 @@ export default function EditOrderScreen() {
         try {
             // Format time string HH:MM
             const formattedTime = deliveryTimeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            // Save products first: if the order ends up paid, updateOrder deducts
+            // inventory from these items
+            await setItemsForOrder(id as string, orderProducts.map(p => ({
+                productName: p.productName,
+                recipeId: p.recipeId,
+                quantity: p.quantity,
+                notes: p.notes,
+            })));
 
             const updated = await updateOrder(id as string, {
                 clientName,
@@ -326,6 +352,7 @@ export default function EditOrderScreen() {
                     <FormField label="Teléfono" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
+                            testID="edit-phone"
                             value={clientPhone}
                             onChangeText={setClientPhone}
                             keyboardType="phone-pad"
@@ -426,12 +453,19 @@ export default function EditOrderScreen() {
                 </FormSection>
 
                 {/* Payment */}
+                <FormSection title="¿QUÉ VAS A PREPARAR?" colors={colors}>
+                    <View style={{ paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm }}>
+                        <OrderProductsSelector products={orderProducts} onProductsChange={setOrderProducts} />
+                    </View>
+                </FormSection>
+
                 <FormSection title="PAGO" colors={colors}>
                     <FormField label="Precio Total" colors={colors}>
                         <View style={styles.priceInput}>
                             <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
+                                testID="edit-total"
                                 value={totalPrice}
                                 onChangeText={setTotalPrice}
                                 keyboardType="decimal-pad"
@@ -483,6 +517,7 @@ export default function EditOrderScreen() {
                             <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
+                                testID="edit-deposit"
                                 value={deposit}
                                 onChangeText={setDeposit}
                                 keyboardType="decimal-pad"

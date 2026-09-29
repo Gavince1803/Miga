@@ -27,6 +27,7 @@ import {
 
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import { cancelOrderNotification } from '@/lib/notifications';
 
 function CurrencyConversions({ amount, colors }: { amount: number, colors: typeof Colors.light }) {
@@ -159,6 +160,9 @@ export default function OrderDetailScreen() {
             setLoading(false);
         }
     };
+
+    // Coming back from "Editar" must show the saved changes
+    useRefreshOnFocus(() => { fetchOrder(); });
 
     useEffect(() => {
         fetchOrder();

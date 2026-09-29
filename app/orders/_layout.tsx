@@ -34,6 +34,14 @@ export default function OrdersLayout() {
                     title: 'Detalle del Pedido',
                 }}
             />
+            <Stack.Screen
+                name="edit"
+                options={{
+                    // The screen has its own big "Editar Pedido" heading; without a title
+                    // the header showed the route name "edit"
+                    title: '',
+                }}
+            />
         </Stack>
     );
 }

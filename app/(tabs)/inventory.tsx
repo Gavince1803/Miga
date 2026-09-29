@@ -526,6 +526,12 @@ export default function InventoryScreen() {
             showAlert({ title: 'Falta la cantidad', message: '¿Cuánto compraste?', type: 'warning' });
             return;
         }
+        // Without a price the expense can't be recorded at what was paid, and
+        // Finances would value it at the current cost instead
+        if (purchasePriceValue <= 0) {
+            showAlert({ title: 'Falta el precio', message: '¿Cuánto pagaste? Para corregir la cantidad sin compra, toca el número del ingrediente.', type: 'warning' });
+            return;
+        }
         setIsSavingPurchase(true);
         const ok = await registerPurchase(purchaseItem.id, purchaseQtyInItemUnit, purchasePriceValue);
         setIsSavingPurchase(false);

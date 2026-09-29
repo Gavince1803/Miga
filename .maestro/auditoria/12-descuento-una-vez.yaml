@@ -1,0 +1,31 @@
+# Pagado → Pendiente → Pagado descuenta una sola vez (#36).
+# Usa el pedido pendiente "Prueba Lista" (con receta Torta de chocolate).
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Pedidos(, tab.*)?"
+- tapOn: ".*Prueba Lista.*"
+- tapOn:
+    point: "78%,19%"          # botón de estado ("Pendiente ⌄")
+- tapOn: "Pagado"
+- tapOn: "OK"
+- takeScreenshot: capturas/una-vez-01-primer-pago
+- tapOn:
+    point: "78%,19%"          # botón de estado ("Pagado ⌄")
+- tapOn: "Pendiente"
+- tapOn: "OK"
+- tapOn:
+    point: "78%,19%"          # botón de estado ("Pendiente ⌄")
+- tapOn: "Pagado"
+- tapOn: "OK"
+- takeScreenshot: capturas/una-vez-02-segundo-pago
+- tapOn:
+    point: "9%,9%"
+- tapOn: "Inventario(, tab.*)?"
+- extendedWaitUntil:
+    visible: "Registrar compra de .*"
+    timeout: 15000
+- takeScreenshot: capturas/una-vez-03-inventario
