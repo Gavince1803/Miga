@@ -44,6 +44,7 @@ export default function MoreScreen() {
             <View style={[styles.card, { backgroundColor: colors.surface }, Shadows.sm]}>
                 <MoreRow icon="calculator" label="Calculadora de costos" colors={colors} onPress={() => router.push('/calculator' as any)} />
                 <MoreRow icon="book" label="Recetario" colors={colors} onPress={() => router.push('/recipes')} />
+                <MoreRow icon="shopping-cart" label="Lista de compras" colors={colors} onPress={() => router.push('/inventory/shopping' as any)} />
                 <MoreRow icon="line-chart" label="Finanzas" colors={colors} onPress={() => router.push('/finances')} />
                 <MoreRow icon="bar-chart" label="Analytics" colors={colors} onPress={() => router.push('/analytics')} />
                 <MoreRow icon="cog" label="Ajustes" colors={colors} onPress={() => router.push('/settings')} />
