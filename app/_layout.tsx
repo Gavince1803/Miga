@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { Linking } from 'react-native';
 import 'react-native-reanimated';
+import { KeyboardProvider, KeyboardToolbar } from 'react-native-keyboard-controller';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -80,13 +81,15 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <AlertProvider>
-        <SettingsProvider>
-          <RootLayoutNav />
-        </SettingsProvider>
-      </AlertProvider>
-    </AuthProvider>
+    <KeyboardProvider>
+      <AuthProvider>
+        <AlertProvider>
+          <SettingsProvider>
+            <RootLayoutNav />
+          </SettingsProvider>
+        </AlertProvider>
+      </AuthProvider>
+    </KeyboardProvider>
   );
 }
 
@@ -201,6 +204,9 @@ function RootLayoutNav() {
         <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
         <Stack.Screen name="auth/reset-password" options={{ headerShown: false }} />
       </Stack>
+      {/* "Listo" bar above every keyboard (the iOS number pad has no return key).
+          No prev/next arrows: tabs stay mounted and they'd jump into hidden screens. */}
+      <KeyboardToolbar doneText="Listo" showArrows={false} />
     </ThemeProvider>
   );
 }

@@ -21,6 +21,7 @@ import {
     UIManager,
     View,
 } from 'react-native';
+import { KeyboardToolbar } from 'react-native-keyboard-controller';
 
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -433,6 +434,8 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                         )}
                     </View>
                 </KeyboardAvoidingView>
+                {/* RN Modals render in their own window, above the root "Listo" bar */}
+                <KeyboardToolbar doneText="Listo" showArrows={false} />
             </Modal>
         </View>
     );

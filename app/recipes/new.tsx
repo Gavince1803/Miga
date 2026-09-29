@@ -17,8 +17,6 @@ import React from 'react';
 import {
     ActivityIndicator,
     Image,
-    KeyboardAvoidingView,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -26,6 +24,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 // ... imports
 
@@ -224,13 +223,9 @@ export default function NewRecipeScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: colors.background }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-        >
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{ headerLeft: () => <BackButton /> }} />
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <KeyboardAwareScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" bottomOffset={72}>
 
                 {/* Title Section */}
                 <View style={styles.section}>
@@ -387,7 +382,7 @@ export default function NewRecipeScreen() {
                     </ScrollView>
                 </View>
 
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
                 <TouchableOpacity
@@ -402,7 +397,7 @@ export default function NewRecipeScreen() {
                     )}
                 </TouchableOpacity>
             </View>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 

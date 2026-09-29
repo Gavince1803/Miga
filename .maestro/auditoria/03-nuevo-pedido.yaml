@@ -32,19 +32,21 @@ appId: com.agendarepostera.app
 - tapOn: "Detalles extra..."
 - inputText: "Prueba de auditoria"
 - takeScreenshot: capturas/ped-06-descripcion-teclado
+- tapOn:
+    point: "88%,58%"          # "Listo" sobre el teclado de texto (no aparece en el árbol)
 - scrollUntilVisible:
     element: "Precio Total"
     direction: DOWN
 - tapOn:
-    text: "0"
-    index: 0
+    id: "order-total-price"
 - inputText: "45,50"
 - takeScreenshot: capturas/ped-07-total-teclado
 - tapOn:
-    text: "0"
-    index: 0
+    id: "order-deposit"
 - inputText: "20"
 - takeScreenshot: capturas/ped-08-abono-teclado
+- tapOn:
+    point: "88%,61%"          # "Listo" sobre el teclado numérico
 - scrollUntilVisible:
     element: "Transferencia"
     direction: DOWN

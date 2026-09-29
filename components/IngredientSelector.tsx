@@ -18,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardToolbar } from 'react-native-keyboard-controller';
 import { parseDecimal } from '@/lib/number';
 
 export type SelectedIngredient = {
@@ -469,6 +470,8 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                         )}
                     </View>
                 </KeyboardAvoidingView>
+                {/* RN Modals render in their own window, above the root "Listo" bar */}
+                <KeyboardToolbar doneText="Listo" showArrows={false} />
             </Modal>
         </View>
     );

@@ -17,15 +17,13 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { parseDecimal } from '@/lib/number';
 
 
@@ -368,11 +366,9 @@ export default function NewOrderScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView
+            <KeyboardAwareScrollView
+                keyboardDismissMode="interactive"
+                bottomOffset={72}
                 style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
@@ -589,6 +585,7 @@ export default function NewOrderScreen() {
                                         style={[styles.input, styles.priceField, { color: colors.text }]}
                                         placeholder="0"
                                         placeholderTextColor={colors.textMuted}
+                                        testID="order-total-price"
                                         value={totalPrice}
                                         onChangeText={setTotalPrice}
                                         keyboardType="decimal-pad"
@@ -604,6 +601,7 @@ export default function NewOrderScreen() {
                                         style={[styles.input, styles.priceField, { color: colors.primary }]}
                                         placeholder="0"
                                         placeholderTextColor={colors.textMuted}
+                                        testID="order-deposit"
                                         value={depositAmount}
                                         onChangeText={setDepositAmount}
                                         keyboardType="decimal-pad"
@@ -711,8 +709,7 @@ export default function NewOrderScreen() {
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
-            </ScrollView >
-        </KeyboardAvoidingView >
+            </KeyboardAwareScrollView>
     );
 }
 

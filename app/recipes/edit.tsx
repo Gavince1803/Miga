@@ -19,6 +19,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 export default function EditRecipeScreen() {
     const { id } = useLocalSearchParams();
@@ -173,7 +174,7 @@ export default function EditRecipeScreen() {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <KeyboardAwareScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" bottomOffset={72}>
 
                 {/* Title Section */}
                 <View style={styles.section}>
@@ -283,7 +284,7 @@ export default function EditRecipeScreen() {
                     </ScrollView>
                 </View>
 
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
                 <TouchableOpacity
