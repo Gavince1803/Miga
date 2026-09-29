@@ -1,9 +1,9 @@
 import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import { InventoryItem } from '@/types';
-import { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-export function useInventory() {
+function useInventoryState() {
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -148,6 +148,16 @@ export function useInventory() {
 
     useEffect(() => {
         fetchInventory();
+    }, []);
+
+    // The provider lives at the root and mounts before login: load on sign-in
+    // and clear on sign-out so an account never sees another's data
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_IN') fetchInventory();
+            else if (event === 'SIGNED_OUT') setInventory([]);
+        });
+        return () => subscription.unsubscribe();
     }, []);
 
     const onRefresh = useCallback(() => {
@@ -470,4 +480,21 @@ export function useInventory() {
         archiveItem,
         unarchiveItem
     };
+}
+
+type InventoryContextValue = ReturnType<typeof useInventoryState>;
+
+const InventoryContext = createContext<InventoryContextValue | null>(null);
+
+// One shared copy for the whole app: each screen used to keep its own and
+// refetch on mount, so a change on one screen didn't show up on the others.
+export function InventoryProvider({ children }: { children: React.ReactNode }) {
+    const value = useInventoryState();
+    return React.createElement(InventoryContext.Provider, { value }, children);
+}
+
+export function useInventory(): InventoryContextValue {
+    const context = useContext(InventoryContext);
+    if (!context) throw new Error('useInventory must be used inside InventoryProvider');
+    return context;
 }

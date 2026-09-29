@@ -59,6 +59,8 @@ const BakeryDarkTheme = {
 
 import { SettingsProvider } from '@/context/SettingsContext';
 import { SubscriptionProvider } from '@/hooks/useSubscription';
+import { OrdersProvider } from '@/hooks/useOrders';
+import { InventoryProvider } from '@/hooks/useInventory';
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -87,7 +89,11 @@ export default function RootLayout() {
         <AlertProvider>
           <SettingsProvider>
             <SubscriptionProvider>
-              <RootLayoutNav />
+              <OrdersProvider>
+                <InventoryProvider>
+                  <RootLayoutNav />
+                </InventoryProvider>
+              </OrdersProvider>
             </SubscriptionProvider>
           </SettingsProvider>
         </AlertProvider>
