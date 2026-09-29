@@ -41,85 +41,84 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
             return { success: true, deductedItems: [], errors: [] };
         }
 
-        // 3. For each order item with a recipe, get recipe ingredients
-        for (const item of orderItems) {
-            if (!item.recipe_id) continue; // Skip items without recipes
+        // 3. Load the ingredients of every recipe in the order in one query
+        const recipeIds = [...new Set(orderItems.map(item => item.recipe_id).filter(Boolean))];
+        if (recipeIds.length === 0) {
+            return { success: true, deductedItems: [], errors: [] };
+        }
 
-            const { data: recipeIngredients, error: ingredientsError } = await supabase
-                .from('recipe_ingredients')
-                .select(`
+        const { data: recipeIngredients, error: ingredientsError } = await supabase
+            .from('recipe_ingredients')
+            .select(`
+                recipe_id,
+                quantity,
+                unit,
+                inventory_item_id,
+                inventory_items (
+                    id,
+                    name,
                     quantity,
-                    unit,
-                    inventory_item_id,
-                    inventory_items (
-                        id,
-                        name,
-                        quantity,
-                        unit
-                    )
-                `)
-                .eq('recipe_id', item.recipe_id);
+                    unit
+                )
+            `)
+            .in('recipe_id', recipeIds);
 
-            if (ingredientsError) {
-                errors.push(`Error cargando ingredientes para ${item.product_name}`);
-                continue;
-            }
+        if (ingredientsError) throw ingredientsError;
 
-            if (!recipeIngredients) continue;
-
-            // 4. Deduct each ingredient * order item quantity
-            for (const ingredient of recipeIngredients) {
-                // Calculate total needed in Ingredient's unit
-                const totalNeeded = ingredient.quantity * item.quantity;
+        // 4. Add up what each inventory item loses across all products, so two
+        // products using the same ingredient don't overwrite each other
+        const totals = new Map<string, { item: any; amount: number; products: string[] }>();
+        for (const orderItem of orderItems) {
+            if (!orderItem.recipe_id) continue; // Skip items without recipes
+            for (const ingredient of recipeIngredients ?? []) {
+                if (ingredient.recipe_id !== orderItem.recipe_id) continue;
                 const inventoryItem = ingredient.inventory_items as any;
-
                 if (!inventoryItem) continue;
 
-                // Normalize: Convert totalNeeded (in ingredient.unit) -> (inventoryItem.unit)
-                const amountToDeduct = convertValue(totalNeeded, ingredient.unit, inventoryItem.unit);
-
-                if (amountToDeduct === null) {
+                // Normalize: Convert needed amount (in ingredient.unit) -> (inventoryItem.unit)
+                const amount = convertValue(ingredient.quantity * orderItem.quantity, ingredient.unit, inventoryItem.unit);
+                if (amount === null) {
                     errors.push(`Unidades incompatibles para ${inventoryItem.name}: ${ingredient.unit} vs ${inventoryItem.unit}`);
                     continue;
                 }
 
-                const totalToDeduct = amountToDeduct;
-
-                // Calculate new quantity (don't go below 0)
-                const newQuantity = Math.max(0, inventoryItem.quantity - totalToDeduct);
-
-                // Update inventory
-                const { error: updateError } = await supabase
-                    .from('inventory_items')
-                    .update({
-                        quantity: newQuantity,
-                        last_updated: new Date().toISOString()
-                    })
-                    .eq('id', inventoryItem.id);
-
-                if (updateError) {
-                    errors.push(`Error descontando ${inventoryItem.name}`);
-                    continue;
-                }
-
-                // Log the movement
-                await supabase
-                    .from('inventory_movements')
-                    .insert({
-                        user_id: session.user.id,
-                        inventory_item_id: inventoryItem.id,
-                        order_id: orderId,
-                        movement_type: 'deduccion',
-                        quantity: -totalToDeduct,
-                        notes: `Pedido completado - ${item.product_name}`
-                    });
-
-                deductedItems.push({
-                    name: inventoryItem.name,
-                    quantity: totalToDeduct,
-                    unit: ingredient.unit
-                });
+                const entry = totals.get(inventoryItem.id) ?? { item: inventoryItem, amount: 0, products: [] };
+                entry.amount += amount;
+                entry.products.push(orderItem.product_name);
+                totals.set(inventoryItem.id, entry);
             }
+        }
+
+        // 5. Update every item in parallel (don't go below 0)
+        const now = new Date().toISOString();
+        const entries = [...totals.values()];
+        const results = await Promise.all(entries.map(({ item, amount }) =>
+            supabase
+                .from('inventory_items')
+                .update({ quantity: Math.max(0, item.quantity - amount), last_updated: now })
+                .eq('id', item.id)
+        ));
+
+        const movements: Record<string, unknown>[] = [];
+        entries.forEach(({ item, amount, products }, i) => {
+            if (results[i].error) {
+                errors.push(`Error descontando ${item.name}`);
+                return;
+            }
+            movements.push({
+                user_id: session.user.id,
+                inventory_item_id: item.id,
+                order_id: orderId,
+                movement_type: 'deduccion',
+                quantity: -amount,
+                notes: `Pedido completado - ${[...new Set(products)].join(', ')}`
+            });
+            deductedItems.push({ name: item.name, quantity: amount, unit: item.unit });
+        });
+
+        // 6. Log all movements in one insert
+        if (movements.length > 0) {
+            await supabase.from('inventory_movements').insert(movements);
         }
 
         return { success: errors.length === 0, deductedItems, errors };
