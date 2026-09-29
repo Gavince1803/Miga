@@ -58,9 +58,11 @@ export function useClientDetail(clientName: string) {
                 updatedAt: item.updated_at,
             }));
 
-            const paidCount = mapped.filter(o => o.status === 'pagado' || o.paymentStatus === 'pagado').length;
+            const isPaid = (o: { status: string; paymentStatus: string }) =>
+                o.status !== 'cancelado' && (o.status === 'pagado' || o.paymentStatus === 'pagado');
+            const paidCount = mapped.filter(isPaid).length;
             const totalSpent = mapped
-                .filter(o => o.status === 'pagado' || o.paymentStatus === 'pagado')
+                .filter(isPaid)
                 .reduce((s, o) => s + (o.totalPrice || 0), 0);
 
             const cakeMap = new Map<string, { count: number; date: string }>();

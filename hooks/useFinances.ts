@@ -67,6 +67,8 @@ export function useFinances(year?: number, month?: number) {
                 .from('orders')
                 .select('*')
                 .or('status.eq.pagado,payment_status.eq.pagado')
+                // A paid order that was later cancelled is not income
+                .neq('status', 'cancelado')
                 .gte('delivery_date', startDateOnly)
                 .lte('delivery_date', endDateOnly)
                 .order('delivery_date', { ascending: false });

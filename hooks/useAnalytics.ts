@@ -75,7 +75,7 @@ export function useAnalytics() {
             }
 
             const paidOrders = orders.filter(o =>
-                o.status === 'pagado' || o.payment_status === 'pagado'
+                o.status !== 'cancelado' && (o.status === 'pagado' || o.payment_status === 'pagado')
             );
 
             // Current month summary
