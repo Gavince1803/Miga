@@ -479,14 +479,24 @@ export default function InventoryScreen() {
             let success = true;
             const updates: any = {};
 
-            // Check for changes
-            if (newQty !== editingItem.quantity) {
+            // Changing the unit converts the stored numbers (500 g -> 0.5 kg).
+            // If the quantity was also edited, it's taken as already in the new unit.
+            const unitChanged = editUnit !== editingItem.unit;
+            const unitFactor = unitChanged ? convertValue(1, editingItem.unit, editUnit) : null;
+            const qtyEdited = newQty !== editingItem.quantity;
+
+            if (qtyEdited) {
                 const qtySuccess = await setStock(editingItem.id, newQty);
                 if (!qtySuccess) success = false;
             }
 
-            if (editUnit !== editingItem.unit) {
+            if (unitChanged) {
                 updates.unit = editUnit;
+                if (unitFactor !== null) {
+                    if (!qtyEdited) updates.quantity = editingItem.quantity * unitFactor;
+                    updates.minStock = editingItem.minStock * unitFactor;
+                    if (editingItem.costPerUnit) updates.costPerUnit = editingItem.costPerUnit / unitFactor;
+                }
             }
 
             if (editCategory !== (editingItem.category || '')) {
