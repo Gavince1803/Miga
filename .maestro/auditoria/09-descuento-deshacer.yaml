@@ -1,0 +1,37 @@
+# Pedido con receta vinculada → marcar Pagado → aviso "Se descontó ... Deshacer".
+# Crea un pedido en la cuenta activa (usar la cuenta de prueba).
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: ".*Nuevo Pedido.*"
+- tapOn: "Ej: María García"
+- inputText: "Prueba Descuento"
+- tapOn:
+    point: "88%,58%"          # Listo
+- scrollUntilVisible:
+    element: ".*Agregar Preparación.*"
+    direction: DOWN
+- tapOn: ".*Agregar Preparación.*"
+- takeScreenshot: capturas/desc-01-modal-preparacion
+- tapOn:
+    text: "Torta de chocolate.*"
+    below: "Buscar por nombre.*"   # el placeholder de búsqueda también dice "Torta de Chocolate"
+- takeScreenshot: capturas/desc-02-receta-elegida
+- tapOn: ".*Agregar al Pedido.*"
+- scrollUntilVisible:
+    element: ".*Guardar Pedido.*"
+    direction: DOWN
+- tapOn: ".*Guardar Pedido.*"
+- tapOn: "OK"
+- tapOn: "Pedidos(, tab.*)?"
+- tapOn: ".*Prueba Descuento.*"
+- takeScreenshot: capturas/desc-03-detalle
+- tapOn: ".*Pendiente.*"
+- tapOn: "Pagado"
+- tapOn: "OK"                   # "Estado actualizado"
+- takeScreenshot: capturas/desc-04-aviso-descuento
+- tapOn: "Deshacer"
+- takeScreenshot: capturas/desc-05-deshecho
