@@ -1,0 +1,57 @@
+# Editar pedido (#49): borrar el teléfono, completar el abono → Pagado,
+# subir el total → vuelve a Abonado. Usa el pedido "Cliente Maestro" #1536.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Pedidos(, tab.*)?"
+- tapOn: ".*#1536.*"
+- tapOn: ".*Editar.*"
+- extendedWaitUntil:
+    visible: "Editar Pedido"
+    timeout: 10000
+# 1. Borrar teléfono y completar el abono (45,50 = total)
+- tapOn:
+    id: "edit-phone"
+- eraseText: 20
+- scrollUntilVisible:
+    element:
+      id: "edit-deposit"
+    direction: DOWN
+- tapOn:
+    id: "edit-deposit"
+- eraseText: 10
+- inputText: "45,50"
+- takeScreenshot: capturas/edit-01-abono-completo
+- tapOn:
+    point: "88%,61%"          # Listo
+- scrollUntilVisible:
+    element: ".*Guardar Cambios.*"
+    direction: DOWN
+- tapOn: ".*Guardar Cambios.*"
+- tapOn: "OK"
+- takeScreenshot: capturas/edit-02-detalle-pagado
+# 2. Subir el total a 60 → debe quedar Abonado
+- tapOn: ".*Editar.*"
+- extendedWaitUntil:
+    visible: "Editar Pedido"
+    timeout: 10000
+- takeScreenshot: capturas/edit-03-telefono-vacio
+- scrollUntilVisible:
+    element:
+      id: "edit-total"
+    direction: DOWN
+- tapOn:
+    id: "edit-total"
+- eraseText: 10
+- inputText: "60"
+- tapOn:
+    point: "88%,61%"
+- scrollUntilVisible:
+    element: ".*Guardar Cambios.*"
+    direction: DOWN
+- tapOn: ".*Guardar Cambios.*"
+- tapOn: "OK"
+- takeScreenshot: capturas/edit-04-detalle-abonado

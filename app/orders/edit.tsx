@@ -326,6 +326,7 @@ export default function EditOrderScreen() {
                     <FormField label="Teléfono" colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
+                            testID="edit-phone"
                             value={clientPhone}
                             onChangeText={setClientPhone}
                             keyboardType="phone-pad"
@@ -432,6 +433,7 @@ export default function EditOrderScreen() {
                             <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
+                                testID="edit-total"
                                 value={totalPrice}
                                 onChangeText={setTotalPrice}
                                 keyboardType="decimal-pad"
@@ -483,6 +485,7 @@ export default function EditOrderScreen() {
                             <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
+                                testID="edit-deposit"
                                 value={deposit}
                                 onChangeText={setDeposit}
                                 keyboardType="decimal-pad"
