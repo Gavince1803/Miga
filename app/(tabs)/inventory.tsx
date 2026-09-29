@@ -494,7 +494,7 @@ export default function InventoryScreen() {
     );
 
     const lowStockCount = inventory.filter(
-        item => item.minStock && item.quantity < item.minStock
+        item => item.minStock > 0 && item.quantity < item.minStock
     ).length;
 
     const handleQuickAdjust = (id: string, delta: number) => {
@@ -780,12 +780,27 @@ export default function InventoryScreen() {
                     </Text>
                 </View>
                 {lowStockCount > 0 && !showArchived && (
-                    <View style={[styles.statChip, { backgroundColor: colors.error + '15' }]}>
+                    <TouchableOpacity
+                        style={[styles.statChip, { backgroundColor: colors.error + '15' }]}
+                        onPress={() => router.push('/inventory/shopping' as any)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${lowStockCount} bajo stock, ver lista de compras`}
+                    >
                         <FontAwesome name="exclamation-triangle" size={14} color={colors.error} />
                         <Text style={[styles.statText, { color: colors.error }]}>
                             {lowStockCount} bajo stock
                         </Text>
-                    </View>
+                    </TouchableOpacity>
+                )}
+                {!showArchived && (
+                    <TouchableOpacity
+                        style={[styles.statChip, { backgroundColor: colors.primary + '15' }]}
+                        onPress={() => router.push('/inventory/shopping' as any)}
+                        accessibilityRole="button"
+                    >
+                        <FontAwesome name="shopping-cart" size={14} color={colors.primary} />
+                        <Text style={[styles.statText, { color: colors.primary }]}>Lista de compras</Text>
+                    </TouchableOpacity>
                 )}
                 {archivedItems.length > 0 && (
                     <TouchableOpacity

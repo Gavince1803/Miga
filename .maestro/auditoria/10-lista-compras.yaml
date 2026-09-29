@@ -1,0 +1,18 @@
+# Lista de compras desde Inventario: bajo el mínimo + faltantes de pedidos
+# pendientes de los próximos 7 días.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Inventario(, tab.*)?"
+- tapOn: ".*Lista de compras.*"
+- extendedWaitUntil:
+    visible: "Lo que está bajo tu mínimo.*"
+    timeout: 15000
+- takeScreenshot: capturas/lista-01
+- tapOn:
+    text: ".*comprar.*"
+    index: 0
+- takeScreenshot: capturas/lista-02-marcado
