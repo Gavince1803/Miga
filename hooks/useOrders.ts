@@ -398,6 +398,7 @@ export function useOrders() {
     };
 
     return {
+        refetch: fetchOrders,
         orders,
         loading,
         refreshing,

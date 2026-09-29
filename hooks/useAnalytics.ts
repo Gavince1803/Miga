@@ -154,7 +154,7 @@ export function useAnalytics() {
         fetchAnalytics();
     }, []);
 
-    return { data, loading, refreshing, onRefresh };
+    return { refetch: fetchAnalytics, data, loading, refreshing, onRefresh };
 }
 
 function buildEmptyMonthlyRevenue(curYear: number, curMonth: number): MonthlyRevenue[] {

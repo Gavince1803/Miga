@@ -86,5 +86,5 @@ export function useClients() {
         fetchClients();
     }, []);
 
-    return { clients, loading, refreshing, onRefresh };
+    return { refetch: fetchClients, clients, loading, refreshing, onRefresh };
 }

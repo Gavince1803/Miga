@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { useOrders } from '@/hooks/useOrders';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 
 type FilterType = 'todos' | 'pendiente' | 'pagado' | 'cancelado';
 
@@ -108,7 +109,8 @@ function OrderCard({
 export default function OrdersScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { orders, loading, refreshing, onRefresh } = useOrders();
+    const { orders, loading, refreshing, onRefresh, refetch } = useOrders();
+    useRefreshOnFocus(refetch);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState<FilterType>('todos');
 

@@ -11,7 +11,8 @@ import { Order } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { isToday } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Link, router, useFocusEffect } from 'expo-router';
+import { Link, router } from 'expo-router';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -135,14 +136,6 @@ export default function HomeScreen() {
   // Get first name or business name
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
-  // Refresh data when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      onRefresh();
-      onRefreshInventory();
-    }, [])
-  );
-
   // Calculate stats
   const todayOrdersCount = orders.filter(o => isToday(parseLocalDate(o.deliveryDate))).length;
   // Simplified week calculation (last 7 days + next 7 days or just volume)
@@ -247,13 +240,11 @@ export default function HomeScreen() {
   }, [fetchExpenses]);
 
   // Refresh data when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      onRefresh();
-      onRefreshInventory();
-      fetchExpenses();
-    }, [fetchExpenses, onRefresh, onRefreshInventory])
-  );
+  useRefreshOnFocus(() => {
+    onRefresh();
+    onRefreshInventory();
+    fetchExpenses();
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);

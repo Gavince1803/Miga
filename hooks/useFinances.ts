@@ -247,6 +247,7 @@ export function useFinances(year?: number, month?: number) {
     };
 
     return {
+        refetch: fetchFinances,
         summary,
         recentTransactions,
         loading,

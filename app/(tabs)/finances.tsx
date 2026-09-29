@@ -20,6 +20,7 @@ import {
     View
 } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 
 const { width } = Dimensions.get('screen');
 
@@ -27,10 +28,11 @@ export default function FinancesScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const [currentDate, setCurrentDate] = React.useState(new Date());
-    const { summary, recentTransactions, loading, refreshing, onRefresh, revertTransaction } = useFinances(
+    const { summary, recentTransactions, loading, refreshing, onRefresh, revertTransaction, refetch } = useFinances(
         currentDate.getFullYear(),
         currentDate.getMonth()
     );
+    useRefreshOnFocus(refetch);
 
     const { showAlert } = useAlert();
     const haptics = useHaptics();
