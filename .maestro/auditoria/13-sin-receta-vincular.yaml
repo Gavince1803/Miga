@@ -1,0 +1,40 @@
+# Pedido con un producto sin receta → Pagado → aviso "No se descontó... Vincular" (#47).
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: ".*Nuevo Pedido.*"
+- tapOn: "Ej: María García"
+- inputText: "Prueba Sin Receta"
+- tapOn:
+    point: "88%,58%"
+- scrollUntilVisible:
+    element: ".*Agregar Preparación.*"
+    direction: DOWN
+- tapOn: ".*Agregar Preparación.*"
+- tapOn: ".*No está en mi recetario.*"
+- tapOn: "Ej: Torta de Chocolate"
+- inputText: "Alfajores"
+- tapOn: ".*Agregar al Pedido.*"
+- scrollUntilVisible:
+    element: ".*Guardar Pedido.*"
+    direction: DOWN
+- tapOn: ".*Guardar Pedido.*"
+- tapOn: "OK"
+- tapOn: "Pedidos(, tab.*)?"
+- tapOn: "Buscar por cliente.*"
+- inputText: "Sin Receta"
+- tapOn:
+    point: "50%,34%"          # primer resultado (el primer toque por texto solo cerraba el teclado)
+- extendedWaitUntil:
+    visible: "Detalle del Pedido"
+    timeout: 10000
+- tapOn:
+    point: "78%,19%"
+- tapOn: "Pagado"
+- tapOn: "OK"
+- takeScreenshot: capturas/sin-receta-01-aviso
+- tapOn: "Vincular"
+- takeScreenshot: capturas/sin-receta-02-editar
