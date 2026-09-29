@@ -16,7 +16,14 @@ export interface RedeemResult {
     premiumUntil?: Date;
 }
 
-const CACHE_KEY = 'subscription_status_cache';
+// One cache per account, so another account on the same device doesn't
+// inherit this one's premium status.
+const cacheKey = (userId: string) => `subscription_status_cache_${userId}`;
+
+async function currentUserId(): Promise<string | null> {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user.id ?? null;
+}
 
 export function useSubscription() {
     const [status, setStatus] = useState<SubscriptionStatus>({
@@ -28,16 +35,20 @@ export function useSubscription() {
 
     const loadCache = async () => {
         try {
-            const cached = await AsyncStorage.getItem(CACHE_KEY);
+            const userId = await currentUserId();
+            if (!userId) return;
+            const cached = await AsyncStorage.getItem(cacheKey(userId));
             if (cached) {
                 const parsed = JSON.parse(cached);
-                // Check if likely valid (not expired if we have expiration?)
-                // Actually, just trust cache for initial render
+                const premiumUntil = parsed.premiumUntil ? new Date(parsed.premiumUntil) : null;
+                // A code-based premium that already expired shouldn't survive offline
+                const expired = premiumUntil !== null && premiumUntil.getTime() < Date.now() && !parsed.viaStore;
+                const isPremium = parsed.isPremium && !expired;
                 setStatus(prev => ({
                     ...prev,
-                    isPremium: parsed.isPremium,
-                    planType: parsed.planType,
-                    premiumUntil: parsed.premiumUntil ? new Date(parsed.premiumUntil) : null,
+                    isPremium,
+                    planType: isPremium ? 'premium' : 'free',
+                    premiumUntil,
                     loading: false // Important: Stop loading if cache exists
                 }));
             }
@@ -48,6 +59,12 @@ export function useSubscription() {
 
     const checkPremiumStatus = useCallback(async () => {
         try {
+            const userId = await currentUserId();
+            if (!userId) {
+                setStatus({ isPremium: false, planType: 'free', premiumUntil: null, loading: false });
+                return;
+            }
+
             // Check Supabase (Manual Codes)
             const { data, error } = await supabase.rpc('check_premium_status');
 
@@ -55,7 +72,14 @@ export function useSubscription() {
             const isRevenueCatPremium = await getPremiumStatus();
 
             if (error) {
+                // Offline or server error: we don't know the code-based status, so
+                // keep what we had (cache) instead of downgrading a paying user.
+                // Pago Móvil users on flaky connections were losing premium here.
                 console.error('Error checking Supabase premium status:', error);
+                setStatus(prev => isRevenueCatPremium
+                    ? { ...prev, isPremium: true, planType: 'premium', loading: false }
+                    : { ...prev, loading: false });
+                return;
             }
 
             const isSupabasePremium = data?.is_premium ?? false;
@@ -73,7 +97,7 @@ export function useSubscription() {
             setStatus(newStatus as SubscriptionStatus);
 
             // Update Cache
-            AsyncStorage.setItem(CACHE_KEY, JSON.stringify(newStatus));
+            AsyncStorage.setItem(cacheKey(userId), JSON.stringify({ ...newStatus, viaStore: isRevenueCatPremium }));
 
         } catch (error) {
             console.error('Error checking premium status:', error);
@@ -122,7 +146,9 @@ export function useSubscription() {
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'SIGNED_IN') {
-                checkPremiumStatus();
+                loadCache().then(checkPremiumStatus);
+            } else if (event === 'SIGNED_OUT') {
+                setStatus({ isPremium: false, planType: 'free', premiumUntil: null, loading: false });
             }
         });
 
