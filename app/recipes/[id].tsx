@@ -290,10 +290,12 @@ export default function RecipeDetailScreen() {
                                                 <Text style={[styles.lowStockText, { color: colors.warning }]}>Archivado</Text>
                                             </View>
                                         )}
-                                        {ing.inventoryItem && ing.inventoryItem.quantity < ing.quantity && (
+                                        {/* Compare in the same unit: 1.2 kg in stock vs 100 g needed used to show
+                                            as missing. Label differs from Inventario's "bajo stock" (below minimum). */}
+                                        {ing.inventoryItem && ing.inventoryItem.quantity < (convertValue(ing.quantity, ing.unit, ing.inventoryItem.unit) ?? ing.quantity) && (
                                             <View style={[styles.lowStockWarning, { backgroundColor: colors.error + '20' }]}>
                                                 <FontAwesome name="exclamation-triangle" size={10} color={colors.error} />
-                                                <Text style={[styles.lowStockText, { color: colors.error }]}>Bajo stock</Text>
+                                                <Text style={[styles.lowStockText, { color: colors.error }]}>No alcanza</Text>
                                             </View>
                                         )}
                                     </View>

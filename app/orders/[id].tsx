@@ -500,11 +500,12 @@ export default function OrderDetailScreen() {
                     {/* Quick Actions */}
                     <View style={styles.quickActions}>
                         <TouchableOpacity
-                            style={[styles.quickAction, { backgroundColor: colors.success + '15' }]}
+                            style={[styles.quickAction, { backgroundColor: colors.success + '30' }]}
                             onPress={handleCall}
                         >
-                            <FontAwesome name="phone" size={18} color={colors.success} />
-                            <Text style={[styles.quickActionText, { color: colors.success }]}>Llamar</Text>
+                            {/* Mint on a 15% mint background was too faint and read as disabled */}
+                            <FontAwesome name="phone" size={18} color={colors.text} />
+                            <Text style={[styles.quickActionText, { color: colors.text }]}>Llamar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.quickAction, { backgroundColor: '#25D366' + '15' }]}
