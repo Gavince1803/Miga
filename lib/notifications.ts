@@ -28,8 +28,8 @@ export async function requestNotificationPermissions() {
 }
 
 /**
- * Schedules the reminders for an order: 3, 2 and 1 days before at 9:00, plus
- * one 2 hours before delivery on the day itself. A fixed small set keeps us
+ * Schedules the reminders for an order: 7, 3, 2 and 1 days before at 9:00,
+ * plus one 2 hours before delivery on the day itself. A fixed small set keeps us
  * under iOS's 64 pending notifications and makes cancelling reliable.
  *
  * Reminders whose time already passed are skipped, except that on creation
@@ -71,6 +71,13 @@ export async function scheduleOrderNotification(order: {
         const detail = order.description || order.size || 'Sin descripción';
 
         const reminders: { key: string; date: Date; title: string; body: string }[] = [];
+
+        reminders.push({
+            key: 'd7',
+            date: new Date(year, month - 1, day - 7, 9, 0, 0, 0),
+            title: '🗓️ Falta 1 semana para un pedido',
+            body: `Pedido de ${order.clientName} para el ${friendlyDate}.\nBuen momento para comprar ingredientes 🛒`,
+        });
 
         for (const daysBefore of [3, 2, 1]) {
             const date = new Date(year, month - 1, day - daysBefore, 9, 0, 0, 0);
