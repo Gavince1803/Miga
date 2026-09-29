@@ -20,7 +20,7 @@ export {
 // Auth
 import { AlertProvider } from '@/context/AlertContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { requestNotificationPermissions, scheduleTrialNotifications } from '@/lib/notifications';
+import { pruneLegacyOrderReminders, requestNotificationPermissions, scheduleTrialNotifications } from '@/lib/notifications';
 import { getTrialInfo } from '@/lib/revenuecat';
 import { Stack, useRouter, useSegments } from 'expo-router';
 
@@ -97,13 +97,19 @@ function RootLayoutNav() {
   const router = useRouter();
   const notificationResponseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
 
-  // Open paywall when user taps any trial notification
+  useEffect(() => {
+    pruneLegacyOrderReminders();
+  }, []);
+
+  // Open the paywall for trial notifications and the order for its reminders
   useEffect(() => {
     notificationResponseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = response.notification.request.content.data as Record<string, unknown>;
         if (data?.type === 'trial_expiry') {
           router.push('/premium' as any);
+        } else if (typeof data?.orderId === 'string') {
+          router.push(`/orders/${data.orderId}` as any);
         }
       }
     );

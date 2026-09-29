@@ -28,18 +28,23 @@ export async function requestNotificationPermissions() {
 }
 
 /**
- * Schedules a notification for an order.
- * Triggers exactly X days before the delivery date/time.
+ * Schedules the reminders for an order: 7, 3, 2 and 1 days before at 9:00,
+ * plus one 2 hours before delivery on the day itself. A fixed small set keeps us
+ * under iOS's 64 pending notifications and makes cancelling reliable.
+ *
+ * Reminders whose time already passed are skipped, except that on creation
+ * (`fireMissedToday`) the latest one due today fires in 1 minute, so an order
+ * created after 9:00 for tomorrow still gets its "mañana es la entrega".
  */
 export async function scheduleOrderNotification(order: {
     id: string;
     clientName: string;
     description?: string;
     size?: string;
-    deliveryDate: string; // ISO string 2026-01-10T00:00:00
+    deliveryDate: string; // YYYY-MM-DD
     deliveryTime: string; // "14:30" or "14:30:00"
-    reminderDays?: number; // Kept for interface compatibility but ignored or used as toggle
-}) {
+    reminderDays?: number; // Kept for interface compatibility, ignored
+}, options: { fireMissedToday?: boolean } = {}) {
     try {
         const hasPermission = await requestNotificationPermissions();
         if (!hasPermission) return;
@@ -51,85 +56,77 @@ export async function scheduleOrderNotification(order: {
             return;
         }
         const [year, month, day] = parts;
-
-        // Month is 0-indexed in JS Date constructor
         const deliveryMoment = new Date(year, month - 1, day);
-
-        const [hours, minutes] = order.deliveryTime ? order.deliveryTime.split(':').map(Number) : [12, 0];
+        const hasTime = !!order.deliveryTime;
+        const [hours, minutes] = hasTime ? order.deliveryTime.split(':').map(Number) : [12, 0];
         deliveryMoment.setHours(hours, minutes, 0, 0);
 
-        // Cancel previous notifications for this order to avoid duplicates
         await cancelOrderNotification(order.id);
 
         const now = new Date();
-        // Calculate total days until delivery
-        const timeDiff = deliveryMoment.getTime() - now.getTime();
-        const daysUntilDelivery = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        if (deliveryMoment.getTime() <= now.getTime()) return;
 
-        if (daysUntilDelivery <= 0) return;
-
-        // Formatter for body text
         const friendlyDate = deliveryMoment.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        const friendlyTime = deliveryMoment.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const detail = order.description || order.size || 'Sin descripción';
 
-        // Schedule notification for EVERY DAY from now until delivery
-        // Loop 'i' represents "days remaining"
-        // We start from daysUntilDelivery down to 1
-        for (let i = daysUntilDelivery; i >= 1; i--) {
-            const triggerDate = new Date(deliveryMoment);
-            triggerDate.setDate(triggerDate.getDate() - i);
+        const reminders: { key: string; date: Date; title: string; body: string }[] = [];
 
-            // Set notification time to 9:00 AM for daily reminders
-            // Exception: If 'today' is the trigger date and it's past 9am, we might skip or set to soon.
-            // For simplicity, let's target 9:00 AM. 
-            // If the calculated triggerDate at 9am is in the past, JS Notifications usually fires immediately or fails.
-            triggerDate.setHours(9, 0, 0, 0);
+        reminders.push({
+            key: 'd7',
+            date: new Date(year, month - 1, day - 7, 9, 0, 0, 0),
+            title: '🗓️ Falta 1 semana para un pedido',
+            body: `Pedido de ${order.clientName} para el ${friendlyDate}.\nBuen momento para comprar ingredientes 🛒`,
+        });
 
-            // If it's already past 9am today, maybe schedule for "now + 1 min" or just skip today's morning reminder?
-            // User request: "send a notification every day".
-            // Let's stick to the relative day check.
-            // If it's already past 9am today:
-            // 1. If the trigger date is TODAY, send it 1 minute from now so the user gets it.
-            // 2. If the trigger date is purely in the past (yesterday etc), skip it.
-            if (triggerDate.getTime() <= Date.now()) {
-                const isSameDay = triggerDate.toDateString() === new Date().toDateString();
-                if (isSameDay) {
-                    // Send in 1 minute
-                    triggerDate.setTime(Date.now() + 60 * 1000);
-                } else {
-                    continue;
+        for (const daysBefore of [3, 2, 1]) {
+            const date = new Date(year, month - 1, day - daysBefore, 9, 0, 0, 0);
+            reminders.push(daysBefore === 1
+                ? {
+                    key: 'd1',
+                    date,
+                    title: '🚨 ¡Mañana es la entrega! 🎂',
+                    body: `👩‍🍳 Para: ${order.clientName}\n📅 Fecha: ${friendlyDate}\n📝 Detalle: ${detail}`,
                 }
-            }
+                : {
+                    key: `d${daysBefore}`,
+                    date,
+                    title: `⏰ Faltan ${daysBefore} días para el pedido`,
+                    body: `Para: ${order.clientName}\nRecuerda preparar los ingredientes 🧁`,
+                });
+        }
 
-            const identifier = `order_${order.id}_${i}`;
+        if (hasTime) {
+            reminders.push({
+                key: 'today',
+                date: new Date(deliveryMoment.getTime() - 2 * 60 * 60 * 1000),
+                title: `🎂 Hoy entregas a las ${friendlyTime}`,
+                body: `Para: ${order.clientName}\n📝 Detalle: ${detail}`,
+            });
+        }
 
-            // --- COPY LOGIC ---
-            let title = '';
-            let body = '';
+        const upcoming = reminders.filter(r => r.date.getTime() > now.getTime());
+        if (options.fireMissedToday) {
+            const missedToday = reminders
+                .filter(r => r.date.getTime() <= now.getTime() && r.date.toDateString() === now.toDateString())
+                .pop();
+            if (missedToday) upcoming.push({ ...missedToday, date: new Date(now.getTime() + 60 * 1000) });
+        }
 
-            if (i === 1) {
-                title = `🚨 ¡Mañana es la entrega! 🎂`;
-                body = `👩‍🍳 Para: ${order.clientName}\n📅 Fecha: ${friendlyDate}\n📝 Detalle: ${order.description || order.size || 'Sin descripción'}`;
-            } else if (i <= 3) {
-                title = `⏰ Faltan ${i} días para el pedido`;
-                body = `Para: ${order.clientName}\nRecuerda preparar los ingredientes 🧁`;
-            } else {
-                title = `🗓️ Recordatorio: Faltan ${i} días`;
-                body = `Pedido de ${order.clientName} para el ${friendlyDate}.`;
-            }
-
+        for (const reminder of upcoming) {
+            const identifier = `order_${order.id}_${reminder.key}`;
             await Notifications.scheduleNotificationAsync({
                 content: {
-                    title,
-                    body,
+                    title: reminder.title,
+                    body: reminder.body,
                     sound: true,
                     data: { orderId: order.id },
                     subtitle: 'Agenda Repostera'
                 },
-                trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
+                trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.date },
                 identifier,
             });
-
-            console.log(`Scheduled notification ${identifier} at ${triggerDate.toISOString()}`);
+            console.log(`Scheduled notification ${identifier} at ${reminder.date.toISOString()}`);
         }
 
     } catch (error) {
@@ -215,14 +212,47 @@ export async function scheduleTrialNotifications(expirationDate: Date): Promise<
 
 export async function cancelOrderNotification(orderId: string) {
     try {
-        // Cancel legacy single notification
-        await Notifications.cancelScheduledNotificationAsync(`order_${orderId}`);
-
-        // Cancel potential daily reminders (up to 30 days coverage)
-        for (let i = 1; i <= 30; i++) {
-            await Notifications.cancelScheduledNotificationAsync(`order_${orderId}_${i}`);
+        // Match by orderId (and legacy identifiers) instead of guessing
+        // identifiers: older versions scheduled one reminder per day.
+        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+        for (const notification of scheduled) {
+            const data = notification.content.data as Record<string, unknown> | undefined;
+            if (data?.orderId === orderId || notification.identifier.startsWith(`order_${orderId}`)) {
+                await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+            }
         }
     } catch (error) {
         console.error('Error canceling notification:', error);
+    }
+}
+
+// On logout / account deletion, so the next account on this device doesn't
+// get reminders with the previous account's clients.
+export async function cancelAllNotifications() {
+    try {
+        await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (error) {
+        console.error('Error canceling all notifications:', error);
+    }
+}
+
+// Older versions scheduled one reminder per remaining day (`order_<id>_<n>`),
+// which can exhaust iOS's 64 pending notifications. Keep only the last 3
+// days before delivery, once per install.
+export async function pruneLegacyOrderReminders() {
+    try {
+        const storageKey = 'legacy_order_reminders_pruned';
+        if (await AsyncStorage.getItem(storageKey)) return;
+
+        const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+        for (const notification of scheduled) {
+            const match = notification.identifier.match(/^order_.+_(\d+)$/);
+            if (match && Number(match[1]) > 3) {
+                await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+            }
+        }
+        await AsyncStorage.setItem(storageKey, 'true');
+    } catch (error) {
+        console.error('Error pruning legacy reminders:', error);
     }
 }
