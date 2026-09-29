@@ -61,6 +61,7 @@ import { SettingsProvider } from '@/context/SettingsContext';
 import { SubscriptionProvider } from '@/hooks/useSubscription';
 import { OrdersProvider } from '@/hooks/useOrders';
 import { InventoryProvider } from '@/hooks/useInventory';
+import { ToastProvider } from '@/context/ToastContext';
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -89,11 +90,14 @@ export default function RootLayout() {
         <AlertProvider>
           <SettingsProvider>
             <SubscriptionProvider>
-              <OrdersProvider>
+              <ToastProvider>
+                {/* Inventory outside Orders: paying an order refreshes inventory */}
                 <InventoryProvider>
-                  <RootLayoutNav />
+                  <OrdersProvider>
+                    <RootLayoutNav />
+                  </OrdersProvider>
                 </InventoryProvider>
-              </OrdersProvider>
+              </ToastProvider>
             </SubscriptionProvider>
           </SettingsProvider>
         </AlertProvider>

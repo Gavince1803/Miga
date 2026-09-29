@@ -9,9 +9,12 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
     success: boolean;
     deductedItems: { name: string; quantity: number; unit: string }[];
     errors: string[];
+    /** Products in the order with no recipe (or a recipe with no ingredients) */
+    skippedProducts: string[];
 }> {
     const deductedItems: { name: string; quantity: number; unit: string }[] = [];
     const errors: string[] = [];
+    const skippedProducts: string[] = [];
 
     try {
         // 1. Get session for user_id
@@ -27,7 +30,7 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
 
         if (previousError) throw previousError;
         if (previousDeductions && previousDeductions > 0) {
-            return { success: true, deductedItems: [], errors: [] };
+            return { success: true, deductedItems: [], errors: [], skippedProducts: [] };
         }
 
         // 2. Get all order items with their recipes
@@ -38,13 +41,13 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
 
         if (itemsError) throw itemsError;
         if (!orderItems || orderItems.length === 0) {
-            return { success: true, deductedItems: [], errors: [] };
+            return { success: true, deductedItems: [], errors: [], skippedProducts: [] };
         }
 
         // 3. Load the ingredients of every recipe in the order in one query
         const recipeIds = [...new Set(orderItems.map(item => item.recipe_id).filter(Boolean))];
         if (recipeIds.length === 0) {
-            return { success: true, deductedItems: [], errors: [] };
+            return { success: true, deductedItems: [], errors: [], skippedProducts: orderItems.map(item => item.product_name) };
         }
 
         const { data: recipeIngredients, error: ingredientsError } = await supabase
@@ -69,9 +72,12 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
         // products using the same ingredient don't overwrite each other
         const totals = new Map<string, { item: any; amount: number; products: string[] }>();
         for (const orderItem of orderItems) {
-            if (!orderItem.recipe_id) continue; // Skip items without recipes
-            for (const ingredient of recipeIngredients ?? []) {
-                if (ingredient.recipe_id !== orderItem.recipe_id) continue;
+            const ingredients = (recipeIngredients ?? []).filter(i => i.recipe_id === orderItem.recipe_id);
+            if (!orderItem.recipe_id || ingredients.length === 0) {
+                skippedProducts.push(orderItem.product_name);
+                continue;
+            }
+            for (const ingredient of ingredients) {
                 const inventoryItem = ingredient.inventory_items as any;
                 if (!inventoryItem) continue;
 
@@ -92,6 +98,17 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
         // 5. Update every item in parallel (don't go below 0)
         const now = new Date().toISOString();
         const entries = [...totals.values()];
+        // What is actually taken can be less than needed when stock runs out;
+        // that's what gets recorded, so "Deshacer" restores exactly that
+        const outOfStock: string[] = [];
+        entries.forEach(entry => { entry.amount = Math.min(entry.amount, Math.max(0, entry.item.quantity)); });
+        for (let i = entries.length - 1; i >= 0; i--) {
+            if (entries[i].amount <= 0) {
+                outOfStock.push(entries[i].item.name);
+                entries.splice(i, 1);
+            }
+        }
+        if (outOfStock.length > 0) errors.push(`Sin stock: ${outOfStock.reverse().join(', ').toLowerCase()}`);
         const results = await Promise.all(entries.map(({ item, amount }) =>
             supabase
                 .from('inventory_items')
@@ -121,47 +138,88 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
             await supabase.from('inventory_movements').insert(movements);
         }
 
-        return { success: errors.length === 0, deductedItems, errors };
+        return { success: errors.length === 0, deductedItems, errors, skippedProducts };
     } catch (error) {
         console.error('Error deducting inventory:', error);
         return {
             success: false,
             deductedItems,
-            errors: ['Error general al descontar inventario']
+            errors: ['Error general al descontar inventario'],
+            skippedProducts,
         };
     }
 }
 
 /**
- * Format the deduction summary message
+ * Puts back what an order's deduction took and deletes those movements, so the
+ * order can be deducted again later.
  */
-export function formatDeductionMessage(
-    deductedItems: { name: string; quantity: number; unit: string }[],
-    errors: string[]
-): { title: string; message: string; type: 'success' | 'warning' } | null {
-    if (deductedItems.length === 0 && errors.length === 0) {
-        return null; // Nothing to show
-    }
+export async function undoDeductionForOrder(orderId: string): Promise<boolean> {
+    try {
+        const { data: movements, error } = await supabase
+            .from('inventory_movements')
+            .select('id, inventory_item_id, quantity, inventory_items ( quantity )')
+            .eq('order_id', orderId)
+            .eq('movement_type', 'deduccion');
+        if (error) throw error;
+        if (!movements || movements.length === 0) return true;
 
-    let message = '';
+        const now = new Date().toISOString();
+        const results = await Promise.all(movements.map((m: any) =>
+            supabase
+                .from('inventory_items')
+                .update({ quantity: (m.inventory_items?.quantity ?? 0) + Math.abs(m.quantity), last_updated: now })
+                .eq('id', m.inventory_item_id)
+        ));
+        if (results.some(r => r.error)) throw new Error('Error restoring stock');
+
+        const { error: deleteError } = await supabase
+            .from('inventory_movements')
+            .delete()
+            .in('id', movements.map((m: any) => m.id));
+        if (deleteError) throw deleteError;
+        return true;
+    } catch (error) {
+        console.error('Error undoing deduction:', error);
+        return false;
+    }
+}
+
+function formatQuantity(quantity: number, unit: string): string {
+    if ((unit === 'g' || unit === 'ml') && quantity >= 1000) {
+        return `${Math.round(quantity / 10) / 100} ${unit === 'g' ? 'kg' : 'L'}`;
+    }
+    return `${Math.round(quantity * 100) / 100} ${unit}`;
+}
+
+/**
+ * Short text for the toast shown after a paid order deducts stock.
+ * Returns null when there's nothing worth telling (no products in the order).
+ */
+export function describeDeduction(result: {
+    deductedItems: { name: string; quantity: number; unit: string }[];
+    errors: string[];
+    skippedProducts: string[];
+}): { message: string; canUndo: boolean; needsRecipe: boolean } | null {
+    const { deductedItems, errors, skippedProducts } = result;
+    const parts: string[] = [];
 
     if (deductedItems.length > 0) {
-        message += 'Ingredientes descontados:\n';
-        deductedItems.forEach(item => {
-            message += `• ${item.quantity} ${item.unit} de ${item.name}\n`;
-        });
+        const list = deductedItems.map(i => `${i.name.toLowerCase()} ${formatQuantity(i.quantity, i.unit)}`);
+        parts.push(`Se descontó: ${list.join(', ')}`);
     }
-
-    if (errors.length > 0) {
-        message += '\n⚠️ Advertencias:\n';
-        errors.forEach(err => {
-            message += `• ${err}\n`;
-        });
+    if (skippedProducts.length > 0) {
+        const names = [...new Set(skippedProducts)].join(', ');
+        parts.push(deductedItems.length > 0
+            ? `${names} no tiene receta vinculada`
+            : `No se descontó inventario: ${names} no tiene receta vinculada`);
     }
+    if (errors.length > 0) parts.push(errors.join('. '));
 
+    if (parts.length === 0) return null;
     return {
-        title: deductedItems.length > 0 ? '✓ Inventario Actualizado' : '⚠️ Advertencias',
-        message: message.trim(),
-        type: errors.length > 0 ? 'warning' : 'success'
+        message: parts.join('. '),
+        canUndo: deductedItems.length > 0,
+        needsRecipe: deductedItems.length === 0 && skippedProducts.length > 0,
     };
 }

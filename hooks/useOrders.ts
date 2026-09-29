@@ -1,5 +1,6 @@
 import { useAlert } from '@/context/AlertContext';
-import { deductInventoryForOrder, formatDeductionMessage } from '@/lib/inventoryDeduction';
+import { deductInventoryForOrder } from '@/lib/inventoryDeduction';
+import { useDeductionToast } from '@/hooks/useDeductionToast';
 import { cancelOrderNotification, scheduleOrderNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { Order, OrderFormData } from '@/types';
@@ -25,6 +26,7 @@ function useOrdersState() {
     const [refreshing, setRefreshing] = useState(false);
 
     const { showAlert } = useAlert();
+    const notifyDeduction = useDeductionToast();
 
     const fetchOrders = async () => {
         try {
@@ -221,11 +223,7 @@ function useOrdersState() {
                 if (error) throw error;
 
                 // Auto-deduct inventory including in updateOrder
-                const { deductedItems, errors } = await deductInventoryForOrder(id);
-                const notification = formatDeductionMessage(deductedItems, errors);
-                if (notification) {
-                    showAlert(notification);
-                }
+                notifyDeduction(id, await deductInventoryForOrder(id));
             } else {
                 const { data, error } = await supabase
                     .from('orders')
@@ -299,11 +297,7 @@ function useOrdersState() {
             if (error) throw error;
 
             if (updates.payment_status === 'pagado' || updates.status === 'pagado') {
-                const { deductedItems, errors } = await deductInventoryForOrder(id);
-                const notification = formatDeductionMessage(deductedItems, errors);
-                if (notification) {
-                    showAlert(notification);
-                }
+                notifyDeduction(id, await deductInventoryForOrder(id));
             }
 
             // Update Notification Schedule
