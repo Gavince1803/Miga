@@ -310,7 +310,7 @@ export default function HomeScreen() {
 
       {/* Quick Action Button - STRIKING GRADIENT DESIGN */}
       <Link href="/orders/new" asChild>
-        <TouchableOpacity style={{ marginBottom: 40 }} activeOpacity={0.8}>
+        <TouchableOpacity style={{ marginBottom: Spacing.md }} activeOpacity={0.8}>
           <LinearGradient
             // Gradient adjusted to match Bakery Aesthetic: Gold to Burnt Orange/Sienna
             colors={['#D4A574', '#D35400']}
@@ -331,6 +331,25 @@ export default function HomeScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </Link>
+
+      {/* Quote entry: the calculator used to be reachable only from the
+          onboarding or an unlabeled icon inside a recipe */}
+      <TouchableOpacity
+        style={[styles.quoteButton, { backgroundColor: colors.surface, borderColor: colors.border }, Shadows.sm]}
+        activeOpacity={0.8}
+        onPress={() => router.push('/calculator' as any)}
+      >
+        <View style={styles.newOrderContent}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+            <FontAwesome name="calculator" size={22} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.quoteTitle, { color: colors.text }]}>Cotizar un pastel</Text>
+            <Text style={[styles.quoteSubtitle, { color: colors.textSecondary }]}>Calcula tu precio y envíalo por WhatsApp</Text>
+          </View>
+        </View>
+        <FontAwesome name="chevron-right" size={16} color={colors.textMuted} />
+      </TouchableOpacity>
 
       {/* Re-engagement Banner */}
       <ReEngagementBanner ordersCount={orders.length} inventoryCount={inventory.length} />
@@ -450,6 +469,24 @@ const styles = StyleSheet.create({
   newOrderSubtitle: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
+    marginTop: 2,
+  },
+  quoteButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  quoteTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  quoteSubtitle: {
+    fontSize: 13,
     marginTop: 2,
   },
   section: {
