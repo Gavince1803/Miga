@@ -60,14 +60,13 @@ export function useFinances(year?: number, month?: number) {
             const startDateISO = startOfMonth.toISOString();
             const endDateISO = endOfMonth.toISOString();
 
-            // 1. Fetch Income (Orders Paid)
-            // Filter by status 'pagado' OR payment_status 'pagado'
-            // AND within date range
+            // 1. Income = money collected: deposits of the month's orders (a paid
+            // order's deposit equals its total). Same rule as Inicio, which used to
+            // show a different figure (it counted deposits, this counted paid totals).
             const { data: orders, error: ordersError } = await supabase
                 .from('orders')
                 .select('*')
-                .or('status.eq.pagado,payment_status.eq.pagado')
-                // A paid order that was later cancelled is not income
+                .gt('deposit_amount', 0)
                 .neq('status', 'cancelado')
                 .gte('delivery_date', startDateOnly)
                 .lte('delivery_date', endDateOnly)
@@ -99,8 +98,7 @@ export function useFinances(year?: number, month?: number) {
 
             if (orders) {
                 orders.forEach((order: any) => {
-                    // Use total_price. 
-                    const amount = order.total_price || 0;
+                    const amount = order.deposit_amount || 0;
                     totalIncome += amount;
 
                     incomeTransactions.push({
@@ -187,8 +185,8 @@ export function useFinances(year?: number, month?: number) {
                     .update({
                         status: 'pendiente',
                         payment_status: 'pendiente',
-                        // Optional: Reset deposit if it was a full payment transaction?
-                        // For safety, let's just mark it pending. User can fix amounts.
+                        // Income is the collected deposit, so reverting it clears it
+                        deposit_amount: 0,
                     })
                     .eq('id', transaction.id);
 
