@@ -132,7 +132,9 @@ export function useExchangeRates() {
                 error: 'Error de conexión'
             }));
         }
-    }, []);
+        // currency must be a dependency: with [] the callback kept the initial
+        // 'VES' (default before settings load) and every user hit the VES APIs
+    }, [currency]);
 
     // Initial fetch / When currency changes
     useEffect(() => {
