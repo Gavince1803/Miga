@@ -26,6 +26,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { parseDecimal } from '@/lib/number';
 
 
 
@@ -218,8 +219,8 @@ export default function NewOrderScreen() {
         };
         loadSizes();
     }, []);
-    const total = parseFloat(totalPrice) || 0;
-    const deposit = parseFloat(depositAmount) || 0;
+    const total = parseDecimal(totalPrice);
+    const deposit = parseDecimal(depositAmount);
     const remaining = Math.max(0, total - deposit);
 
     // Auto-set Status based on payment
@@ -641,7 +642,7 @@ export default function NewOrderScreen() {
 
                             {totalPrice ? (
                                 <Text style={{ fontSize: 13, color: colors.textSecondary, marginLeft: 2 }}>
-                                    ≈ Bs. {(parseFloat(totalPrice) * (
+                                    ≈ Bs. {(parseDecimal(totalPrice) * (
                                         selectedRateType === 'bcv' ? bcv :
                                             selectedRateType === 'parallel' ? parallel :
                                                 (euro || 0)

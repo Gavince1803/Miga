@@ -19,9 +19,11 @@ import {
     StyleSheet,
     Text,
     TextInput,
+    TextInputProps,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { parseDecimal } from '@/lib/number';
 
 const QUOTE_BANNER_KEY = 'miga_quote_share_announced';
 
@@ -66,6 +68,33 @@ const bannerStyles = StyleSheet.create({
         lineHeight: 18,
     },
 });
+
+// Keeps the typed text ("12," or "1.") so decimals can be entered;
+// only the parsed number goes to the calculation.
+function DecimalInput({ value, onChange, style }: {
+    value: number;
+    onChange: (value: number) => void;
+    style: TextInputProps['style'];
+}) {
+    const [text, setText] = useState(String(value));
+
+    // Sync when the value changes from outside (e.g. loading a saved recipe)
+    useEffect(() => {
+        if (parseDecimal(text) !== value) setText(String(value));
+    }, [value]);
+
+    return (
+        <TextInput
+            style={style}
+            keyboardType="decimal-pad"
+            value={text}
+            onChangeText={(t) => {
+                setText(t);
+                onChange(Math.max(0, parseDecimal(t)));
+            }}
+        />
+    );
+}
 
 export default function CostCalculatorScreen() {
     const colorScheme = useColorScheme();
@@ -410,38 +439,34 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         <View style={styles.gridContainer}>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Mano de Obra (%)</Text>
-                                <TextInput
+                                <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
-                                    keyboardType="numeric"
-                                    value={config.laborPercentage.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, laborPercentage: Math.max(0, parseFloat(t) || 0) })}
+                                    value={config.laborPercentage}
+                                    onChange={(v) => setConfig({ ...config, laborPercentage: v })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Merma (%)</Text>
-                                <TextInput
+                                <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
-                                    keyboardType="numeric"
-                                    value={config.wastePercentage.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, wastePercentage: Math.max(0, parseFloat(t) || 0) })}
+                                    value={config.wastePercentage}
+                                    onChange={(v) => setConfig({ ...config, wastePercentage: v })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Servicios ($)</Text>
-                                <TextInput
+                                <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
-                                    keyboardType="numeric"
-                                    value={config.utilityCost.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, utilityCost: Math.max(0, parseFloat(t) || 0) })}
+                                    value={config.utilityCost}
+                                    onChange={(v) => setConfig({ ...config, utilityCost: v })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Empaque ($)</Text>
-                                <TextInput
+                                <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
-                                    keyboardType="numeric"
-                                    value={config.packagingCost.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, packagingCost: Math.max(0, parseFloat(t) || 0) })}
+                                    value={config.packagingCost}
+                                    onChange={(v) => setConfig({ ...config, packagingCost: v })}
                                 />
                             </View>
                         </View>
@@ -453,20 +478,18 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         <View style={styles.gridContainer}>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Ganancia Deseada (%)</Text>
-                                <TextInput
+                                <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
-                                    keyboardType="numeric"
-                                    value={config.profitPercentage.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, profitPercentage: Math.max(0, parseFloat(t) || 0) })}
+                                    value={config.profitPercentage}
+                                    onChange={(v) => setConfig({ ...config, profitPercentage: v })}
                                 />
                             </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Porciones</Text>
-                                <TextInput
+                                <DecimalInput
                                     style={[styles.gridInput, { color: colors.text }]}
-                                    keyboardType="numeric"
-                                    value={config.portions.toString()}
-                                    onChangeText={(t) => setConfig({ ...config, portions: Math.max(0, parseFloat(t) || 0) })}
+                                    value={config.portions}
+                                    onChange={(v) => setConfig({ ...config, portions: v })}
                                 />
                             </View>
                         </View>
