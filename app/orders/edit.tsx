@@ -7,7 +7,7 @@ import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
-import { PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
+import { OrderStatus, PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -132,6 +132,7 @@ export default function EditOrderScreen() {
     const [description, setDescription] = useState('');
     const [totalPrice, setTotalPrice] = useState('');
     const [deposit, setDeposit] = useState('');
+    const [originalStatus, setOriginalStatus] = useState<OrderStatus>('pendiente');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('zelle');
 
     useEffect(() => {
@@ -176,6 +177,7 @@ export default function EditOrderScreen() {
                     setTotalPrice(data.total_price ? data.total_price.toString() : '');
                     setDeposit(data.deposit_amount ? data.deposit_amount.toString() : '');
                     setPaymentMethod(data.payment_method);
+                    setOriginalStatus(data.status);
                 }
             } catch (error) {
                 console.error(error);
@@ -202,6 +204,18 @@ export default function EditOrderScreen() {
             showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
             return;
         }
+        if (total > 0 && depositVal > total) {
+            showAlert({ title: 'Revisa el abono', message: 'El abono no puede ser mayor que el precio total', type: 'error' });
+            return;
+        }
+
+        // Recalculate payment state from the amounts (same rule as new.tsx):
+        // raising the total used to leave an order 'pagado'
+        const paymentStatus = (total > 0 && depositVal >= total) ? 'pagado' : depositVal > 0 ? 'abonado' : 'pendiente';
+        const status: OrderStatus = originalStatus === 'cancelado' ? 'cancelado'
+            : paymentStatus === 'pagado' ? 'pagado'
+            : originalStatus === 'pagado' ? 'pendiente'
+            : originalStatus;
 
         setSubmitting(true);
 
@@ -225,6 +239,8 @@ export default function EditOrderScreen() {
                 totalPrice: total,
                 depositAmount: depositVal,
                 paymentMethod,
+                paymentStatus,
+                status,
             });
 
             if (updated) {

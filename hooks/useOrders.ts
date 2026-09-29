@@ -3,7 +3,7 @@ import { deductInventoryForOrder } from '@/lib/inventoryDeduction';
 import { useDeductionToast } from '@/hooks/useDeductionToast';
 import { cancelOrderNotification, scheduleOrderNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
-import { Order, OrderFormData } from '@/types';
+import { Order, OrderFormData, OrderStatus } from '@/types';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Turns a failed save into something the user can act on, plus a short
@@ -256,12 +256,13 @@ function useOrdersState() {
         }
     };
 
-    const updateOrder = async (id: string, orderData: Partial<OrderFormData>) => {
+    const updateOrder = async (id: string, orderData: Partial<OrderFormData> & { status?: OrderStatus }) => {
         try {
             const updates: any = {};
             if (orderData.clientName) updates.client_name = orderData.clientName;
-            if (orderData.clientPhone) updates.client_phone = orderData.clientPhone;
-            if (orderData.address) updates.address = orderData.address;
+            // Optional text fields: '' clears them (truthiness checks made clearing impossible)
+            if (orderData.clientPhone !== undefined) updates.client_phone = orderData.clientPhone;
+            if (orderData.address !== undefined) updates.address = orderData.address;
             if (orderData.deliveryDate) {
                 const d = orderData.deliveryDate;
                 const year = d.getFullYear();
@@ -271,18 +272,19 @@ function useOrdersState() {
             }
             if (orderData.deliveryTime) updates.delivery_time = orderData.deliveryTime;
             if (orderData.size) updates.size = orderData.size;
-            if (orderData.servings) updates.servings = orderData.servings;
-            if (orderData.filling) updates.filling = orderData.filling;
-            if (orderData.cover) updates.cover = orderData.cover;
-            if (orderData.occasion) updates.occasion = orderData.occasion;
-            if (orderData.cakeType) updates.cake_type = orderData.cakeType;
-            if (orderData.description) updates.description = orderData.description;
+            if (orderData.servings !== undefined) updates.servings = orderData.servings;
+            if (orderData.filling !== undefined) updates.filling = orderData.filling;
+            if (orderData.cover !== undefined) updates.cover = orderData.cover;
+            if (orderData.occasion !== undefined) updates.occasion = orderData.occasion;
+            if (orderData.cakeType !== undefined) updates.cake_type = orderData.cakeType;
+            if (orderData.description !== undefined) updates.description = orderData.description;
 
             if (orderData.totalPrice !== undefined) updates.total_price = orderData.totalPrice;
             if (orderData.depositAmount !== undefined) updates.deposit_amount = orderData.depositAmount;
             if (orderData.paymentMethod) updates.payment_method = orderData.paymentMethod;
 
             if (orderData.paymentStatus) updates.payment_status = orderData.paymentStatus;
+            if (orderData.status) updates.status = orderData.status;
 
             // Check changes to reminderDays
             if (orderData.reminderDays !== undefined) updates.reminder_days = orderData.reminderDays;

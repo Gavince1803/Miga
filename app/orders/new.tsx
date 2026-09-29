@@ -301,6 +301,10 @@ export default function NewOrderScreen() {
             showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
             return;
         }
+        if (total > 0 && deposit > total) {
+            showAlert({ title: 'Revisa el abono', message: 'El abono no puede ser mayor que el precio total', type: 'error' });
+            return;
+        }
 
 
         setSubmitting(true);
