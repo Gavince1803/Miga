@@ -225,7 +225,7 @@ export default function NewRecipeScreen() {
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{ headerLeft: () => <BackButton /> }} />
-            <KeyboardAwareScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" bottomOffset={24}>
+            <KeyboardAwareScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" bottomOffset={72}>
 
                 {/* Title Section */}
                 <View style={styles.section}>

@@ -25,7 +25,7 @@ import {
     View,
 } from 'react-native';
 import { parseDecimal } from '@/lib/number';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView, KeyboardToolbar } from 'react-native-keyboard-controller';
 
 const QUOTE_BANNER_KEY = 'miga_quote_share_announced';
 
@@ -381,7 +381,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="interactive"
-                    bottomOffset={24}
+                    bottomOffset={72}
                 >
 
                     {showQuoteBanner && (
@@ -674,6 +674,8 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         </View>
                     </View>
                 </KeyboardAvoidingView>
+                {/* RN Modals render in their own window, above the root "Listo" bar */}
+                <KeyboardToolbar doneText="Listo" showArrows={false} />
             </Modal>
         </View>
     );

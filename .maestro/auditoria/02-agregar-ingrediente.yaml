@@ -17,29 +17,34 @@ appId: com.agendarepostera.app
     visible: "Nuevo Ingrediente"
     timeout: 10000
 - takeScreenshot: capturas/ing-02-formulario
-# Campos por posición: varios placeholders ("General", "1", "5") existen también
-# en pestañas montadas detrás, y el selector por texto toca el equivocado.
+# Cada campo se toca por su etiqueta (below:): los placeholders ("General",
+# "1", "5") se repiten en pestañas montadas detrás, y las posiciones cambian
+# cuando el formulario se desplaza con el teclado.
 - tapOn:
-    point: "50%,22%"          # Nombre
+    below: "Nombre \\*"
 - inputText: "Harina de prueba Maestro"
 - takeScreenshot: capturas/ing-03-nombre-teclado
 - tapOn:
-    point: "50%,32%"          # Categoría
+    below: "Categoría"
 - inputText: "Secos"
 - takeScreenshot: capturas/ing-04-categoria-teclado
 - tapOn:
-    point: "29%,47%"          # Cantidad
+    below: "Cantidad"
 - inputText: "2,5"
 - takeScreenshot: capturas/ing-05-cantidad-teclado
 - tapOn:
-    point: "71%,47%"          # Pagué
+    point: "71%,47%"          # Pagué ($): "below" encuentra primero Cantidad, que está al lado
 - inputText: "4,20"
 - takeScreenshot: capturas/ing-06-precio-teclado
+- swipe:                      # queda detrás del teclado: deslizar como haría una persona
+    start: "50%,40%"
+    end: "50%,20%"
 - tapOn:
-    point: "50%,65%"          # Stock mínimo
+    below: "Stock mínimo \\(alerta\\)"
 - inputText: "1"
 - takeScreenshot: capturas/ing-07-minimo-teclado
-- hideKeyboard
+- tapOn:
+    point: "88%,61%"          # "Listo" (la barra vive en la ventana del teclado; no aparece en el árbol)
 - takeScreenshot: capturas/ing-08-antes-de-guardar
-- tapOn: "Agregar Ingrediente"
+- tapOn: ".*Agregar Ingrediente"   # el texto incluye el glifo del ícono
 - takeScreenshot: capturas/ing-09-despues-de-guardar

@@ -114,7 +114,7 @@ export default function AddItemScreen() {
                     contentContainerStyle={styles.contentContainer}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="interactive"
-                    bottomOffset={24}
+                    bottomOffset={72}
                 >
                     {/* Nombre */}
                     <View style={styles.inputGroup}>

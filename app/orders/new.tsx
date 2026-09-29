@@ -368,7 +368,7 @@ export default function NewOrderScreen() {
     return (
             <KeyboardAwareScrollView
                 keyboardDismissMode="interactive"
-                bottomOffset={24}
+                bottomOffset={72}
                 style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
@@ -585,6 +585,7 @@ export default function NewOrderScreen() {
                                         style={[styles.input, styles.priceField, { color: colors.text }]}
                                         placeholder="0"
                                         placeholderTextColor={colors.textMuted}
+                                        testID="order-total-price"
                                         value={totalPrice}
                                         onChangeText={setTotalPrice}
                                         keyboardType="decimal-pad"
@@ -600,6 +601,7 @@ export default function NewOrderScreen() {
                                         style={[styles.input, styles.priceField, { color: colors.primary }]}
                                         placeholder="0"
                                         placeholderTextColor={colors.textMuted}
+                                        testID="order-deposit"
                                         value={depositAmount}
                                         onChangeText={setDepositAmount}
                                         keyboardType="decimal-pad"

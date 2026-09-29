@@ -25,6 +25,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { KeyboardToolbar } from 'react-native-keyboard-controller';
 import * as XLSX from 'xlsx';
 import { convertValue } from '@/lib/units';
 
@@ -1091,6 +1092,8 @@ export default function InventoryScreen() {
                         </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
+                {/* RN Modals render in their own window, above the root "Listo" bar */}
+                <KeyboardToolbar doneText="Listo" showArrows={false} />
             </Modal>
         </View >
     );

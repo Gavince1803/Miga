@@ -254,7 +254,7 @@ export default function EditOrderScreen() {
     return (
             <KeyboardAwareScrollView
                 keyboardDismissMode="interactive"
-                bottomOffset={24}
+                bottomOffset={72}
                 style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
