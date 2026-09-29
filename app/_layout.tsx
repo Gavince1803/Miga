@@ -58,6 +58,7 @@ const BakeryDarkTheme = {
 };
 
 import { SettingsProvider } from '@/context/SettingsContext';
+import { SubscriptionProvider } from '@/hooks/useSubscription';
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -85,7 +86,9 @@ export default function RootLayout() {
       <AuthProvider>
         <AlertProvider>
           <SettingsProvider>
-            <RootLayoutNav />
+            <SubscriptionProvider>
+              <RootLayoutNav />
+            </SubscriptionProvider>
           </SettingsProvider>
         </AlertProvider>
       </AuthProvider>
