@@ -22,6 +22,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { parseDecimal } from '@/lib/number';
 
 function FormSection({ title, children, colors }: { title: string; children: React.ReactNode; colors: typeof Colors.light }) {
     return (
@@ -196,8 +197,8 @@ export default function EditOrderScreen() {
             return;
         }
 
-        const total = totalPrice ? parseFloat(totalPrice) : 0;
-        const depositVal = deposit ? parseFloat(deposit) : 0;
+        const total = parseDecimal(totalPrice);
+        const depositVal = parseDecimal(deposit);
 
         if (total < 0 || depositVal < 0) {
             showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
@@ -453,7 +454,7 @@ export default function EditOrderScreen() {
                                     </View>
                                     {totalPrice ? (
                                         <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                                            ≈ Bs. {(parseFloat(totalPrice) * (
+                                            ≈ Bs. {(parseDecimal(totalPrice) * (
                                                 selectedRateType === 'bcv' ? bcv :
                                                     selectedRateType === 'parallel' ? parallel :
                                                         (euro || 0)

@@ -4,17 +4,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type Currency = 'VES' | 'USD' | 'MXN' | 'ARS' | 'COP' | 'CLP';
 
-// Monedas soportadas con su símbolo local. El Bolívar usa "Bs.", no "$".
-// El resto sí usa "$" oficialmente, pero se antepone el código de país
-// (US$/MX$/AR$/CO$/CL$) para evitar ambigüedad entre ellas — mismo
-// criterio que usan apps como Wise o Revolut.
+// Monedas soportadas con su símbolo local. El Bolívar usa "Bs.", el resto "$".
+// Cada usuaria trabaja con una sola moneda, así que no hace falta el prefijo
+// de país (US$/MX$…): solo ocupaba espacio. El código se ve en el selector.
 export const CURRENCIES: Record<Currency, { symbol: string, label: string, flag: string }> = {
     VES: { symbol: 'Bs.', label: 'Bolívares (VES)', flag: '🇻🇪' },
-    USD: { symbol: 'US$', label: 'Dólares (USD)', flag: '🇺🇸' },
-    MXN: { symbol: 'MX$', label: 'Pesos Mexicanos (MXN)', flag: '🇲🇽' },
-    ARS: { symbol: 'AR$', label: 'Pesos Argentinos (ARS)', flag: '🇦🇷' },
-    COP: { symbol: 'CO$', label: 'Pesos Colombianos (COP)', flag: '🇨🇴' },
-    CLP: { symbol: 'CL$', label: 'Pesos Chilenos (CLP)', flag: '🇨🇱' },
+    USD: { symbol: '$', label: 'Dólares (USD)', flag: '🇺🇸' },
+    MXN: { symbol: '$', label: 'Pesos Mexicanos (MXN)', flag: '🇲🇽' },
+    ARS: { symbol: '$', label: 'Pesos Argentinos (ARS)', flag: '🇦🇷' },
+    COP: { symbol: '$', label: 'Pesos Colombianos (COP)', flag: '🇨🇴' },
+    CLP: { symbol: '$', label: 'Pesos Chilenos (CLP)', flag: '🇨🇱' },
 };
 
 type SettingsContextType = {

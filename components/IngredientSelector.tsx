@@ -18,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { parseDecimal } from '@/lib/number';
 
 export type SelectedIngredient = {
     inventoryItemId: string;
@@ -83,7 +84,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     };
 
     const handleAddIngredient = () => {
-        if (!quantity || parseFloat(quantity) <= 0) {
+        if (!quantity || parseDecimal(quantity) <= 0) {
             haptics.error();
             showAlert({ title: 'Error', message: 'Ingresa una cantidad válida para la receta', type: 'error' });
             return;
@@ -94,7 +95,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
             const newIngredient: SelectedIngredient = {
                 inventoryItemId: selectedItem.id,
                 inventoryItemName: selectedItem.name,
-                quantity: parseFloat(quantity),
+                quantity: parseDecimal(quantity),
                 unit: unit
             };
             onIngredientsChange([...selectedIngredients, newIngredient]);
@@ -135,13 +136,13 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
             }
 
             // Validate Purchase Details if provided
-            let pQty = parseFloat(purchaseQuantity);
-            let pCost = parseFloat(purchaseCost);
+            let pQty = parseDecimal(purchaseQuantity);
+            let pCost = parseDecimal(purchaseCost);
 
             const newIngredient: SelectedIngredient = {
                 inventoryItemId: `new:${normalizedName}`,
                 inventoryItemName: normalizedName,
-                quantity: parseFloat(quantity),
+                quantity: parseDecimal(quantity),
                 unit: unit,
                 purchaseQuantity: pQty || undefined,
                 purchaseUnit: purchaseUnit || unit, // Use selected purchase unit or default to recipe unit
@@ -173,7 +174,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
     const handleQuantityChange = (index: number, newQty: string) => {
         haptics.light();
         const updated = [...selectedIngredients];
-        updated[index].quantity = parseFloat(newQty) || 0;
+        updated[index].quantity = parseDecimal(newQty);
         onIngredientsChange(updated);
     };
 
@@ -391,7 +392,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                 <TouchableOpacity
                                     style={[styles.confirmButton, { backgroundColor: colors.primary }]}
                                     onPress={handleAddIngredient}
-                                    disabled={!quantity || parseFloat(quantity) <= 0}
+                                    disabled={!quantity || parseDecimal(quantity) <= 0}
                                 >
                                     <Text style={styles.confirmButtonText}>Agregar</Text>
                                 </TouchableOpacity>

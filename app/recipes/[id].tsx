@@ -19,6 +19,8 @@ import {
     View,
 } from 'react-native';
 import { convertValue } from '@/lib/units';
+import { useSettings } from '@/context/SettingsContext';
+import { formatMoney } from '@/lib/money';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +28,7 @@ export default function RecipeDetailScreen() {
     const { id } = useLocalSearchParams();
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const { currency } = useSettings();
     const router = useRouter();
     const { getRecipeById, deleteRecipe } = useRecipes();
     const { getIngredientsForRecipe } = useRecipeIngredients();
@@ -235,20 +238,20 @@ export default function RecipeDetailScreen() {
                                     <Text style={[styles.badgeText, { color: colors.primary }]}>{recipe.category.toUpperCase()}</Text>
                                 </View>
                             )}
-                            {recipe.suggestedPrice && recipe.suggestedPrice > 0 && (
+                            {(recipe.suggestedPrice ?? 0) > 0 && (
                                 <View style={[styles.badge, { backgroundColor: colors.success + '20' }]}>
                                     <FontAwesome name="tag" size={10} color={colors.success} />
                                     <Text style={[styles.badgeText, { color: colors.success, marginLeft: 4 }]}>
-                                        Venta: ${recipe.suggestedPrice.toFixed(2)}
+                                        Venta: {formatMoney(recipe.suggestedPrice!, currency)}
                                     </Text>
                                 </View>
                             )}
 
-                            {recipe.costPerPortion && recipe.costPerPortion > 0 && (
+                            {(recipe.costPerPortion ?? 0) > 0 && (
                                 <View style={[styles.badge, { backgroundColor: colors.warning + '20' }]}>
                                     <FontAwesome name="pie-chart" size={10} color={colors.warning} />
                                     <Text style={[styles.badgeText, { color: colors.warning, marginLeft: 4 }]}>
-                                        Costo: ${recipe.costPerPortion.toFixed(2)}/ud
+                                        Costo: {formatMoney(recipe.costPerPortion!, currency)}/ud
                                     </Text>
                                 </View>
                             )}

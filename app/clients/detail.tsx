@@ -1,7 +1,7 @@
 import BackButton from '@/components/BackButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import { CURRENCIES, useSettings } from '@/context/SettingsContext';
+import { useSettings } from '@/context/SettingsContext';
 import { useClientDetail } from '@/hooks/useClientDetail';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -17,6 +17,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { formatMoney } from '@/lib/money';
 
 export default function ClientDetailScreen() {
     const colorScheme = useColorScheme();
@@ -24,14 +25,8 @@ export default function ClientDetailScreen() {
     const { name } = useLocalSearchParams<{ name: string }>();
     const { orders, stats, loading, refreshing, onRefresh } = useClientDetail(name || '');
     const { currency } = useSettings();
-    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
-    const formatCurrency = (amount: number) => {
-        if (currency === 'VES') {
-            return `${currencySymbol}${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-        return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
+    const formatCurrency = (amount: number) => formatMoney(amount, currency);
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '—';

@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
-import { CURRENCIES, useSettings } from '@/context/SettingsContext';
+import { useSettings } from '@/context/SettingsContext';
 import { useFinances } from '@/hooks/useFinances';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
+import { formatCompact, formatMoney } from '@/lib/money';
 
 const { width } = Dimensions.get('screen');
 
@@ -38,14 +39,8 @@ export default function FinancesScreen() {
     const haptics = useHaptics();
     const { isPremium, loading: isAuthLoading } = useSubscription();
     const { currency } = useSettings();
-    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
-    const formatCurrency = React.useCallback((amount: number) => {
-        if (currency === 'VES') {
-            return `${currencySymbol}${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-        return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }, [currency, currencySymbol]);
+    const formatCurrency = React.useCallback((amount: number) => formatMoney(amount, currency), [currency]);
 
     const changeMonth = (increment: number) => {
         const newDate = new Date(currentDate);
@@ -121,11 +116,11 @@ export default function FinancesScreen() {
             frontColor: colors.success,
             topLabelComponent: () => (
                 <Text style={{ color: colors.success, fontSize: 9, marginBottom: 2 }}>
-                    {formatCurrency(daysMap.get(day)?.income || 0).split('.')[0]}
+                    {formatCompact(daysMap.get(day)?.income || 0, currency)}
                 </Text>
             ),
         }));
-    }, [recentTransactions, colors, formatCurrency]);
+    }, [recentTransactions, colors, currency]);
 
     const chartMaxValue = useMemo(() => {
         if (chartData.length === 0) return 100;
