@@ -78,7 +78,7 @@ export default function FinancesScreen() {
         } else {
             showAlert({
                 title: 'Detalles del Ingreso',
-                message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\n¿Hubo un error? Puedes revertir este ingreso (se marcará como pendiente).`,
+                message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\n¿Hubo un error? Puedes revertir este cobro (el pedido quedará pendiente y sin abono).`,
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', onPress: () => { }, style: 'cancel' },
@@ -140,8 +140,11 @@ export default function FinancesScreen() {
     const chartMaxValue = useMemo(() => {
         if (chartData.length === 0) return 100;
         const max = Math.max(...chartData.map(d => d.value));
-        // Add 25% headroom so top labels are never clipped
-        return Math.ceil((max * 1.25) / 10) * 10;
+        // 25% headroom so top labels are never clipped, rounded so each of the
+        // 3 sections is a round number (0/70/140/210, not 0/66/133/200)
+        const sectionRaw = (max * 1.25) / 3;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(sectionRaw)));
+        return Math.ceil(sectionRaw / magnitude) * magnitude * 3;
     }, [chartData]);
 
     // Premium gate: Show upsell screen for free users
