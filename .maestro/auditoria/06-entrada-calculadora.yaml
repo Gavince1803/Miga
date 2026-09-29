@@ -1,0 +1,19 @@
+# La calculadora se abre desde Inicio ("Cotizar un pastel") y desde Más.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- takeScreenshot: capturas/calc-entrada-01-inicio
+- tapOn: ".*Cotizar un pastel.*"
+- extendedWaitUntil:
+    visible: "Calculadora de Costos"
+    timeout: 10000
+- takeScreenshot: capturas/calc-entrada-02-calculadora
+- tapOn:
+    point: "9%,9%"           # botón de volver del encabezado (en iOS `back` no hace nada)
+- tapOn: "Más, tab.*"
+- takeScreenshot: capturas/calc-entrada-03-mas
+- tapOn: ".*Calculadora de costos.*"
+- assertVisible: "Calculadora de Costos"
