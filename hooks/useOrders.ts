@@ -3,7 +3,7 @@ import { deductInventoryForOrder, formatDeductionMessage } from '@/lib/inventory
 import { cancelOrderNotification, scheduleOrderNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { Order, OrderFormData } from '@/types';
-import { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Turns a failed save into something the user can act on, plus a short
 // code they can send to support.
@@ -19,7 +19,7 @@ function describeSaveError(action: string, error: any): string {
     return `No se pudo ${action} el pedido${code}. Intenta de nuevo y, si sigue fallando, escríbenos con este código.`;
 }
 
-export function useOrders() {
+function useOrdersState() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -372,6 +372,16 @@ export function useOrders() {
         fetchOrders();
     }, []);
 
+    // The provider lives at the root and mounts before login: load on sign-in
+    // and clear on sign-out so an account never sees another's data
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_IN') fetchOrders();
+            else if (event === 'SIGNED_OUT') setOrders([]);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
+
     const onRefresh = useCallback(() => {
         setRefreshing(true);
         fetchOrders();
@@ -440,4 +450,21 @@ export function useOrders() {
         getDictionaryOptions,
         getOrdersByClient,
     };
+}
+
+type OrdersContextValue = ReturnType<typeof useOrdersState>;
+
+const OrdersContext = createContext<OrdersContextValue | null>(null);
+
+// One shared copy for the whole app: each screen used to keep its own and
+// refetch on mount, so a change on one screen didn't show up on the others.
+export function OrdersProvider({ children }: { children: React.ReactNode }) {
+    const value = useOrdersState();
+    return React.createElement(OrdersContext.Provider, { value }, children);
+}
+
+export function useOrders(): OrdersContextValue {
+    const context = useContext(OrdersContext);
+    if (!context) throw new Error('useOrders must be used inside OrdersProvider');
+    return context;
 }

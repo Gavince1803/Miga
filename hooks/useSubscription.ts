@@ -1,7 +1,8 @@
 import { getPremiumStatus } from '@/lib/revenuecat';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useState } from 'react';
+import { AppState } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export interface SubscriptionStatus {
     isPremium: boolean;
@@ -25,7 +26,7 @@ async function currentUserId(): Promise<string | null> {
     return session?.user.id ?? null;
 }
 
-export function useSubscription() {
+function useSubscriptionState() {
     const [status, setStatus] = useState<SubscriptionStatus>({
         isPremium: false,
         planType: 'free',
@@ -155,11 +156,37 @@ export function useSubscription() {
         return () => subscription.unsubscribe();
     }, [checkPremiumStatus]);
 
+    // Screens no longer re-check on mount, so re-check when the app comes back
+    // to the foreground (catches a code that expired while it was closed)
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state === 'active') checkPremiumStatus();
+        });
+        return () => sub.remove();
+    }, [checkPremiumStatus]);
+
     return {
         ...status,
         redeemCode,
         refreshStatus: checkPremiumStatus,
     };
+}
+
+type SubscriptionContextValue = ReturnType<typeof useSubscriptionState>;
+
+const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
+
+// One subscription state for the whole app: each screen used to keep its own
+// copy and call check_premium_status on mount (9 calls on startup).
+export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
+    const value = useSubscriptionState();
+    return React.createElement(SubscriptionContext.Provider, { value }, children);
+}
+
+export function useSubscription(): SubscriptionContextValue {
+    const context = useContext(SubscriptionContext);
+    if (!context) throw new Error('useSubscription must be used inside SubscriptionProvider');
+    return context;
 }
 
 // Feature limits for free tier
