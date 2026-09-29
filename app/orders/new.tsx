@@ -17,15 +17,13 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { parseDecimal } from '@/lib/number';
 
 
@@ -368,11 +366,9 @@ export default function NewOrderScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView
+            <KeyboardAwareScrollView
+                keyboardDismissMode="interactive"
+                bottomOffset={24}
                 style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
@@ -711,8 +707,7 @@ export default function NewOrderScreen() {
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
-            </ScrollView >
-        </KeyboardAvoidingView >
+            </KeyboardAwareScrollView>
     );
 }
 

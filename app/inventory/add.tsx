@@ -8,15 +8,13 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const UNIT_OPTIONS = [
@@ -101,10 +99,7 @@ export default function AddItemScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-            >
+            <View style={{ flex: 1 }}>
                 {/* Header */}
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -114,10 +109,12 @@ export default function AddItemScreen() {
                     <View style={{ width: 44 }} />
                 </View>
 
-                <ScrollView
+                <KeyboardAwareScrollView
                     style={styles.content}
                     contentContainerStyle={styles.contentContainer}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    bottomOffset={24}
                 >
                     {/* Nombre */}
                     <View style={styles.inputGroup}>
@@ -216,7 +213,7 @@ export default function AddItemScreen() {
                             keyboardType="numeric"
                         />
                     </View>
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
                 {/* Save Button */}
                 <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
@@ -235,7 +232,7 @@ export default function AddItemScreen() {
                         )}
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 }

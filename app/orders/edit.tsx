@@ -13,15 +13,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { parseDecimal } from '@/lib/number';
 
 function FormSection({ title, children, colors }: { title: string; children: React.ReactNode; colors: typeof Colors.light }) {
@@ -254,11 +252,9 @@ export default function EditOrderScreen() {
     }
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView
+            <KeyboardAwareScrollView
+                keyboardDismissMode="interactive"
+                bottomOffset={24}
                 style={[styles.container, { backgroundColor: colors.background }]}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
@@ -525,8 +521,7 @@ export default function EditOrderScreen() {
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </KeyboardAwareScrollView>
     );
 }
 

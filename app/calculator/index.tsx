@@ -12,6 +12,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+    Keyboard,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -24,6 +25,7 @@ import {
     View,
 } from 'react-native';
 import { parseDecimal } from '@/lib/number';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 const QUOTE_BANNER_KEY = 'miga_quote_share_announced';
 
@@ -123,6 +125,13 @@ export default function CostCalculatorScreen() {
         setShowQuoteBanner(false);
     };
     const [sharing, setSharing] = useState(false);
+
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true));
+        const hide = Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false));
+        return () => { show.remove(); hide.remove(); };
+    }, []);
     const { updateRecipePrice } = useRecipes();
 
     // State for Ingredients
@@ -360,17 +369,20 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Stack.Screen options={{
                 title: 'Calculadora de Costos',
+                headerBackButtonDisplayMode: 'minimal',
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.text,
                 headerShadowVisible: false,
             }} />
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                style={{ flex: 1 }}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-            >
-                <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={{ flex: 1 }}>
+                <KeyboardAwareScrollView
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    bottomOffset={24}
+                >
 
                     {showQuoteBanner && (
                         <QuoteFeatureBanner colors={colors} onDismiss={dismissQuoteBanner} />
@@ -496,9 +508,11 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                     </View>
 
                     <View style={{ height: 100 }} />
-                </ScrollView>
+                </KeyboardAwareScrollView>
 
-                {/* Sticky Summary */}
+                {/* Sticky Summary: hidden while typing, otherwise it takes over half
+                    the screen and fields like "Ganancia" can't be reached */}
+                {!keyboardVisible && (
                 <View style={[styles.summaryContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }, Shadows.md]}>
                     <View style={styles.summaryRow}>
                         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Costo Total</Text>
@@ -512,11 +526,11 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                     <View style={styles.summaryRowMain}>
                         <View>
                             <Text style={[styles.summaryMainLabel, { color: colors.textSecondary }]}>Precio Sugerido</Text>
-                            <Text style={[styles.summarySubLabel, { color: colors.textMuted }]}>por porción</Text>
+                            <Text style={[styles.summarySubLabel, { color: colors.textMuted }]}>total</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
                             <Text style={[styles.summaryMainValue, { color: colors.primary }]}>{currencySymbol}{totals.totalSuggestedPrice.toFixed(2)}</Text>
-                            <Text style={[styles.summarySubValue, { color: colors.text }]}>{currencySymbol}{totals.pricePerPortion.toFixed(2)} / ud</Text>
+                            <Text style={[styles.summarySubValue, { color: colors.text }]}>{currencySymbol}{totals.pricePerPortion.toFixed(2)} por porción</Text>
                         </View>
                     </View>
                     <TouchableOpacity
@@ -542,7 +556,8 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         </TouchableOpacity>
                     )}
                 </View>
-            </KeyboardAvoidingView>
+                )}
+            </View>
 
             {/* Add Ingredient Modal */}
             <Modal
