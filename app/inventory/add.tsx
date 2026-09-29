@@ -203,12 +203,12 @@ export default function AddItemScreen() {
 
                     {/* Stock mínimo */}
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: colors.textSecondary }]}>Stock mínimo (alerta)</Text>
+                        <Text style={[styles.label, { color: colors.textSecondary }]}>Avisarme cuando queden menos de ({unit})</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
                             value={minStock}
                             onChangeText={setMinStock}
-                            placeholder="5"
+                            placeholder="Opcional"
                             placeholderTextColor={colors.textMuted}
                             keyboardType="numeric"
                         />

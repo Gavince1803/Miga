@@ -29,6 +29,7 @@ import {
 import { KeyboardToolbar } from 'react-native-keyboard-controller';
 import * as XLSX from 'xlsx';
 import { convertValue } from '@/lib/units';
+import { parseDecimal } from '@/lib/number';
 
 const TUTORIAL_KEY = 'miga_inventory_tutorial_seen';
 
@@ -197,19 +198,41 @@ const UNIT_OPTIONS = [
     { label: 'Unidad', value: 'u' },
 ];
 
+// +/- move a sensible amount for the unit: 1 g or 1 ml is useless, 1 kg is a lot
+function stepFor(unit: string): number {
+    if (unit === 'g' || unit === 'ml') return 100;
+    if (unit === 'kg' || unit === 'L' || unit === 'l') return 0.5;
+    return 1;
+}
+
+// Float math (0.1 + 0.2) shouldn't show up as 0.30000000000000004
+function formatQty(value: number): string {
+    return String(Math.round(value * 100) / 100);
+}
+
+// Units a purchase can be entered in, so "1 kg" works for an item stored in g
+function purchaseUnitsFor(unit: string): string[] {
+    if (unit === 'g' || unit === 'kg') return ['g', 'kg'];
+    if (unit === 'ml' || unit === 'L' || unit === 'l') return ['ml', 'L'];
+    return [unit];
+}
+
 // InventoryCard component
 function InventoryCard({
     item,
     colors,
     onQuickAdjust,
     onEditQuantity,
+    onRegisterPurchase,
 }: {
     item: InventoryItem;
     colors: typeof Colors.light;
     onQuickAdjust: (id: string, delta: number) => void;
     onEditQuantity: (item: InventoryItem) => void;
+    onRegisterPurchase: (item: InventoryItem) => void;
 }) {
-    const isLowStock = item.minStock && item.quantity < item.minStock;
+    const step = stepFor(item.unit);
+    const isLowStock = item.minStock > 0 && item.quantity < item.minStock;
     const stockPercentage = item.minStock ? (item.quantity / item.minStock) * 100 : 100;
 
     let stockColor = colors.success;
@@ -255,7 +278,7 @@ function InventoryCard({
                 >
                     <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                         <Text style={[styles.quantity, { color: colors.primary }]}>
-                            {item.quantity}
+                            {formatQty(item.quantity)}
                         </Text>
                         <Text style={[styles.unit, { color: colors.textSecondary }]}>
                             {item.unit}
@@ -264,7 +287,10 @@ function InventoryCard({
                     </View>
                     {(item.costPerUnit || 0) > 0 && (
                         <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
-                            ${item.costPerUnit?.toFixed(2)}/{item.unit}
+                            {/* Per g/ml the price rounds to $0.00; show it per kg/L like on the package */}
+                            {item.unit === 'g' || item.unit === 'ml'
+                                ? `$${((item.costPerUnit || 0) * 1000).toFixed(2)}/${item.unit === 'g' ? 'kg' : 'L'}`
+                                : `$${item.costPerUnit?.toFixed(2)}/${item.unit}`}
                         </Text>
                     )}
                 </TouchableOpacity>
@@ -283,19 +309,19 @@ function InventoryCard({
                     <View style={styles.quickActions}>
                         <TouchableOpacity
                             style={[styles.quickButton, { backgroundColor: colors.error + '20' }]}
-                            onPress={() => onQuickAdjust(item.id, -1)}
+                            onPress={() => onQuickAdjust(item.id, -step)}
                             hitSlop={6}
                             accessibilityRole="button"
-                            accessibilityLabel={`Restar 1 ${item.unit} de ${item.name}`}
+                            accessibilityLabel={`Restar ${step} ${item.unit} de ${item.name}`}
                         >
                             <FontAwesome name="minus" size={14} color={colors.error} />
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.quickButton, { backgroundColor: colors.success + '20' }]}
-                            onPress={() => onQuickAdjust(item.id, 1)}
+                            onPress={() => onQuickAdjust(item.id, step)}
                             hitSlop={6}
                             accessibilityRole="button"
-                            accessibilityLabel={`Sumar 1 ${item.unit} a ${item.name}`}
+                            accessibilityLabel={`Sumar ${step} ${item.unit} a ${item.name}`}
                         >
                             <FontAwesome name="plus" size={14} color={colors.success} />
                         </TouchableOpacity>
@@ -303,9 +329,21 @@ function InventoryCard({
                 </View>
             </View>
 
+            {/* Buying is the common case: adds stock and records the real price */}
+            <TouchableOpacity
+                style={[styles.purchaseButton, { borderColor: colors.primary + '40' }]}
+                onPress={() => onRegisterPurchase(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Registrar compra de ${item.name}`}
+            >
+                <FontAwesome name="shopping-cart" size={13} color={colors.primary} />
+                <Text style={[styles.purchaseButtonText, { color: colors.primary }]}>Registrar compra</Text>
+            </TouchableOpacity>
+
             {/* Stock Level Indicator */}
             {
-                item.minStock && (
+                // `> 0`, not truthiness: with minStock 0 `0 && …` renders a bare 0 → crash
+                item.minStock > 0 && (
                     <View style={styles.stockIndicator}>
                         <View style={[styles.stockBar, { backgroundColor: colors.border }]}>
                             <View
@@ -331,7 +369,7 @@ function InventoryCard({
 export default function InventoryScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, addItem, updateItemDetails, importInventory, exportInventory, archiveItem, unarchiveItem } = useInventory();
+    const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, registerPurchase, addItem, updateItemDetails, importInventory, exportInventory, archiveItem, unarchiveItem } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
     const { showAlert } = useAlert();
     const { isPremium } = useSubscription();
@@ -461,6 +499,37 @@ export default function InventoryScreen() {
 
     const handleQuickAdjust = (id: string, delta: number) => {
         updateStock(id, delta);
+    };
+
+    // "Registrar compra" sheet
+    const [purchaseItem, setPurchaseItem] = useState<InventoryItem | null>(null);
+    const [purchaseQty, setPurchaseQty] = useState('');
+    const [purchaseUnit, setPurchaseUnit] = useState('');
+    const [purchasePrice, setPurchasePrice] = useState('');
+    const [isSavingPurchase, setIsSavingPurchase] = useState(false);
+
+    const openPurchase = (item: InventoryItem) => {
+        setPurchaseItem(item);
+        setPurchaseQty('');
+        setPurchaseUnit(item.unit === 'g' ? 'kg' : item.unit === 'ml' ? 'L' : item.unit);
+        setPurchasePrice('');
+    };
+
+    const purchaseQtyInItemUnit = purchaseItem
+        ? (convertValue(parseDecimal(purchaseQty), purchaseUnit, purchaseItem.unit) ?? 0)
+        : 0;
+    const purchasePriceValue = parseDecimal(purchasePrice);
+
+    const handleSavePurchase = async () => {
+        if (!purchaseItem || isSavingPurchase) return;
+        if (purchaseQtyInItemUnit <= 0) {
+            showAlert({ title: 'Falta la cantidad', message: '¿Cuánto compraste?', type: 'warning' });
+            return;
+        }
+        setIsSavingPurchase(true);
+        const ok = await registerPurchase(purchaseItem.id, purchaseQtyInItemUnit, purchasePriceValue);
+        setIsSavingPurchase(false);
+        if (ok) setPurchaseItem(null);
     };
 
     const openEditModal = (item: InventoryItem) => {
@@ -790,6 +859,7 @@ export default function InventoryScreen() {
                         colors={colors}
                         onQuickAdjust={handleQuickAdjust}
                         onEditQuantity={openEditModal}
+                        onRegisterPurchase={openPurchase}
                     />
                 )}
                 ListHeaderComponent={
@@ -988,6 +1058,98 @@ export default function InventoryScreen() {
             </Modal>
 
             {/* Edit Item Modal */}
+            {/* Registrar compra */}
+            <Modal
+                visible={purchaseItem !== null}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setPurchaseItem(null)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.modalOverlay}
+                >
+                    <View style={[styles.editModalContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 4 }]}>
+                            Compré {purchaseItem?.name}
+                        </Text>
+                        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 12 }]}>
+                            Tienes {purchaseItem ? formatQty(purchaseItem.quantity) : 0} {purchaseItem?.unit}
+                        </Text>
+
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cantidad</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                    testID="purchase-quantity"
+                                    value={purchaseQty}
+                                    onChangeText={setPurchaseQty}
+                                    keyboardType="decimal-pad"
+                                    placeholder="Ej: 2"
+                                    placeholderTextColor={colors.textMuted}
+                                    autoFocus
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Pagué ($)</Text>
+                                <TextInput
+                                    style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                    testID="purchase-price"
+                                    value={purchasePrice}
+                                    onChangeText={setPurchasePrice}
+                                    keyboardType="decimal-pad"
+                                    placeholder="Ej: 5,50"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                            </View>
+                        </View>
+
+                        {purchaseItem && purchaseUnitsFor(purchaseItem.unit).length > 1 && (
+                            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
+                                {purchaseUnitsFor(purchaseItem.unit).map(u => (
+                                    <TouchableOpacity
+                                        key={u}
+                                        style={[styles.unitPill, { backgroundColor: purchaseUnit === u ? colors.primary : colors.border }]}
+                                        onPress={() => setPurchaseUnit(u)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Cantidad en ${u}`}
+                                    >
+                                        <Text style={{ color: purchaseUnit === u ? '#FFF' : colors.text, fontSize: 13 }}>{u}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+
+                        {purchaseItem && purchaseQtyInItemUnit > 0 && (
+                            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginBottom: 12 }]}>
+                                Quedarás con {formatQty(purchaseItem.quantity + purchaseQtyInItemUnit)} {purchaseItem.unit}
+                                {purchasePriceValue > 0 ? ` · Esta compra: ${purchaseItem.unit === 'g' || purchaseItem.unit === 'ml'
+                                    ? `$${(purchasePriceValue / purchaseQtyInItemUnit * 1000).toFixed(2)}/${purchaseItem.unit === 'g' ? 'kg' : 'L'}`
+                                    : `$${(purchasePriceValue / purchaseQtyInItemUnit).toFixed(2)}/${purchaseItem.unit}`}` : ''}
+                            </Text>
+                        )}
+
+                        <View style={styles.editModalButtons}>
+                            <TouchableOpacity
+                                style={[styles.editModalButton, { backgroundColor: colors.border }]}
+                                onPress={() => setPurchaseItem(null)}
+                            >
+                                <Text style={[styles.addButtonText, { color: colors.text }]}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.editModalButton, { backgroundColor: colors.primary, opacity: isSavingPurchase ? 0.6 : 1 }]}
+                                onPress={handleSavePurchase}
+                                disabled={isSavingPurchase}
+                            >
+                                <Text style={styles.addButtonText}>{isSavingPurchase ? 'Guardando...' : 'Guardar compra'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+                <KeyboardToolbar doneText="Listo" showArrows={false} />
+            </Modal>
+
             <Modal
                 visible={showEditModal}
                 animationType="fade"
@@ -1337,6 +1499,21 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: 'transparent'
+    },
+    purchaseButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: Spacing.sm,
+        marginBottom: Spacing.md,
+        paddingVertical: 10,
+        borderRadius: BorderRadius.md,
+        borderWidth: 1,
+    },
+    purchaseButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     editModalButtons: {
         flexDirection: 'row',

@@ -205,12 +205,16 @@ export default function HomeScreen() {
         .from('inventory_movements')
         .select(`
           quantity,
-          movement_type,
+          unit_cost,
+          total_cost,
           inventory_items (
             cost_per_unit
           )
         `)
-        .in('movement_type', ['agregado', 'importacion'])
+        // Same rule as Finances (useFinances): only purchases, at their
+        // historical cost. Home also counted Excel imports and used today's price,
+        // so the two screens showed different expenses for the same month.
+        .eq('movement_type', 'agregado')
         .gte('created_at', startOfMonth)
         .lte('created_at', endOfMonth);
 
@@ -222,9 +226,9 @@ export default function HomeScreen() {
       if (data) {
 
         const expenses = data.reduce((sum, move: any) => {
-          const itemData = move.inventory_items || move.item;
-          const cost = itemData?.cost_per_unit || 0;
-          return sum + (move.quantity * cost);
+          if (move.total_cost > 0) return sum + move.total_cost;
+          const cost = move.unit_cost || move.inventory_items?.cost_per_unit || 0;
+          return sum + (move.quantity || 0) * cost;
         }, 0);
 
         setMonthlyExpenses(expenses);
