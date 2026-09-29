@@ -214,10 +214,12 @@ export default function CostCalculatorScreen() {
             return;
         }
         setSaving(true);
+        // cost_per_portion is the real cost (no profit), not the selling price
+        const costPerPortion = config.portions > 0 ? totals.subtotal / config.portions : 0;
         const success = await updateRecipePrice(
             recipeId,
             totals.totalSuggestedPrice,
-            totals.pricePerPortion
+            costPerPortion
         );
         setSaving(false);
         if (success) {

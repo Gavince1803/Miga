@@ -14,6 +14,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSettings } from '@/context/SettingsContext';
+import { formatMoney } from '@/lib/money';
 
 function RecipeCard({
     recipe,
@@ -22,6 +24,7 @@ function RecipeCard({
     recipe: Recipe;
     colors: typeof Colors.light;
 }) {
+    const { currency } = useSettings();
     return (
         <Link href={`/recipes/${recipe.id}`} asChild>
             <TouchableOpacity
@@ -51,7 +54,7 @@ function RecipeCard({
 
                     {/* Price Badges */}
                     <View style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
-                        {recipe.suggestedPrice && recipe.suggestedPrice > 0 && (
+                        {(recipe.suggestedPrice ?? 0) > 0 && (
                             <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
@@ -63,11 +66,11 @@ function RecipeCard({
                             }}>
                                 <FontAwesome name="tag" size={10} color={colors.success} />
                                 <Text style={{ fontSize: 10, fontWeight: '700', color: colors.success }}>
-                                    Venta: ${recipe.suggestedPrice.toFixed(2)}
+                                    Venta: {formatMoney(recipe.suggestedPrice!, currency)}
                                 </Text>
                             </View>
                         )}
-                        {recipe.costPerPortion && recipe.costPerPortion > 0 && (
+                        {(recipe.costPerPortion ?? 0) > 0 && (
                             <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
@@ -79,7 +82,7 @@ function RecipeCard({
                             }}>
                                 <FontAwesome name="pie-chart" size={10} color={colors.warning} />
                                 <Text style={{ fontSize: 10, fontWeight: '700', color: colors.warning }}>
-                                    Costo: ${recipe.costPerPortion.toFixed(2)}
+                                    Costo: {formatMoney(recipe.costPerPortion!, currency)}
                                 </Text>
                             </View>
                         )}
