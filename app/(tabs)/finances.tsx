@@ -24,6 +24,11 @@ import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import { formatCompact, formatMoney } from '@/lib/money';
 
 const { width } = Dimensions.get('screen');
+// `width` of BarChart excludes the y-axis labels: screen minus card margins and
+// padding (2×16 + 2×16) minus the labels. It used to be width - 80 plus the
+// labels, which overflowed the card and cut off the last bar.
+const Y_AXIS_LABEL_WIDTH = 32;
+const CHART_WIDTH = width - 64 - Y_AXIS_LABEL_WIDTH;
 
 export default function FinancesScreen() {
     const colorScheme = useColorScheme();
@@ -108,19 +113,29 @@ export default function FinancesScreen() {
             daysMap.set(day, current);
         });
 
-        const sortedDays = Array.from(daysMap.keys()).sort((a, b) => a - b);
+        // Only days with income: expense-only days drew empty "0" bars
+        const sortedDays = Array.from(daysMap.keys())
+            .filter(day => (daysMap.get(day)?.income || 0) > 0)
+            .sort((a, b) => a - b);
 
         return sortedDays.map(day => ({
             value: daysMap.get(day)?.income || 0,
             label: `${day}`,
             frontColor: colors.success,
             topLabelComponent: () => (
-                <Text style={{ color: colors.success, fontSize: 9, marginBottom: 2 }}>
+                <Text numberOfLines={1} style={{ color: colors.success, fontSize: 9, marginBottom: 2, width: 40, textAlign: 'center', alignSelf: 'center' }}>
                     {formatCompact(daysMap.get(day)?.income || 0, currency)}
                 </Text>
             ),
         }));
     }, [recentTransactions, colors, currency]);
+
+    // Fit every day of the month in the card instead of scrolling sideways
+    const barLayout = useMemo(() => {
+        const slot = CHART_WIDTH / Math.max(chartData.length, 1);
+        const barWidth = Math.min(22, Math.max(8, slot * 0.6));
+        return { barWidth, spacing: Math.max(4, slot - barWidth) };
+    }, [chartData.length]);
 
     const chartMaxValue = useMemo(() => {
         if (chartData.length === 0) return 100;
@@ -249,8 +264,11 @@ export default function FinancesScreen() {
                                 </Text>
                                 <BarChart
                                     data={chartData}
-                                    barWidth={22}
-                                    spacing={14}
+                                    barWidth={barLayout.barWidth}
+                                    spacing={barLayout.spacing}
+                                    initialSpacing={barLayout.spacing / 2}
+                                    endSpacing={barLayout.spacing / 2}
+                                    yAxisLabelWidth={Y_AXIS_LABEL_WIDTH}
                                     roundedTop
                                     roundedBottom
                                     hideRules
@@ -261,8 +279,8 @@ export default function FinancesScreen() {
                                     maxValue={chartMaxValue}
                                     isAnimated
                                     animationDuration={500}
-                                    width={width - 80} // screen padding
-                                    labelWidth={30}
+                                    width={CHART_WIDTH}
+                                    labelWidth={barLayout.barWidth + barLayout.spacing}
                                     xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
                                 />
                             </View>
