@@ -1,6 +1,7 @@
 import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
+import { convertValue } from '@/lib/units';
 
 export type RecipeIngredient = {
     id: string;
@@ -161,14 +162,8 @@ export function useRecipeIngredients() {
                     const pUnit = purchaseDetails.purchaseUnit || unit;
 
                     // Conversion
-                    const convertUnit = (val: number, from: string, to: string): number => {
-                        if (from === to) return val;
-                        if (from === 'kg' && to === 'g') return val * 1000;
-                        if (from === 'g' && to === 'kg') return val / 1000;
-                        if (from === 'L' && to === 'ml') return val * 1000;
-                        if (from === 'ml' && to === 'L') return val / 1000;
-                        return val;
-                    };
+                    const convertUnit = (val: number, from: string, to: string): number =>
+                        convertValue(val, from, to) ?? val;
 
                     const addedQuantity = convertUnit(pQty, pUnit, unit);
 
@@ -217,19 +212,9 @@ export function useRecipeIngredients() {
                 let costPerUnit = 0;
                 let initialQuantity = 0;
 
-                // Basic Unit Conversion Helper
-                const convertUnit = (val: number, from: string, to: string): number => {
-                    if (from === to) return val;
-                    // Mass
-                    if (from === 'kg' && to === 'g') return val * 1000;
-                    if (from === 'g' && to === 'kg') return val / 1000;
-                    // Volume
-                    if (from === 'L' && to === 'ml') return val * 1000;
-                    if (from === 'ml' && to === 'L') return val / 1000;
-
-                    // Fallback for incompatible or custom units (e.g. u -> u, or kg -> L)
-                    return val;
-                };
+                // Fallback for incompatible units (e.g. kg -> L): keep the value as is
+                const convertUnit = (val: number, from: string, to: string): number =>
+                    convertValue(val, from, to) ?? val;
 
                 if (purchaseDetails?.purchaseQuantity && purchaseDetails?.purchaseCost) {
                     const pQty = purchaseDetails.purchaseQuantity;

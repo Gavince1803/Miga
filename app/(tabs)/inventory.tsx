@@ -26,6 +26,7 @@ import {
     View
 } from 'react-native';
 import * as XLSX from 'xlsx';
+import { convertValue } from '@/lib/units';
 
 const TUTORIAL_KEY = 'miga_inventory_tutorial_seen';
 
@@ -189,7 +190,7 @@ const tutorialStyles = StyleSheet.create({
 const UNIT_OPTIONS = [
     { label: 'Kilogramo', value: 'kg' },
     { label: 'Gramo', value: 'g' },
-    { label: 'Litro', value: 'l' },
+    { label: 'Litro', value: 'L' },
     { label: 'Mililitro', value: 'ml' },
     { label: 'Unidad', value: 'u' },
 ];
@@ -359,15 +360,7 @@ export default function InventoryScreen() {
         const q = parseFloat(qty.replace(',', '.'));
 
         if (!isNaN(p) && !isNaN(q) && q > 0) {
-            let conversion = 1;
-            // Kg -> g
-            if (bUnit === 'kg' && sUnit === 'g') conversion = 1000;
-            // L -> ml
-            else if (bUnit === 'l' && sUnit === 'ml') conversion = 1000;
-            // g -> kg
-            else if (bUnit === 'g' && sUnit === 'kg') conversion = 0.001;
-            // ml -> l
-            else if (bUnit === 'ml' && sUnit === 'l') conversion = 0.001;
+            const conversion = convertValue(1, bUnit, sUnit) ?? 1;
 
             // Cost Per Storage Unit = Total Price / (Attributes * Conversion)
             const totalUnits = q * conversion;

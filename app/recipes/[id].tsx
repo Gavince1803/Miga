@@ -18,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { convertValue } from '@/lib/units';
 
 const { width } = Dimensions.get('window');
 
@@ -153,16 +154,10 @@ export default function RecipeDetailScreen() {
 
                                         let effectivePrice = costPerUnit;
 
-                                        // Basic Conversion KG <-> G, L <-> ML
+                                        // Cost per recipe unit = cost per inventory unit × inventory units in one recipe unit
                                         if (recipeUnit !== inventoryUnit) {
-                                            if ((inventoryUnit === 'kg' && recipeUnit === 'g') || (inventoryUnit === 'l' && recipeUnit === 'ml')) {
-                                                // Cost is per kg. We need cost per g.
-                                                effectivePrice = costPerUnit / 1000;
-                                            } else if ((inventoryUnit === 'g' && recipeUnit === 'kg') || (inventoryUnit === 'ml' && recipeUnit === 'l')) {
-                                                // Cost is per g. We need cost per kg.
-                                                effectivePrice = costPerUnit * 1000;
-                                            }
-                                            // Other conversions ignored for MVP
+                                            const factor = convertValue(1, recipeUnit, inventoryUnit);
+                                            if (factor !== null) effectivePrice = costPerUnit * factor;
                                         }
 
                                         // Smart Scaling for Small Units (g, ml)
