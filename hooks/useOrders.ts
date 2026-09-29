@@ -5,6 +5,20 @@ import { supabase } from '@/lib/supabase';
 import { Order, OrderFormData } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
 
+// Turns a failed save into something the user can act on, plus a short
+// code they can send to support.
+function describeSaveError(action: string, error: any): string {
+    const message = String(error?.message ?? '');
+    if (/network request failed|failed to fetch/i.test(message)) {
+        return `No se pudo ${action} el pedido: sin conexión. Revisa tu internet e intenta de nuevo.`;
+    }
+    if (error?.code === 'PGRST301' || /jwt/i.test(message)) {
+        return `No se pudo ${action} el pedido: tu sesión venció. Cierra sesión y vuelve a entrar.`;
+    }
+    const code = error?.code ? ` (código ${error.code})` : '';
+    return `No se pudo ${action} el pedido${code}. Intenta de nuevo y, si sigue fallando, escríbenos con este código.`;
+}
+
 export function useOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -174,7 +188,7 @@ export function useOrders() {
             return data;
         } catch (error) {
             console.error('Error creating order:', error);
-            showAlert({ title: 'Error', message: 'No se pudo guardar el pedido', type: 'error' });
+            showAlert({ title: 'Error', message: describeSaveError('guardar', error), type: 'error' });
             return null;
         }
     };
@@ -301,7 +315,7 @@ export function useOrders() {
             return data;
         } catch (error) {
             console.error('Error updating order:', error);
-            showAlert({ title: 'Error', message: 'No se pudo actualizar el pedido', type: 'error' });
+            showAlert({ title: 'Error', message: describeSaveError('actualizar', error), type: 'error' });
             return null;
         }
     };
