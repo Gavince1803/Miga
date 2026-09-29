@@ -1,0 +1,16 @@
+# Orden de Pedidos (próximos primero) y ficha de cliente sin doble encabezado.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Pedidos(, tab.*)?"
+- takeScreenshot: capturas/nav-01-pedidos
+- tapOn: "Clientes"
+- takeScreenshot: capturas/nav-02-clientes
+- tapOn: ".*Maria Daniela.*"
+- extendedWaitUntil:
+    visible: "Total pedidos"
+    timeout: 10000
+- takeScreenshot: capturas/nav-03-ficha-cliente

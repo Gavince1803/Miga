@@ -8,11 +8,11 @@ appId: com.agendarepostera.app
     visible: "Tu día de hoy"
     timeout: 20000
 - takeScreenshot: capturas/01-inicio
-- tapOn: "Pedidos, tab.*"   # las pestañas se exponen como "Pedidos, tab, N of 10"
+- tapOn: "Pedidos(, tab.*)?"
 - takeScreenshot: capturas/02-pedidos
-- tapOn: "Calendario, tab.*"   # las pestañas se exponen como "Calendario, tab, N of 10"
+- tapOn: "Calendario(, tab.*)?"
 - takeScreenshot: capturas/03-calendario
-- tapOn: "Inventario, tab.*"   # las pestañas se exponen como "Inventario, tab, N of 10"
+- tapOn: "Inventario(, tab.*)?"
 - takeScreenshot: capturas/04-inventario
-- tapOn: "Más, tab.*"   # las pestañas se exponen como "Más, tab, N of 10"
+- tapOn: "Más(, tab.*)?"
 - takeScreenshot: capturas/05-mas
