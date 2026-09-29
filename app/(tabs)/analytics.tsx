@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import { CURRENCIES, useSettings } from '@/context/SettingsContext';
+import { useSettings } from '@/context/SettingsContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useSubscription } from '@/hooks/useSubscription';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
+import { formatCompact, formatMoney } from '@/lib/money';
 
 const { width } = Dimensions.get('screen');
 
@@ -28,14 +29,8 @@ export default function AnalyticsScreen() {
     useRefreshOnFocus(refetch);
     const { isPremium, loading: isAuthLoading } = useSubscription();
     const { currency } = useSettings();
-    const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
-    const formatCurrency = React.useCallback((amount: number) => {
-        if (currency === 'VES') {
-            return `${currencySymbol}${amount.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-        return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }, [currency, currencySymbol]);
+    const formatCurrency = React.useCallback((amount: number) => formatMoney(amount, currency), [currency]);
 
     const barChartData = useMemo(() => {
         return data.monthlyRevenue.map(item => ({
@@ -44,11 +39,11 @@ export default function AnalyticsScreen() {
             frontColor: colors.primary,
             topLabelComponent: () => (
                 <Text style={{ color: colors.primary, fontSize: 9, marginBottom: 2 }}>
-                    {item.revenue > 0 ? formatCurrency(item.revenue).split('.')[0] : ''}
+                    {item.revenue > 0 ? formatCompact(item.revenue, currency) : ''}
                 </Text>
             ),
         }));
-    }, [data.monthlyRevenue, colors, formatCurrency]);
+    }, [data.monthlyRevenue, colors, currency]);
 
     const barChartMax = useMemo(() => {
         if (barChartData.length === 0) return 100;
