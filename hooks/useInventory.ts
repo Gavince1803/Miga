@@ -87,9 +87,11 @@ function useInventoryState() {
                     const { error: moveError } = await supabase.from('inventory_movements').insert({
                         user_id: session.user.id,
                         inventory_item_id: id,
-                        movement_type: delta > 0 ? 'agregado' : 'uso',
+                        // Corrections are not purchases: 'agregado' counts as an expense
+                        // in Finances, so a +1 to fix a miscount inflated expenses
+                        movement_type: delta > 0 ? 'ajuste' : 'uso',
                         quantity: Math.abs(delta),
-                        notes: delta > 0 ? 'Restock Rápido' : 'Uso Rápido'
+                        notes: delta > 0 ? 'Ajuste rápido' : 'Uso rápido'
                     });
                     if (moveError) console.error('Error logging movement (updateStock):', moveError);
                 }
@@ -130,7 +132,7 @@ function useInventoryState() {
                         const { error: moveError } = await supabase.from('inventory_movements').insert({
                             user_id: session.user.id,
                             inventory_item_id: id,
-                            movement_type: delta > 0 ? 'agregado' : 'uso',
+                            movement_type: delta > 0 ? 'ajuste' : 'uso',
                             quantity: Math.abs(delta),
                             notes: 'Ajuste Manual'
                         });
@@ -165,6 +167,56 @@ function useInventoryState() {
         fetchInventory();
     }, []);
 
+    /**
+     * "Compré 2 kg por $5": adds the stock, updates the cost per unit as a
+     * weighted average of what was left and what was bought, and records the
+     * expense at the price actually paid (so later price changes don't rewrite
+     * past expenses). `quantity` is already in the item's unit.
+     */
+    const registerPurchase = async (id: string, quantity: number, totalPrice: number) => {
+        const item = inventory.find(i => i.id === id);
+        if (!item || quantity <= 0 || totalPrice < 0) return false;
+
+        const oldQty = Math.max(0, item.quantity);
+        const oldCost = item.costPerUnit || 0;
+        const newQty = oldQty + quantity;
+        const newCost = oldQty > 0 && oldCost > 0
+            ? (oldQty * oldCost + totalPrice) / newQty
+            : totalPrice / quantity;
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No session');
+
+            setInventory(prev => prev.map(i => i.id === id ? { ...i, quantity: newQty, costPerUnit: newCost } : i));
+
+            const { error } = await supabase
+                .from('inventory_items')
+                .update({ quantity: newQty, cost_per_unit: newCost, last_updated: new Date().toISOString() })
+                .eq('id', id);
+            if (error) {
+                fetchInventory();
+                throw error;
+            }
+
+            const { error: moveError } = await supabase.from('inventory_movements').insert({
+                user_id: session.user.id,
+                inventory_item_id: id,
+                movement_type: 'agregado',
+                quantity,
+                unit_cost: totalPrice / quantity,
+                total_cost: totalPrice,
+                notes: 'Compra',
+            });
+            if (moveError) console.error('Error logging movement (registerPurchase):', moveError);
+            return true;
+        } catch (error) {
+            console.error('Error registering purchase:', error);
+            showAlert({ title: 'Error', message: 'No se pudo registrar la compra', type: 'error' });
+            return false;
+        }
+    };
+
     const addItem = async (item: Omit<InventoryItem, 'id' | 'userId' | 'createdAt'>) => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -177,7 +229,9 @@ function useInventoryState() {
                     name: item.name.trim(),
                     quantity: item.quantity,
                     unit: item.unit || 'u',
-                    min_stock: item.minStock || 5,
+                    // Empty min stock = no alert (was 5 in any unit: 5 g never alerted,
+                    // 5 kg of vanilla always did)
+                    min_stock: item.minStock ?? 0,
                     cost_per_unit: item.costPerUnit || 0,
                     category: item.category || 'General',
                 })
@@ -193,6 +247,8 @@ function useInventoryState() {
                     inventory_item_id: newItem.id,
                     movement_type: 'agregado',
                     quantity: newItem.quantity,
+                    unit_cost: newItem.cost_per_unit || 0,
+                    total_cost: (newItem.cost_per_unit || 0) * newItem.quantity,
                     notes: 'Stock Inicial',
                 });
                 if (moveError) console.error('Error logging movement (addItem):', moveError);
@@ -472,6 +528,7 @@ function useInventoryState() {
         fetchInventory,
         updateStock,
         setStock,
+        registerPurchase,
         addItem,
         importInventory,
         updateItemDetails,

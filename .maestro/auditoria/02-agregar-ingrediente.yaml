@@ -40,7 +40,7 @@ appId: com.agendarepostera.app
     start: "50%,40%"
     end: "50%,20%"
 - tapOn:
-    below: "Stock mínimo \\(alerta\\)"
+    below: "Avisarme cuando queden menos de.*"
 - inputText: "1"
 - takeScreenshot: capturas/ing-07-minimo-teclado
 - tapOn:

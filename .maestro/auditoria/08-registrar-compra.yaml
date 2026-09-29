@@ -1,0 +1,30 @@
+# Registrar una compra en el primer ingrediente (Azúcar Blanca, en g) usando kg,
+# y usar el + que ahora suma según la unidad. Crea datos en la cuenta activa.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Inventario(, tab.*)?"
+- extendedWaitUntil:
+    visible: "Registrar compra de .*"
+    timeout: 15000
+- takeScreenshot: capturas/compra-01-lista
+- tapOn:
+    text: "Registrar compra de .*"
+    index: 0
+- takeScreenshot: capturas/compra-02-hoja
+- tapOn:
+    id: "purchase-quantity"
+- inputText: "1"
+- tapOn:
+    id: "purchase-price"
+- inputText: "2,50"
+- takeScreenshot: capturas/compra-03-completa
+- tapOn: "Guardar compra"
+- takeScreenshot: capturas/compra-04-guardada
+- tapOn:
+    text: "Sumar .*"
+    index: 0
+- takeScreenshot: capturas/compra-05-mas-100g
