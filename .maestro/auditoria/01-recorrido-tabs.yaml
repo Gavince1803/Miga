@@ -1,0 +1,18 @@
+# Recorrido por las pestañas principales con una captura de cada una.
+# Requiere haber iniciado sesión antes en el simulador.
+# Correr desde la carpeta donde se quieren las capturas (quedan en ./capturas).
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- takeScreenshot: capturas/01-inicio
+- tapOn: "Pedidos, tab.*"   # las pestañas se exponen como "Pedidos, tab, N of 10"
+- takeScreenshot: capturas/02-pedidos
+- tapOn: "Calendario, tab.*"   # las pestañas se exponen como "Calendario, tab, N of 10"
+- takeScreenshot: capturas/03-calendario
+- tapOn: "Inventario, tab.*"   # las pestañas se exponen como "Inventario, tab, N of 10"
+- takeScreenshot: capturas/04-inventario
+- tapOn: "Más, tab.*"   # las pestañas se exponen como "Más, tab, N of 10"
+- takeScreenshot: capturas/05-mas

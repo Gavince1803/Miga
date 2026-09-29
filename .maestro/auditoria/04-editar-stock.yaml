@@ -1,0 +1,25 @@
+# Abrir el modal de edición de stock del primer ingrediente y escribir en
+# cada campo con el teclado abierto. No guarda (cierra con Cancelar/atrás).
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Inventario, tab.*"
+- extendedWaitUntil:
+    notVisible: "Cargando..."
+    timeout: 15000
+- takeScreenshot: capturas/stk-01-lista
+- tapOn:
+    point: "21%,79%"          # cantidad del primer ingrediente (abre el modal)
+- takeScreenshot: capturas/stk-02-modal
+- tapOn: "Categoría"
+- inputText: "Secos"
+- takeScreenshot: capturas/stk-03-categoria-teclado
+- tapOn: "Cantidad"
+- inputText: "1"
+- takeScreenshot: capturas/stk-04-compra-cantidad-teclado
+- tapOn: "Precio \\$"
+- inputText: "3,50"
+- takeScreenshot: capturas/stk-05-compra-precio-teclado

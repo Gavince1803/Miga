@@ -1,0 +1,58 @@
+# Crear un pedido completo desde Inicio, con capturas del teclado abierto en
+# cada campo. Crea un pedido real en la cuenta con sesión iniciada.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: ".*Nuevo Pedido.*"
+- extendedWaitUntil:
+    visible: "Ej: María García"
+    timeout: 10000
+- takeScreenshot: capturas/ped-01-formulario
+- tapOn: "Ej: María García"
+- inputText: "Cliente Maestro"
+- takeScreenshot: capturas/ped-02-cliente-teclado
+- tapOn: "Ej: \\+58 412 123 4567 \\(opcional\\)"
+- inputText: "04121234567"
+- takeScreenshot: capturas/ped-03-telefono-teclado
+- tapOn: "Dirección de entrega \\(opcional\\)"
+- inputText: "Calle 1"
+- takeScreenshot: capturas/ped-04-direccion-teclado
+- scrollUntilVisible:
+    element: "Ej: 20"
+    direction: DOWN
+- tapOn: "Ej: 20"
+- inputText: "15"
+- takeScreenshot: capturas/ped-05-cantidad-teclado
+- scrollUntilVisible:
+    element: "Detalles extra..."
+    direction: DOWN
+- tapOn: "Detalles extra..."
+- inputText: "Prueba de auditoria"
+- takeScreenshot: capturas/ped-06-descripcion-teclado
+- scrollUntilVisible:
+    element: "Precio Total"
+    direction: DOWN
+- tapOn:
+    text: "0"
+    index: 0
+- inputText: "45,50"
+- takeScreenshot: capturas/ped-07-total-teclado
+- tapOn:
+    text: "0"
+    index: 0
+- inputText: "20"
+- takeScreenshot: capturas/ped-08-abono-teclado
+- scrollUntilVisible:
+    element: "Transferencia"
+    direction: DOWN
+- tapOn: "Transferencia"
+- takeScreenshot: capturas/ped-09-forma-de-pago
+- scrollUntilVisible:
+    element: ".*Guardar Pedido.*"
+    direction: DOWN
+- takeScreenshot: capturas/ped-10-antes-de-guardar
+- tapOn: ".*Guardar Pedido.*"
+- takeScreenshot: capturas/ped-11-despues-de-guardar

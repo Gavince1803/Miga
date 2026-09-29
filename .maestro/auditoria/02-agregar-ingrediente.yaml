@@ -1,0 +1,45 @@
+# Agregar un ingrediente nuevo desde Inventario, con capturas del teclado
+# abierto en cada campo. Crea datos reales en la cuenta con sesión iniciada.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Inventario, tab.*"
+- extendedWaitUntil:
+    notVisible: "Cargando..."
+    timeout: 15000
+- takeScreenshot: capturas/ing-01-lista
+- tapOn:
+    point: "87%,84%"          # botón flotante "+"
+- extendedWaitUntil:
+    visible: "Nuevo Ingrediente"
+    timeout: 10000
+- takeScreenshot: capturas/ing-02-formulario
+# Campos por posición: varios placeholders ("General", "1", "5") existen también
+# en pestañas montadas detrás, y el selector por texto toca el equivocado.
+- tapOn:
+    point: "50%,22%"          # Nombre
+- inputText: "Harina de prueba Maestro"
+- takeScreenshot: capturas/ing-03-nombre-teclado
+- tapOn:
+    point: "50%,32%"          # Categoría
+- inputText: "Secos"
+- takeScreenshot: capturas/ing-04-categoria-teclado
+- tapOn:
+    point: "29%,47%"          # Cantidad
+- inputText: "2,5"
+- takeScreenshot: capturas/ing-05-cantidad-teclado
+- tapOn:
+    point: "71%,47%"          # Pagué
+- inputText: "4,20"
+- takeScreenshot: capturas/ing-06-precio-teclado
+- tapOn:
+    point: "50%,65%"          # Stock mínimo
+- inputText: "1"
+- takeScreenshot: capturas/ing-07-minimo-teclado
+- hideKeyboard
+- takeScreenshot: capturas/ing-08-antes-de-guardar
+- tapOn: "Agregar Ingrediente"
+- takeScreenshot: capturas/ing-09-despues-de-guardar

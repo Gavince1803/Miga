@@ -1,0 +1,56 @@
+# Llegar a la calculadora (solo accesible desde el detalle de una receta) y
+# escribir en la configuración con el teclado abierto. No guarda nada.
+appId: com.agendarepostera.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Tu día de hoy"
+    timeout: 20000
+- tapOn: "Inventario, tab.*"
+- tapOn:
+    point: "94%,9%"           # ícono de libro → Recetario
+- extendedWaitUntil:
+    visible: "Recetario|Mis Recetas|Recetas"
+    timeout: 10000
+- takeScreenshot: capturas/calc-01-recetario
+- tapOn: ".*Torta de chocolate.*"
+- extendedWaitUntil:
+    visible: "\uf1ec"          # ícono de calculadora en el encabezado (sin texto)
+    timeout: 10000
+- takeScreenshot: capturas/calc-02-detalle-receta
+- tapOn:
+    point: "41%,10%"          # ícono de calculadora
+- extendedWaitUntil:
+    visible: "Mano de Obra \\(%\\)"
+    timeout: 10000
+- takeScreenshot: capturas/calc-03-calculadora
+- scrollUntilVisible:
+    element: "Ganancia Deseada \\(%\\)"
+    direction: DOWN
+- takeScreenshot: capturas/calc-04-config
+- tapOn:
+    below: "Mano de Obra \\(%\\)"
+- eraseText: 5
+- inputText: "12,5"
+- takeScreenshot: capturas/calc-05-mano-obra-teclado
+- tapOn:
+    below: "Ganancia Deseada \\(%\\)"
+- eraseText: 5
+- inputText: "30,5"
+- takeScreenshot: capturas/calc-06-ganancia-teclado
+- scrollUntilVisible:
+    element: "\\+ Agregar"
+    direction: UP
+- tapOn: "\\+ Agregar"
+- takeScreenshot: capturas/calc-07-modal-ingrediente
+- tapOn: "Nombre \\(ej. Harina\\)"
+- inputText: "Harina"
+- takeScreenshot: capturas/calc-08-modal-nombre-teclado
+- tapOn:
+    text: "0"
+    index: 0
+- inputText: "250"
+- takeScreenshot: capturas/calc-09-modal-cantidad-teclado
+- tapOn: "0.00"
+- inputText: "3,20"
+- takeScreenshot: capturas/calc-10-modal-precio-teclado
