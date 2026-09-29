@@ -9,6 +9,8 @@ const CONVERSION_RATES: Record<string, number> = {
     // Volume (base: ml)
     'L': 1000,
     'ml': 1,
+    'cda': 15,
+    'taza': 240,
 
     // Count (base: u)
     'u': 1,
@@ -19,6 +21,8 @@ const UNIT_TYPES: Record<string, 'mass' | 'volume' | 'count'> = {
     'g': 'mass',
     'L': 'volume',
     'ml': 'volume',
+    'cda': 'volume',
+    'taza': 'volume',
     'u': 'count',
 };
 
@@ -27,9 +31,10 @@ const UNIT_TYPES: Record<string, 'mass' | 'volume' | 'count'> = {
  * Returns null if conversion is not possible (incompatible types).
  */
 export function convertValue(value: number, fromUnit: string, toUnit: string): number | null {
-    // Normalize units to lower case just in case, though we expect standard keys
-    const from = fromUnit as Unit;
-    const to = toUnit as Unit;
+    // Inventory items were saved with 'l' while recipes use 'L'
+    const normalize = (unit: string) => (unit === 'l' ? 'L' : unit);
+    const from = normalize(fromUnit);
+    const to = normalize(toUnit);
 
     if (from === to) return value;
 

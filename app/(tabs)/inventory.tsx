@@ -26,6 +26,7 @@ import {
     View
 } from 'react-native';
 import * as XLSX from 'xlsx';
+import { convertValue } from '@/lib/units';
 
 const TUTORIAL_KEY = 'miga_inventory_tutorial_seen';
 
@@ -189,7 +190,7 @@ const tutorialStyles = StyleSheet.create({
 const UNIT_OPTIONS = [
     { label: 'Kilogramo', value: 'kg' },
     { label: 'Gramo', value: 'g' },
-    { label: 'Litro', value: 'l' },
+    { label: 'Litro', value: 'L' },
     { label: 'Mililitro', value: 'ml' },
     { label: 'Unidad', value: 'u' },
 ];
@@ -359,15 +360,7 @@ export default function InventoryScreen() {
         const q = parseFloat(qty.replace(',', '.'));
 
         if (!isNaN(p) && !isNaN(q) && q > 0) {
-            let conversion = 1;
-            // Kg -> g
-            if (bUnit === 'kg' && sUnit === 'g') conversion = 1000;
-            // L -> ml
-            else if (bUnit === 'l' && sUnit === 'ml') conversion = 1000;
-            // g -> kg
-            else if (bUnit === 'g' && sUnit === 'kg') conversion = 0.001;
-            // ml -> l
-            else if (bUnit === 'ml' && sUnit === 'l') conversion = 0.001;
+            const conversion = convertValue(1, bUnit, sUnit) ?? 1;
 
             // Cost Per Storage Unit = Total Price / (Attributes * Conversion)
             const totalUnits = q * conversion;
@@ -486,14 +479,24 @@ export default function InventoryScreen() {
             let success = true;
             const updates: any = {};
 
-            // Check for changes
-            if (newQty !== editingItem.quantity) {
+            // Changing the unit converts the stored numbers (500 g -> 0.5 kg).
+            // If the quantity was also edited, it's taken as already in the new unit.
+            const unitChanged = editUnit !== editingItem.unit;
+            const unitFactor = unitChanged ? convertValue(1, editingItem.unit, editUnit) : null;
+            const qtyEdited = newQty !== editingItem.quantity;
+
+            if (qtyEdited) {
                 const qtySuccess = await setStock(editingItem.id, newQty);
                 if (!qtySuccess) success = false;
             }
 
-            if (editUnit !== editingItem.unit) {
+            if (unitChanged) {
                 updates.unit = editUnit;
+                if (unitFactor !== null) {
+                    if (!qtyEdited) updates.quantity = editingItem.quantity * unitFactor;
+                    updates.minStock = editingItem.minStock * unitFactor;
+                    if (editingItem.costPerUnit) updates.costPerUnit = editingItem.costPerUnit / unitFactor;
+                }
             }
 
             if (editCategory !== (editingItem.category || '')) {

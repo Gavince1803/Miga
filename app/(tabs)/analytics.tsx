@@ -17,13 +17,15 @@ import {
     View,
 } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 
 const { width } = Dimensions.get('screen');
 
 export default function AnalyticsScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { data, loading, refreshing, onRefresh } = useAnalytics();
+    const { data, loading, refreshing, onRefresh, refetch } = useAnalytics();
+    useRefreshOnFocus(refetch);
     const { isPremium, loading: isAuthLoading } = useSubscription();
     const { currency } = useSettings();
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';

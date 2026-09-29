@@ -213,8 +213,9 @@ export function useFinances(year?: number, month?: number) {
 
                     if (itemError) throw itemError;
 
-                    // 3. Subtract the added quantity (Reverse the operation)
-                    const newQuantity = (item.quantity || 0) - movement.quantity;
+                    // 3. Subtract the added quantity (Reverse the operation).
+                    // Never below 0: the movement may predate a unit change or later usage.
+                    const newQuantity = Math.max(0, (item.quantity || 0) - movement.quantity);
 
                     const { error: updateError } = await supabase
                         .from('inventory_items')
@@ -246,6 +247,7 @@ export function useFinances(year?: number, month?: number) {
     };
 
     return {
+        refetch: fetchFinances,
         summary,
         recentTransactions,
         loading,

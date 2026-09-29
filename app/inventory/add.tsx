@@ -22,7 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const UNIT_OPTIONS = [
     { label: 'Kilogramo', value: 'kg' },
     { label: 'Gramo', value: 'g' },
-    { label: 'Litro', value: 'l' },
+    { label: 'Litro', value: 'L' },
     { label: 'Mililitro', value: 'ml' },
     { label: 'Unidad', value: 'u' },
 ];

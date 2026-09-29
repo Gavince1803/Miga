@@ -18,6 +18,18 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('No session');
 
+        // Deduct once per order: toggling pagado -> pendiente -> pagado must not deduct again
+        const { count: previousDeductions, error: previousError } = await supabase
+            .from('inventory_movements')
+            .select('id', { count: 'exact', head: true })
+            .eq('order_id', orderId)
+            .eq('movement_type', 'deduccion');
+
+        if (previousError) throw previousError;
+        if (previousDeductions && previousDeductions > 0) {
+            return { success: true, deductedItems: [], errors: [] };
+        }
+
         // 2. Get all order items with their recipes
         const { data: orderItems, error: itemsError } = await supabase
             .from('order_items')

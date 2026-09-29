@@ -20,6 +20,7 @@ import {
     View
 } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 
 const { width } = Dimensions.get('screen');
 
@@ -27,10 +28,11 @@ export default function FinancesScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const [currentDate, setCurrentDate] = React.useState(new Date());
-    const { summary, recentTransactions, loading, refreshing, onRefresh, revertTransaction } = useFinances(
+    const { summary, recentTransactions, loading, refreshing, onRefresh, revertTransaction, refetch } = useFinances(
         currentDate.getFullYear(),
         currentDate.getMonth()
     );
+    useRefreshOnFocus(refetch);
 
     const { showAlert } = useAlert();
     const haptics = useHaptics();
@@ -57,7 +59,7 @@ export default function FinancesScreen() {
         if (transaction.type === 'expense') {
             showAlert({
                 title: 'Detalles del Gasto',
-                message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\n¿Deseas revertir esta operación? Esto eliminará el registro y devolverá el stock al inventario.`,
+                message: `${transaction.description}\nMonto: ${formatCurrency(transaction.amount)}\n\n¿Deseas revertir esta operación? Esto eliminará el registro y quitará del inventario lo que se sumó con esta compra.`,
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', onPress: () => { }, style: 'cancel' },

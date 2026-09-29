@@ -9,6 +9,7 @@ import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrderItems } from '@/hooks/useOrderItems';
+import { deductInventoryForOrder, formatDeductionMessage } from '@/lib/inventoryDeduction';
 import { useOrders } from '@/hooks/useOrders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
@@ -339,6 +340,13 @@ export default function NewOrderScreen() {
                         quantity: p.quantity,
                         notes: p.notes
                     })));
+                }
+
+                // Deduct only now that order_items exist
+                if (paymentStatus === 'pagado') {
+                    const { deductedItems, errors } = await deductInventoryForOrder(newOrder.id);
+                    const notification = formatDeductionMessage(deductedItems, errors);
+                    if (notification) showAlert(notification);
                 }
 
                 haptics.success();

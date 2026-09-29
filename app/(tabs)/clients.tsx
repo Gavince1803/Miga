@@ -15,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 
 function ClientCard({ client, colors, currencySymbol }: {
     client: ClientSummary;
@@ -85,7 +86,8 @@ function ClientCard({ client, colors, currencySymbol }: {
 export default function ClientsScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const { clients, loading, refreshing, onRefresh } = useClients();
+    const { clients, loading, refreshing, onRefresh, refetch } = useClients();
+    useRefreshOnFocus(refetch);
     const { currency } = useSettings();
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';
     const [search, setSearch] = useState('');
