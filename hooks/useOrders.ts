@@ -147,15 +147,8 @@ export function useOrders() {
 
             if (error) throw error;
 
-            // If the order was already fully paid at creation time, deduct
-            // inventory immediately (mirrors the 'pagado' path in updateOrderStatus)
-            if (data && orderData.paymentStatus === 'pagado') {
-                const { deductedItems, errors } = await deductInventoryForOrder(data.id);
-                const notification = formatDeductionMessage(deductedItems, errors);
-                if (notification) {
-                    showAlert(notification);
-                }
-            }
+            // Orders created already paid are deducted by the caller, after
+            // its order_items are saved (see app/orders/new.tsx).
 
             // Map snake_case data to camelCase for scheduleOrderNotification
             if (data) {
