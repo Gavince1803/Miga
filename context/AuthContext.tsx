@@ -1,4 +1,4 @@
-import { initializeRevenueCat } from '@/lib/revenuecat';
+import { syncRevenueCatUser } from '@/lib/revenuecat';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -28,16 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
             setLoading(false);
-            if (session?.user) {
-                initializeRevenueCat(session.user.id);
-            }
-        });
-
-        // Initialize on mount if session exists
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                initializeRevenueCat(session.user.id);
-            }
+            // Runs for the initial session too (INITIAL_SESSION); no-op on token refresh
+            syncRevenueCatUser(session?.user.id ?? null);
         });
 
         return () => subscription.unsubscribe();

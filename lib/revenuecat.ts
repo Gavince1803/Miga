@@ -24,6 +24,35 @@ export async function initializeRevenueCat(userId?: string) {
 
     // Configurar con el API Key
     Purchases.configure({ apiKey, appUserID: userId });
+    configuredUserId = userId ?? null;
+}
+
+let configuredUserId: string | null | undefined; // undefined = not configured yet
+
+/**
+ * Keeps RevenueCat's user in sync with the Supabase session. RevenueCat must be
+ * configured once; switching accounts goes through logIn/logOut. Configuring
+ * again on every auth event (token refreshes included) could leave purchases
+ * attached to the previous account on a shared device.
+ */
+export async function syncRevenueCatUser(userId: string | null) {
+    try {
+        if (configuredUserId === undefined) {
+            await initializeRevenueCat(userId ?? undefined);
+            return;
+        }
+        if (configuredUserId === userId) return;
+
+        if (userId) {
+            await Purchases.logIn(userId);
+        } else {
+            // logOut throws if the current user is already anonymous
+            if (!(await Purchases.isAnonymous())) await Purchases.logOut();
+        }
+        configuredUserId = userId;
+    } catch (e) {
+        console.error('Error syncing RevenueCat user:', e);
+    }
 }
 
 export async function getPremiumStatus(): Promise<boolean> {
