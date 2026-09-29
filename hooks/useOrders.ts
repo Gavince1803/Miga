@@ -174,7 +174,7 @@ export function useOrders() {
                     deliveryDate: data.delivery_date,
                     deliveryTime: data.delivery_time,
                     reminderDays: data.reminder_days
-                });
+                }, { fireMissedToday: true });
             }
 
             await fetchOrders(); // Refresh list
@@ -227,12 +227,28 @@ export function useOrders() {
                     showAlert(notification);
                 }
             } else {
-                const { error } = await supabase
+                const { data, error } = await supabase
                     .from('orders')
                     .update({ status })
-                    .eq('id', id);
+                    .eq('id', id)
+                    .select()
+                    .single();
 
                 if (error) throw error;
+
+                // A cancelled order shouldn't keep reminding; un-cancelling restores them
+                if (status === 'cancelado') {
+                    await cancelOrderNotification(id);
+                } else if (data) {
+                    await scheduleOrderNotification({
+                        id: data.id,
+                        clientName: data.client_name,
+                        description: data.description,
+                        size: data.size,
+                        deliveryDate: data.delivery_date,
+                        deliveryTime: data.delivery_time,
+                    });
+                }
             }
 
             await fetchOrders();

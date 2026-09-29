@@ -27,6 +27,7 @@ import {
 
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { cancelOrderNotification } from '@/lib/notifications';
 
 function CurrencyConversions({ amount, colors }: { amount: number, colors: typeof Colors.light }) {
     const { bcv, parallel, euro, loading } = useExchangeRates();
@@ -302,6 +303,7 @@ export default function OrderDetailScreen() {
                         try {
                             const { error } = await supabase.from('orders').delete().eq('id', order.id);
                             if (error) throw error;
+                            await cancelOrderNotification(order.id);
                             showAlert({
                                 title: 'Eliminado',
                                 message: 'Pedido eliminado correctamente',

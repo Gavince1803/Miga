@@ -3,7 +3,7 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useAlert } from '@/context/AlertContext';
 import { CURRENCIES, Currency, useSettings } from '@/context/SettingsContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { requestNotificationPermissions } from '@/lib/notifications';
+import { cancelAllNotifications, requestNotificationPermissions } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Notifications from 'expo-notifications';
@@ -367,6 +367,7 @@ export default function SettingsScreen() {
                                 try {
                                     const { error } = await supabase.auth.signOut();
                                     if (error) throw error;
+                                    await cancelAllNotifications();
                                     router.replace('/auth/login');
                                 } catch (error) {
                                     showAlert({ title: 'Error', message: 'No se pudo cerrar sesión. Intenta de nuevo.', type: 'error' });
@@ -405,6 +406,7 @@ export default function SettingsScreen() {
                                             const { error } = await supabase.rpc('delete_user_account');
                                             if (error) throw error;
                                             await supabase.auth.signOut();
+                                            await cancelAllNotifications();
                                             router.replace('/auth/login');
                                             showAlert({ title: 'Cuenta Eliminada', message: 'Tu cuenta ha sido eliminada correctamente.', type: 'success' });
                                         } catch (error) {
