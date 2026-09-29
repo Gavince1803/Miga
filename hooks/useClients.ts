@@ -53,7 +53,7 @@ export function useClients() {
             const result: ClientSummary[] = Array.from(clientMap.values()).map(({ name, phone, address, rows }) => {
                 const totalOrders = rows.length;
                 const totalSpent = rows
-                    .filter(r => r.status === 'pagado' || r.payment_status === 'pagado')
+                    .filter(r => r.status !== 'cancelado' && (r.status === 'pagado' || r.payment_status === 'pagado'))
                     .reduce((s, r) => s + (r.total_price || 0), 0);
                 const lastOrderDate = rows[0]?.delivery_date || '';
 
