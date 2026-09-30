@@ -1,7 +1,9 @@
 import BackButton from '@/components/BackButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import FeedbackModal from '@/components/FeedbackModal';
 import { useAlert } from '@/context/AlertContext';
+import { useFeedbackPrompt } from '@/hooks/useFeedbackPrompt';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
@@ -110,6 +112,8 @@ export default function OrderDetailScreen() {
     const [clientHistoryVisible, setClientHistoryVisible] = useState(false);
     const [clientOrders, setClientOrders] = useState<Order[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    const [feedbackVisible, setFeedbackVisible] = useState(false);
+    const { shouldShowPrompt, markPromptShown } = useFeedbackPrompt();
 
     const fetchOrder = async () => {
         if (!id) return;
@@ -206,9 +210,22 @@ export default function OrderDetailScreen() {
                 text: option.label,
                 onPress: async () => {
                     if (!order) return;
+                    const justPaid = option.value === 'pagado' && order.status !== 'pagado';
                     await updateOrderStatus(order.id, option.value);
                     setOrder(prev => prev ? { ...prev, status: option.value } : null);
-                    showAlert({ title: 'Estado Actualizado', message: `El pedido ahora está: ${option.label}`, type: 'success' });
+                    // Success moment: once per user, ask for feedback after the alert closes (two Modals can't stack on iOS)
+                    const showFeedback = justPaid && await shouldShowPrompt();
+                    showAlert({
+                        title: 'Estado Actualizado',
+                        message: `El pedido ahora está: ${option.label}`,
+                        type: 'success',
+                        buttons: showFeedback ? [{
+                            text: 'OK', onPress: () => setTimeout(() => {
+                                setFeedbackVisible(true);
+                                markPromptShown();
+                            }, 600)
+                        }] : [],
+                    });
                 },
             })),
             { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } }
@@ -828,6 +845,8 @@ export default function OrderDetailScreen() {
                     )}
                 </View>
             </Modal>
+
+            <FeedbackModal visible={feedbackVisible} mode="prompt" onClose={() => setFeedbackVisible(false)} />
         </View>
     );
 }
