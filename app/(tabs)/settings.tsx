@@ -442,7 +442,7 @@ export default function SettingsScreen() {
 
             <View style={{ height: 120 }} />
 
-            <FeedbackModal visible={feedbackVisible} mode="settings" onClose={() => setFeedbackVisible(false)} />
+            <FeedbackModal visible={feedbackVisible} onClose={() => setFeedbackVisible(false)} />
         </ScrollView>
     );
 }

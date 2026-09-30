@@ -1,12 +1,12 @@
 import BackButton from '@/components/BackButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import FeedbackModal from '@/components/FeedbackModal';
 import { useAlert } from '@/context/AlertContext';
 import { useFeedbackPrompt } from '@/hooks/useFeedbackPrompt';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
+import * as StoreReview from 'expo-store-review';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 // STANDBY: foto del pedido — requiere bucket 'order-photos' en Supabase Storage
@@ -112,7 +112,6 @@ export default function OrderDetailScreen() {
     const [clientHistoryVisible, setClientHistoryVisible] = useState(false);
     const [clientOrders, setClientOrders] = useState<Order[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
-    const [feedbackVisible, setFeedbackVisible] = useState(false);
     const { shouldShowPrompt, markPromptShown } = useFeedbackPrompt();
 
     const fetchOrder = async () => {
@@ -213,16 +212,21 @@ export default function OrderDetailScreen() {
                     const justPaid = option.value === 'pagado' && order.status !== 'pagado';
                     await updateOrderStatus(order.id, option.value);
                     setOrder(prev => prev ? { ...prev, status: option.value } : null);
-                    // Success moment: once per user, ask for feedback after the alert closes (two Modals can't stack on iOS)
-                    const showFeedback = justPaid && await shouldShowPrompt();
+                    // Success moment: once per user, ask for a store review after the alert closes.
+                    // Straight to the native dialog, no "¿Te gusta?" first: Google Play forbids gating reviews
+                    const askReview = justPaid && await shouldShowPrompt();
                     showAlert({
                         title: 'Estado Actualizado',
                         message: `El pedido ahora está: ${option.label}`,
                         type: 'success',
-                        buttons: showFeedback ? [{
-                            text: 'OK', onPress: () => setTimeout(() => {
-                                setFeedbackVisible(true);
+                        buttons: askReview ? [{
+                            text: 'OK', onPress: () => setTimeout(async () => {
                                 markPromptShown();
+                                try {
+                                    if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
+                                } catch (error) {
+                                    console.error('Error requesting store review:', error);
+                                }
                             }, 600)
                         }] : [],
                     });
@@ -845,8 +849,6 @@ export default function OrderDetailScreen() {
                     )}
                 </View>
             </Modal>
-
-            <FeedbackModal visible={feedbackVisible} mode="prompt" onClose={() => setFeedbackVisible(false)} />
         </View>
     );
 }
