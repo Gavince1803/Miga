@@ -212,7 +212,7 @@ export default function SettingsScreen() {
         });
     };
 
-    const { isPremium, premiumUntil } = useSubscription();
+    const { isPremium, premiumUntil, loading: subscriptionLoading } = useSubscription();
     const { currency, updateCurrency } = useSettings();
 
     return (
@@ -233,14 +233,17 @@ export default function SettingsScreen() {
             >
                 <FontAwesome name="star" size={24} color="#FFF" />
                 <View style={styles.premiumBannerText}>
+                    {/* Don't show "Actualiza" to a premium user while her status is still loading */}
                     <Text style={styles.premiumTitle}>
-                        {isPremium ? 'Miga Premium Activo ✨' : 'Actualiza a Miga Premium'}
+                        {subscriptionLoading ? 'Verificando tu plan…' : isPremium ? 'Miga Premium Activo ✨' : 'Actualiza a Miga Premium'}
                     </Text>
-                    <Text style={styles.premiumSubtitle}>
-                        {isPremium && premiumUntil
-                            ? `Válido hasta ${premiumUntil.toLocaleDateString('es-ES')}`
-                            : 'Desbloquea todas las funciones'}
-                    </Text>
+                    {!subscriptionLoading && (
+                        <Text style={styles.premiumSubtitle}>
+                            {isPremium && premiumUntil
+                                ? `Válido hasta ${premiumUntil.toLocaleDateString('es-ES')}`
+                                : 'Desbloquea todas las funciones'}
+                        </Text>
+                    )}
                 </View>
                 <FontAwesome name="chevron-right" size={16} color="rgba(255,255,255,0.7)" />
             </TouchableOpacity>
