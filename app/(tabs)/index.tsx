@@ -33,6 +33,7 @@ function StatCard({
   color,
   colors,
   onPress,
+  loading = false,
 }: {
   icon: string;
   label: string;
@@ -40,6 +41,7 @@ function StatCard({
   color: string;
   colors: typeof Colors.light;
   onPress?: () => void;
+  loading?: boolean;
 }) {
   return (
     <TouchableOpacity
@@ -50,7 +52,10 @@ function StatCard({
       <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
         <FontAwesome name={icon as any} size={20} color={color} />
       </View>
-      <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+      {/* Placeholder instead of 0 / $0.00 while data loads, so it doesn't read as real data */}
+      {loading
+        ? <View style={[styles.statValuePlaceholder, { backgroundColor: colors.border }]} />
+        : <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>}
       <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
       {onPress && (
         <FontAwesome name="chevron-right" size={9} color={color} style={{ marginTop: 3 }} />
@@ -128,7 +133,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
-  const { orders, onRefresh } = useOrders();
+  const { orders, loading: ordersLoading, onRefresh } = useOrders();
   const { inventory, onRefresh: onRefreshInventory } = useInventory();
   const { currency } = useSettings();
   const currencySymbol = CURRENCIES[currency]?.symbol || '$';
@@ -193,6 +198,7 @@ export default function HomeScreen() {
 
   // Expenses Calculation
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
+  const [expensesLoading, setExpensesLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchExpenses = useCallback(async () => {
@@ -235,6 +241,8 @@ export default function HomeScreen() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setExpensesLoading(false);
     }
   }, [currentMonth, currentYear]);
 
@@ -284,6 +292,7 @@ export default function HomeScreen() {
         <StatCard
           icon="birthday-cake"
           label="Para Hoy"
+          loading={ordersLoading}
           value={todayOrdersCount}
           color={colors.urgentToday}
           colors={colors}
@@ -292,6 +301,7 @@ export default function HomeScreen() {
         <StatCard
           icon="money"
           label="Por cobrar"
+          loading={ordersLoading}
           value={formatMoney(pendingCollection)}
           color={colors.warning}
           colors={colors}
@@ -299,6 +309,7 @@ export default function HomeScreen() {
         <StatCard
           icon="line-chart"
           label="Ingresos"
+          loading={ordersLoading}
           value={formatMoney(monthlyRevenue)}
           color={colors.success}
           colors={colors}
@@ -306,6 +317,7 @@ export default function HomeScreen() {
         <StatCard
           icon="shopping-cart"
           label="Gastos"
+          loading={expensesLoading}
           value={formatMoney(monthlyExpenses)}
           color={colors.error} // Red for expenses
           colors={colors}
@@ -373,7 +385,11 @@ export default function HomeScreen() {
           </Link>
         </View>
 
-        {upcomingOrders.length === 0 ? (
+        {ordersLoading ? (
+          [0, 1].map(i => (
+            <View key={i} style={[styles.upcomingPlaceholder, { backgroundColor: colors.surface }]} />
+          ))
+        ) : upcomingOrders.length === 0 ? (
           <View style={[styles.emptyUpcoming, { backgroundColor: colors.surface }]}>
             <FontAwesome name="calendar-check-o" size={32} color={colors.textMuted} />
             <Text style={[styles.emptyUpcomingTitle, { color: colors.text }]}>Todo al día</Text>
@@ -437,6 +453,12 @@ const styles = StyleSheet.create({
     ...Typography.subtitle,
     fontSize: 24,
     fontWeight: '700',
+  },
+  statValuePlaceholder: {
+    width: 64,
+    height: 24,
+    borderRadius: BorderRadius.sm,
+    marginVertical: 4,
   },
   statLabel: {
     ...Typography.small,
@@ -541,6 +563,11 @@ const styles = StyleSheet.create({
   },
   orderTime: {
     ...Typography.small,
+  },
+  upcomingPlaceholder: {
+    height: 72,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
   },
   emptyUpcoming: {
     borderRadius: BorderRadius.md,
