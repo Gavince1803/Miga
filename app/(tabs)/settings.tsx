@@ -1,3 +1,4 @@
+import FeedbackModal from '@/components/FeedbackModal';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -98,6 +99,7 @@ export default function SettingsScreen() {
     const router = useRouter();
     const { showAlert } = useAlert();
     const [isNavigating, setIsNavigating] = useState(false);
+    const [feedbackVisible, setFeedbackVisible] = useState(false);
 
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [dailyReminders, setDailyReminders] = useState(true);
@@ -338,6 +340,12 @@ export default function SettingsScreen() {
                         showChevron={false}
                     />
                     <SettingRow
+                        icon="comment"
+                        label="Enviar sugerencia"
+                        onPress={() => setFeedbackVisible(true)}
+                        colors={colors}
+                    />
+                    <SettingRow
                         icon="question-circle"
                         label="Ayuda"
                         onPress={() => { }}
@@ -430,6 +438,8 @@ export default function SettingsScreen() {
             </View>
 
             <View style={{ height: 120 }} />
+
+            <FeedbackModal visible={feedbackVisible} mode="settings" onClose={() => setFeedbackVisible(false)} />
         </ScrollView>
     );
 }
