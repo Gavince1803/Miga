@@ -1,4 +1,5 @@
 import ReEngagementBanner from '@/components/ReEngagementBanner';
+import Skeleton from '@/components/Skeleton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
@@ -54,7 +55,7 @@ function StatCard({
       </View>
       {/* Placeholder instead of 0 / $0.00 while data loads, so it doesn't read as real data */}
       {loading
-        ? <View style={[styles.statValuePlaceholder, { backgroundColor: colors.border }]} />
+        ? <Skeleton width={64} height={24} color={colors.border} style={styles.statValuePlaceholder} />
         : <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>}
       <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
       {onPress && (
@@ -387,7 +388,14 @@ export default function HomeScreen() {
 
         {ordersLoading ? (
           [0, 1].map(i => (
-            <View key={i} style={[styles.upcomingPlaceholder, { backgroundColor: colors.surface }]} />
+            <View key={i} style={[styles.upcomingPlaceholder, { backgroundColor: colors.surface, borderColor: colors.border, borderLeftColor: colors.border }]}>
+              <View style={styles.orderCardHeader}>
+                <Skeleton width="45%" height={16} color={colors.border} />
+                <Skeleton width={56} height={20} color={colors.border} />
+              </View>
+              <Skeleton width="75%" height={14} color={colors.border} style={{ marginVertical: Spacing.xs }} />
+              <Skeleton width={70} height={12} color={colors.border} />
+            </View>
           ))
         ) : upcomingOrders.length === 0 ? (
           <View style={[styles.emptyUpcoming, { backgroundColor: colors.surface }]}>
@@ -455,9 +463,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statValuePlaceholder: {
-    width: 64,
-    height: 24,
-    borderRadius: BorderRadius.sm,
     marginVertical: 4,
   },
   statLabel: {
@@ -565,9 +570,12 @@ const styles = StyleSheet.create({
     ...Typography.small,
   },
   upcomingPlaceholder: {
-    height: 72,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
+    // Same shape as UpcomingOrderCard so the real cards don't jump in
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    marginBottom: 24,
   },
   emptyUpcoming: {
     borderRadius: BorderRadius.md,
