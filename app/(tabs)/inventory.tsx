@@ -29,7 +29,7 @@ import {
 import { KeyboardToolbar } from 'react-native-keyboard-controller';
 import * as XLSX from 'xlsx';
 import { convertValue } from '@/lib/units';
-import { parseDecimal } from '@/lib/number';
+import { cleanDecimalInput, parseDecimal } from '@/lib/number';
 
 const TUTORIAL_KEY = 'miga_inventory_tutorial_seen';
 
@@ -989,7 +989,8 @@ export default function InventoryScreen() {
                                             placeholder="Ej: 1"
                                             placeholderTextColor={colors.textMuted}
                                             value={buyingQty}
-                                            onChangeText={(t) => {
+                                            onChangeText={(text) => {
+                                                const t = cleanDecimalInput(text);
                                                 setBuyingQty(t);
                                                 // Also set the actual inventory quantity
                                                 setNewItemQuantity(t);
@@ -1032,7 +1033,8 @@ export default function InventoryScreen() {
                                             placeholder="Ej: 5.00"
                                             placeholderTextColor={colors.textMuted}
                                             value={buyingPrice}
-                                            onChangeText={(t) => {
+                                            onChangeText={(text) => {
+                                                const t = cleanDecimalInput(text, 2);
                                                 setBuyingPrice(t);
                                                 // Calculate cost per unit
                                                 const price = parseFloat(t.replace(',', '.'));
@@ -1061,7 +1063,7 @@ export default function InventoryScreen() {
                                     placeholder="5"
                                     placeholderTextColor={colors.textMuted}
                                     value={newItemMinStock}
-                                    onChangeText={setNewItemMinStock}
+                                    onChangeText={(t) => setNewItemMinStock(cleanDecimalInput(t))}
                                     keyboardType="numeric"
                                 />
                             </View>
@@ -1105,7 +1107,7 @@ export default function InventoryScreen() {
                                     style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                                     testID="purchase-quantity"
                                     value={purchaseQty}
-                                    onChangeText={setPurchaseQty}
+                                    onChangeText={(t) => setPurchaseQty(cleanDecimalInput(t))}
                                     keyboardType="decimal-pad"
                                     placeholder="Ej: 2"
                                     placeholderTextColor={colors.textMuted}
@@ -1118,7 +1120,7 @@ export default function InventoryScreen() {
                                     style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
                                     testID="purchase-price"
                                     value={purchasePrice}
-                                    onChangeText={setPurchasePrice}
+                                    onChangeText={(t) => setPurchasePrice(cleanDecimalInput(t, 2))}
                                     keyboardType="decimal-pad"
                                     placeholder="Ej: 5,50"
                                     placeholderTextColor={colors.textMuted}
@@ -1168,7 +1170,7 @@ export default function InventoryScreen() {
                         </View>
                     </View>
                 </KeyboardAvoidingView>
-                <KeyboardToolbar doneText="Listo" showArrows={false} />
+                {Platform.OS === 'ios' && <KeyboardToolbar doneText="Listo" showArrows={false} />}
             </Modal>
 
             <Modal
@@ -1193,7 +1195,7 @@ export default function InventoryScreen() {
                                 <TextInput
                                     style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, textAlign: 'center', fontWeight: '600' }]}
                                     value={editQuantity}
-                                    onChangeText={setEditQuantity}
+                                    onChangeText={(t) => setEditQuantity(cleanDecimalInput(t))}
                                     keyboardType="numeric"
                                     autoFocus={true}
                                 />
@@ -1232,7 +1234,7 @@ export default function InventoryScreen() {
                                 <TextInput
                                     style={[styles.modalInput, { flex: 1, backgroundColor: colors.background, color: colors.text, borderColor: colors.border, paddingVertical: 6 }]}
                                     value={editBoughtQty}
-                                    onChangeText={setEditBoughtQty}
+                                    onChangeText={(t) => setEditBoughtQty(cleanDecimalInput(t))}
                                     keyboardType="numeric"
                                     placeholder="Cantidad"
                                     placeholderTextColor={colors.textMuted}
@@ -1240,7 +1242,7 @@ export default function InventoryScreen() {
                                 <TextInput
                                     style={[styles.modalInput, { flex: 1, backgroundColor: colors.background, color: colors.text, borderColor: colors.border, paddingVertical: 6 }]}
                                     value={editBoughtPrice}
-                                    onChangeText={setEditBoughtPrice}
+                                    onChangeText={(t) => setEditBoughtPrice(cleanDecimalInput(t, 2))}
                                     keyboardType="numeric"
                                     placeholder="Precio $"
                                     placeholderTextColor={colors.textMuted}
@@ -1297,8 +1299,10 @@ export default function InventoryScreen() {
                         </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
-                {/* RN Modals render in their own window, above the root "Listo" bar */}
-                <KeyboardToolbar doneText="Listo" showArrows={false} />
+                {/* RN Modals render in their own window, above the root "Listo" bar. iOS only:
+                    inside an Android Modal the bar is offset twice and covers the fields,
+                    and Android keyboards already have their own done key. */}
+                {Platform.OS === 'ios' && <KeyboardToolbar doneText="Listo" showArrows={false} />}
             </Modal>
         </View >
     );

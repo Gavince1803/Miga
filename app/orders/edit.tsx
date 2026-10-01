@@ -22,7 +22,7 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { parseDecimal } from '@/lib/number';
+import { cleanDecimalInput, parseDecimal } from '@/lib/number';
 
 function FormSection({ title, children, colors }: { title: string; children: React.ReactNode; colors: typeof Colors.light }) {
     return (
@@ -467,7 +467,7 @@ export default function EditOrderScreen() {
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
                                 testID="edit-total"
                                 value={totalPrice}
-                                onChangeText={setTotalPrice}
+                                onChangeText={(t) => setTotalPrice(cleanDecimalInput(t, 2))}
                                 keyboardType="decimal-pad"
                             />
                         </View>
@@ -519,7 +519,7 @@ export default function EditOrderScreen() {
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
                                 testID="edit-deposit"
                                 value={deposit}
-                                onChangeText={setDeposit}
+                                onChangeText={(t) => setDeposit(cleanDecimalInput(t, 2))}
                                 keyboardType="decimal-pad"
                                 placeholder="0.00"
                                 placeholderTextColor={colors.textMuted}

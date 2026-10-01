@@ -682,8 +682,10 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         </View>
                     </View>
                 </KeyboardAvoidingView>
-                {/* RN Modals render in their own window, above the root "Listo" bar */}
-                <KeyboardToolbar doneText="Listo" showArrows={false} />
+                {/* RN Modals render in their own window, above the root "Listo" bar. iOS only:
+                    inside an Android Modal the bar is offset twice and covers the fields,
+                    and Android keyboards already have their own done key. */}
+                {Platform.OS === 'ios' && <KeyboardToolbar doneText="Listo" showArrows={false} />}
             </Modal>
         </View>
     );

@@ -25,7 +25,7 @@ import {
     View,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { parseDecimal } from '@/lib/number';
+import { cleanDecimalInput, parseDecimal } from '@/lib/number';
 
 
 
@@ -591,7 +591,7 @@ export default function NewOrderScreen() {
                                         placeholderTextColor={colors.textMuted}
                                         testID="order-total-price"
                                         value={totalPrice}
-                                        onChangeText={setTotalPrice}
+                                        onChangeText={(t) => setTotalPrice(cleanDecimalInput(t, 2))}
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
@@ -607,7 +607,7 @@ export default function NewOrderScreen() {
                                         placeholderTextColor={colors.textMuted}
                                         testID="order-deposit"
                                         value={depositAmount}
-                                        onChangeText={setDepositAmount}
+                                        onChangeText={(t) => setDepositAmount(cleanDecimalInput(t, 2))}
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
