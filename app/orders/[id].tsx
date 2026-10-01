@@ -588,7 +588,7 @@ export default function OrderDetailScreen() {
                     />
                     <DetailRow
                         icon="birthday-cake"
-                        label="Tipo de Ponqué"
+                        label="Sabor / Tipo de Base"
                         value={order.cakeType || '-'}
                         colors={colors}
                     />
