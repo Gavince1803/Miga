@@ -408,7 +408,7 @@ export default function EditOrderScreen() {
 
                     <View style={{ marginBottom: Spacing.md }}>
                         <EditableDropdown
-                            label="Tipo de Ponqué"
+                            label="Sabor / Tipo de Base"
                             value={cakeType}
                             onValueChange={setCakeType}
                             category="cake_type"

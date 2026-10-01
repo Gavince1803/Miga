@@ -520,7 +520,7 @@ export default function NewOrderScreen() {
 
                     <View style={{ marginTop: Spacing.md }}>
                         <EditableDropdown
-                            label="Tipo de Ponqué"
+                            label="Sabor / Tipo de Base"
                             value={cakeType}
                             onValueChange={setCakeType}
                             category="cake_type"
