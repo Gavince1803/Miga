@@ -28,6 +28,7 @@ import { parseDecimal } from '@/lib/number';
 import { KeyboardAwareScrollView, KeyboardToolbar } from 'react-native-keyboard-controller';
 
 const QUOTE_BANNER_KEY = 'miga_quote_share_announced';
+const HOURLY_RATE_KEY = 'miga_calc_hourly_rate';
 
 function QuoteFeatureBanner({ colors, onDismiss }: { colors: typeof Colors.light; onDismiss: () => void }) {
     return (
@@ -164,13 +165,22 @@ export default function CostCalculatorScreen() {
 
     // State for Config
     const [config, setConfig] = useState<RecipeCostConfig>({
-        laborPercentage: 30,
+        laborHours: 2,
+        hourlyRate: 0,
         utilityCost: 0,
         packagingCost: 0,
         wastePercentage: 5,
         profitPercentage: 30,
         portions: 12,
     });
+
+    // The hourly rate is the same for every recipe, so it's remembered on this device.
+    useEffect(() => {
+        AsyncStorage.getItem(HOURLY_RATE_KEY).then(val => {
+            const rate = val ? parseFloat(val) : 0;
+            if (rate > 0) setConfig(c => ({ ...c, hourlyRate: rate }));
+        });
+    }, []);
 
     // Helper to calculate cost for a single ingredient
     const calculateIngredientCost = (ing: CostIngredient) => {
@@ -186,12 +196,10 @@ export default function CostCalculatorScreen() {
         // Waste (Merma) is often applied to ingredients cost
         const wasteCost = ingredientsCost * (config.wastePercentage / 100);
 
-        // Labor is often % of ingredients (or fixed, but prompt said % in screenshot analysis)
-        // Let's assume % of ingredients + waste for now as per typical bakery logic
-        // Or it could be % of TOTAL production cost. 
-        // Based on "Casi Trozos" style simplocity, let's apply Labor % to (Ingredients + Waste)
+        // Labor is charged by the hour: as a % of ingredients a 5-hour cake cost the same
+        // as a 1-hour one, which pushed prices far too low. Same formula as the web calculator.
         const productionBase = ingredientsCost + wasteCost;
-        const laborCost = productionBase * (config.laborPercentage / 100);
+        const laborCost = config.laborHours * config.hourlyRate;
 
         const subtotal = productionBase + laborCost + Number(config.utilityCost) + Number(config.packagingCost);
 
@@ -447,19 +455,46 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         )}
                     </View>
 
+                    {/* Labor */}
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Tu Trabajo</Text>
+                        <View style={styles.gridContainer}>
+                            <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
+                                <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Horas de trabajo</Text>
+                                <DecimalInput
+                                    style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-laborHours"
+                                    value={config.laborHours}
+                                    onChange={(v) => setConfig({ ...config, laborHours: v })}
+                                />
+                            </View>
+                            <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
+                                <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Tu precio por hora ({currencySymbol})</Text>
+                                <DecimalInput
+                                    style={[styles.gridInput, { color: colors.text }]}
+                                    testID="calc-hourlyRate"
+                                    value={config.hourlyRate}
+                                    onChange={(v) => {
+                                        setConfig({ ...config, hourlyRate: v });
+                                        AsyncStorage.setItem(HOURLY_RATE_KEY, String(v));
+                                    }}
+                                />
+                            </View>
+                        </View>
+                        {config.hourlyRate === 0 && (
+                            <View style={styles.laborHint}>
+                                <FontAwesome name="exclamation-circle" size={14} color={colors.warning} />
+                                <Text style={[styles.laborHintText, { color: colors.textSecondary }]}>
+                                    Pon cuánto quieres ganar por hora: si no, tu trabajo no se cobra.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
                     {/* Additional Costs Grid */}
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: colors.primary }]}>Costos Adicionales</Text>
                         <View style={styles.gridContainer}>
-                            <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
-                                <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Mano de Obra (%)</Text>
-                                <DecimalInput
-                                    style={[styles.gridInput, { color: colors.text }]}
-                                    testID="calc-laborPercentage"
-                                    value={config.laborPercentage}
-                                    onChange={(v) => setConfig({ ...config, laborPercentage: v })}
-                                />
-                            </View>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Merma (%)</Text>
                                 <DecimalInput
@@ -787,6 +822,16 @@ const styles = StyleSheet.create({
     },
     summaryValue: {
         ...Typography.bodyBold,
+    },
+    laborHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 8,
+    },
+    laborHintText: {
+        flex: 1,
+        fontSize: 13,
     },
     divider: {
         height: 1,
