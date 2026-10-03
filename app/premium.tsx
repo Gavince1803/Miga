@@ -328,7 +328,7 @@ export default function PremiumScreen() {
                         <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
                             <Text style={{ fontSize: 13, color: colors.primary, textDecorationLine: 'underline' }}>Términos de Uso (EULA)</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/privacy/')}>
+                        <TouchableOpacity onPress={() => Linking.openURL('https://miga-landing.vercel.app/privacidad')}>
                             <Text style={{ fontSize: 13, color: colors.primary, textDecorationLine: 'underline' }}>Política de Privacidad</Text>
                         </TouchableOpacity>
                     </View>
