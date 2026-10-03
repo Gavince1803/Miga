@@ -215,7 +215,8 @@ export const ORDER_STATUS_OPTIONS = [
 
 // Cost Calculator Types
 export interface RecipeCostConfig {
-    laborPercentage: number;
+    laborHours: number;
+    hourlyRate: number;
     utilityCost: number;
     packagingCost: number;
     wastePercentage: number;
