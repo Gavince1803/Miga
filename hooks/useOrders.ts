@@ -188,7 +188,12 @@ function useOrdersState() {
         }
     };
 
-    const updateOrderStatus = async (id: string, status: string) => {
+    // Optimistic: the list shows the new status right away; on failure we refetch
+    // to roll back. Returns whether the change was saved.
+    const updateOrderStatus = async (id: string, status: string): Promise<boolean> => {
+        setOrders(prev => prev.map(o => o.id === id
+            ? { ...o, status: status as OrderStatus, ...(status === 'pagado' ? { paymentStatus: 'pagado' as const } : {}) }
+            : o));
         try {
             // If marking as 'pagado', also update the deposit to equal total (payment complete)
             if (status === 'pagado') {
@@ -202,7 +207,7 @@ function useOrdersState() {
                 // Already paid: skip to avoid deducting inventory twice for the same order
                 if (orderData?.status === 'pagado') {
                     await fetchOrders();
-                    return;
+                    return true;
                 }
 
                 const updates: any = {
@@ -250,9 +255,12 @@ function useOrdersState() {
             }
 
             await fetchOrders();
+            return true;
         } catch (error) {
             console.error('Error updating order:', error);
+            fetchOrders();
             showAlert({ title: 'Error', message: 'No se pudo actualizar el estado', type: 'error' });
+            return false;
         }
     };
 

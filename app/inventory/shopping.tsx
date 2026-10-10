@@ -1,5 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/Colors';
+import { useHaptics } from '@/hooks/useHaptics';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
 import { buildShoppingList, formatAmount, ShoppingItem, shoppingListText } from '@/lib/shoppingList';
@@ -17,6 +18,7 @@ export default function ShoppingListScreen() {
     const [items, setItems] = useState<ShoppingItem[] | null>(null);
     const [error, setError] = useState(false);
     const [checked, setChecked] = useState<Set<string>>(new Set());
+    const haptics = useHaptics();
 
     useEffect(() => {
         buildShoppingList(inventory, orders)
@@ -24,11 +26,14 @@ export default function ShoppingListScreen() {
             .catch(() => setError(true));
     }, [inventory, orders]);
 
-    const toggle = (id: string) => setChecked(prev => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id); else next.add(id);
-        return next;
-    });
+    const toggle = (id: string) => {
+        haptics.selection();
+        setChecked(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
 
     const pending = (items ?? []).filter(i => !checked.has(i.inventoryItemId));
 
