@@ -61,6 +61,41 @@ export async function uploadImage(
 }
 
 /**
+ * Deletes every image the current user uploaded ({user_id}/{folder}/{file}).
+ * Called before deleting the account, since SQL can't remove storage files.
+ */
+export async function deleteUserImages(): Promise<void> {
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const root = session.user.id;
+
+        const { data: entries, error } = await supabase.storage.from('images').list(root);
+        if (error || !entries) return;
+
+        const paths: string[] = [];
+        for (const entry of entries) {
+            if (entry.id) {
+                paths.push(`${root}/${entry.name}`);
+                continue;
+            }
+            // Entries without id are subfolders (e.g. 'recipes')
+            const { data: files } = await supabase.storage
+                .from('images')
+                .list(`${root}/${entry.name}`, { limit: 1000 });
+            files?.forEach(f => paths.push(`${root}/${entry.name}/${f.name}`));
+        }
+
+        if (paths.length > 0) {
+            const { error: removeError } = await supabase.storage.from('images').remove(paths);
+            if (removeError) console.error('Error deleting user images:', removeError);
+        }
+    } catch (error) {
+        console.error('Error in deleteUserImages:', error);
+    }
+}
+
+/**
  * Deletes an image from Supabase Storage
  * @param imageUrl - Public URL of the image
  * @returns true if deleted, false otherwise
