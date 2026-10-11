@@ -3,6 +3,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useFeedbackPrompt } from '@/hooks/useFeedbackPrompt';
+import { useHaptics } from '@/hooks/useHaptics';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
@@ -103,6 +104,7 @@ export default function OrderDetailScreen() {
     const { id } = useLocalSearchParams();
     const { updateOrderStatus, getOrdersByClient } = useOrders();
     const { showAlert } = useAlert();
+    const haptics = useHaptics();
     const { currency } = useSettings();
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
@@ -209,9 +211,16 @@ export default function OrderDetailScreen() {
                 text: option.label,
                 onPress: async () => {
                     if (!order) return;
+                    const previous = order;
                     const justPaid = option.value === 'pagado' && order.status !== 'pagado';
-                    await updateOrderStatus(order.id, option.value);
+                    // Optimistic: show the new status now, revert if the save fails
                     setOrder(prev => prev ? { ...prev, status: option.value } : null);
+                    if (!await updateOrderStatus(order.id, option.value)) {
+                        haptics.error();
+                        setOrder(previous);
+                        return;
+                    }
+                    haptics.success();
                     // Success moment: once per user, ask for a store review after the alert closes.
                     // Straight to the native dialog, no "¿Te gusta?" first: Google Play forbids gating reviews
                     const askReview = justPaid && await shouldShowPrompt();
