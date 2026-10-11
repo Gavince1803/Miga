@@ -1,3 +1,4 @@
+import SocialSignIn from '@/components/SocialSignIn';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -190,6 +191,8 @@ export default function RegisterScreen() {
                                 {loading ? 'Creando cuenta...' : 'REGISTRARME'}
                             </Text>
                         </TouchableOpacity>
+
+                        <SocialSignIn />
 
                         <View style={styles.divider}>
                             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
