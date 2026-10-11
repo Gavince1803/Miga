@@ -47,7 +47,7 @@ function RecipeCard({
                         {recipe.title}
                     </Text>
                     {recipe.category && (
-                        <Text style={[styles.cardCategory, { color: colors.primary }]}>
+                        <Text style={[styles.cardCategory, { color: colors.primaryText }]}>
                             {recipe.category}
                         </Text>
                     )}

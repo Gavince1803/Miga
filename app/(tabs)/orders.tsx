@@ -1,5 +1,5 @@
 import { useColorScheme } from '@/components/useColorScheme';
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { parseLocalDate } from '@/lib/dateUtils';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -71,7 +71,7 @@ function OrderCard({
             >
                 <View style={styles.orderCardHeader}>
                     <View style={styles.orderNumberBadge}>
-                        <Text style={[styles.orderNumber, { color: colors.primary }]}>
+                        <Text style={[styles.orderNumber, { color: colors.primaryText }]}>
                             #{order.orderNumber}
                         </Text>
                     </View>
@@ -97,7 +97,7 @@ function OrderCard({
                             {formatDate(order.deliveryDate)} • {formatTime12hr(order.deliveryTime)}
                         </Text>
                     </View>
-                    <Text style={[styles.orderPrice, { color: colors.primary }]}>
+                    <Text style={[styles.orderPrice, { color: colors.primaryText }]}>
                         ${order.totalPrice.toFixed(2)}
                     </Text>
                 </View>
@@ -303,7 +303,8 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     clientName: {
-        ...Typography.bodyBold,
+        fontFamily: Fonts.serif,
+        fontSize: 17,
         marginBottom: 4,
     },
     orderDescription: {
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
         ...Typography.small,
     },
     orderPrice: {
-        ...Typography.bodyBold,
+        fontFamily: Fonts.serif,
         fontSize: 17,
     },
     emptyState: {

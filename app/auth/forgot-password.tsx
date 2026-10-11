@@ -107,7 +107,7 @@ export default function ForgotPasswordScreen() {
                             onPress={() => router.back()}
                         >
                             <Text style={{ color: colors.textSecondary }}>
-                                Volver a <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Iniciar Sesión</Text>
+                                Volver a <Text style={{ color: colors.primaryText, fontWeight: 'bold' }}>Iniciar Sesión</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>

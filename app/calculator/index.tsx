@@ -409,9 +409,9 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                     {/* Ingredients Section */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Ingredientes</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.primaryText }]}>Ingredientes</Text>
                             <TouchableOpacity onPress={() => setIsAddIngredientVisible(true)}>
-                                <Text style={[styles.actionText, { color: colors.primary }]}>+ Agregar</Text>
+                                <Text style={[styles.actionText, { color: colors.primaryText }]}>+ Agregar</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -449,7 +449,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
 
                     {/* Additional Costs Grid */}
                     <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Costos Adicionales</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.primaryText }]}>Costos Adicionales</Text>
                         <View style={styles.gridContainer}>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Mano de Obra (%)</Text>
@@ -492,7 +492,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
 
                     {/* Pricing Config */}
                     <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Configuración de Precio</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.primaryText }]}>Configuración de Precio</Text>
                         <View style={styles.gridContainer}>
                             <View style={[styles.gridItem, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.gridLabel, { color: colors.textSecondary }]}>Ganancia Deseada (%)</Text>
@@ -537,7 +537,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                             <Text style={[styles.summarySubLabel, { color: colors.textMuted }]}>total</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={[styles.summaryMainValue, { color: colors.primary }]}>{currencySymbol}{totals.totalSuggestedPrice.toFixed(2)}</Text>
+                            <Text style={[styles.summaryMainValue, { color: colors.primaryText }]}>{currencySymbol}{totals.totalSuggestedPrice.toFixed(2)}</Text>
                             <Text style={[styles.summarySubValue, { color: colors.text }]}>{currencySymbol}{totals.pricePerPortion.toFixed(2)} por porción</Text>
                         </View>
                     </View>
@@ -553,7 +553,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                     </TouchableOpacity>
                     {recipeId && (
                         <TouchableOpacity
-                            style={[styles.saveButton, { backgroundColor: colors.success }]}
+                            style={[styles.saveButton, { backgroundColor: colors.successStrong }]}
                             onPress={handleSavePrice}
                             disabled={saving}
                         >

@@ -277,7 +277,7 @@ function InventoryCard({
                     activeOpacity={0.7}
                 >
                     <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                        <Text style={[styles.quantity, { color: colors.primary }]}>
+                        <Text style={[styles.quantity, { color: colors.primaryText }]}>
                             {formatQty(item.quantity)}
                         </Text>
                         <Text style={[styles.unit, { color: colors.textSecondary }]}>
@@ -337,7 +337,7 @@ function InventoryCard({
                 accessibilityLabel={`Registrar compra de ${item.name}`}
             >
                 <FontAwesome name="shopping-cart" size={13} color={colors.primary} />
-                <Text style={[styles.purchaseButtonText, { color: colors.primary }]}>Registrar compra</Text>
+                <Text style={[styles.purchaseButtonText, { color: colors.primaryText }]}>Registrar compra</Text>
             </TouchableOpacity>
 
             {/* Stock Level Indicator */}
@@ -805,7 +805,7 @@ export default function InventoryScreen() {
                         accessibilityRole="button"
                     >
                         <FontAwesome name="shopping-cart" size={14} color={colors.primary} />
-                        <Text style={[styles.statText, { color: colors.primary }]}>Lista de compras</Text>
+                        <Text style={[styles.statText, { color: colors.primaryText }]}>Lista de compras</Text>
                     </TouchableOpacity>
                 )}
                 {archivedItems.length > 0 && (
@@ -837,7 +837,7 @@ export default function InventoryScreen() {
                     />
                 </View>
                 <TouchableOpacity
-                    style={[styles.importButton, { backgroundColor: colors.success, marginRight: 8 }]}
+                    style={[styles.importButton, { backgroundColor: colors.successStrong, marginRight: 8 }]}
                     onPress={handleExportExcel}
                     accessibilityRole="button"
                     accessibilityLabel="Exportar inventario a Excel"
@@ -871,7 +871,7 @@ export default function InventoryScreen() {
                                 if (success) fetchArchivedItems();
                             }}
                         >
-                            <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 13 }}>Restaurar</Text>
+                            <Text style={{ color: colors.primaryText, fontWeight: '600', fontSize: 13 }}>Restaurar</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -976,7 +976,7 @@ export default function InventoryScreen() {
 
                             {/* Purchase Section - THE MAIN INPUT */}
                             <View style={{ marginTop: 12, padding: 16, backgroundColor: colors.surfaceSecondary, borderRadius: 12 }}>
-                                <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 16, marginBottom: 12 }}>
+                                <Text style={{ color: colors.primaryText, fontWeight: '700', fontSize: 16, marginBottom: 12 }}>
                                     💰 Compré...
                                 </Text>
 
@@ -1048,7 +1048,7 @@ export default function InventoryScreen() {
                                     </View>
                                     <View style={{ flex: 1, alignItems: 'center', paddingTop: 20 }}>
                                         <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Costo por {buyingUnit.toUpperCase()}</Text>
-                                        <Text style={{ color: colors.primary, fontSize: 22, fontWeight: 'bold' }}>
+                                        <Text style={{ color: colors.primaryText, fontSize: 22, fontWeight: 'bold' }}>
                                             ${buyingQty && buyingPrice ? (parseFloat(buyingPrice.replace(',', '.')) / parseFloat(buyingQty.replace(',', '.'))).toFixed(2) : '0.00'}
                                         </Text>
                                     </View>
@@ -1227,7 +1227,7 @@ export default function InventoryScreen() {
 
                         {/* Actualizar costo - más compacto */}
                         <View style={{ padding: 8, backgroundColor: colors.surfaceSecondary, borderRadius: 6, marginBottom: 8 }}>
-                            <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 12, marginBottom: 4 }}>
+                            <Text style={{ color: colors.primaryText, fontWeight: '600', fontSize: 12, marginBottom: 4 }}>
                                 💰 Costo: Compré ___ {editUnit} por $___
                             </Text>
                             <View style={{ flexDirection: 'row', gap: 8 }}>

@@ -502,7 +502,7 @@ export default function OrderDetailScreen() {
                 <View style={[styles.headerCard, { backgroundColor: colors.surface }, Shadows.md]}>
                     <View style={styles.headerTop}>
                         <View style={styles.orderBadge}>
-                            <Text style={[styles.orderNumber, { color: colors.primary }]}>
+                            <Text style={[styles.orderNumber, { color: colors.primaryText }]}>
                                 Pedido #{order.orderNumber}
                             </Text>
                         </View>
@@ -523,7 +523,7 @@ export default function OrderDetailScreen() {
                         </Text>
                         <View style={[styles.historyHint, { backgroundColor: colors.primary + '15' }]}>
                             <FontAwesome name="history" size={12} color={colors.primary} />
-                            <Text style={[styles.historyHintText, { color: colors.primary }]}>Historial</Text>
+                            <Text style={[styles.historyHintText, { color: colors.primaryText }]}>Historial</Text>
                         </View>
                     </TouchableOpacity>
 
@@ -549,7 +549,7 @@ export default function OrderDetailScreen() {
                             onPress={handleEdit}
                         >
                             <FontAwesome name="edit" size={18} color={colors.primary} />
-                            <Text style={[styles.quickActionText, { color: colors.primary }]}>Editar</Text>
+                            <Text style={[styles.quickActionText, { color: colors.primaryText }]}>Editar</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -650,7 +650,7 @@ export default function OrderDetailScreen() {
                     </Text>
                     <View style={styles.priceRow}>
                         <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
-                        <Text style={[styles.priceValue, { color: colors.primary }]}>
+                        <Text style={[styles.priceValue, { color: colors.primaryText }]}>
                             {currencySymbol}{order.totalPrice.toFixed(2)}
                         </Text>
                     </View>
@@ -723,7 +723,7 @@ export default function OrderDetailScreen() {
                                             <FontAwesome name="shopping-bag" size={13} color={colors.primary} />
                                         </View>
                                         <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Total pedidos</Text>
-                                        <Text style={[styles.clientStatValue, { color: colors.primary }]}>{allClientOrders.length}</Text>
+                                        <Text style={[styles.clientStatValue, { color: colors.primaryText }]}>{allClientOrders.length}</Text>
                                     </View>
                                     <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                         <View style={[styles.clientStatIcon, { backgroundColor: colors.success + '15' }]}>
@@ -759,7 +759,7 @@ export default function OrderDetailScreen() {
                             </Text>
                             <View style={[styles.historyCard, { backgroundColor: colors.surface, borderLeftColor: colors.primary }, Shadows.sm]}>
                                 <View style={styles.historyCardHeader}>
-                                    <Text style={[styles.historyOrderNumber, { color: colors.primary }]}>
+                                    <Text style={[styles.historyOrderNumber, { color: colors.primaryText }]}>
                                         #{order.orderNumber}
                                     </Text>
                                     <View style={[styles.historyStatusBadge, { backgroundColor: statusOption?.color + '20' }]}>
@@ -837,7 +837,7 @@ export default function OrderDetailScreen() {
                                                 style={[styles.reorderButton, { backgroundColor: colors.primary + '15' }]}
                                             >
                                                 <FontAwesome name="refresh" size={11} color={colors.primary} />
-                                                <Text style={[styles.reorderButtonText, { color: colors.primary }]}>Pedir de nuevo</Text>
+                                                <Text style={[styles.reorderButtonText, { color: colors.primaryText }]}>Pedir de nuevo</Text>
                                             </TouchableOpacity>
                                         </TouchableOpacity>
                                     ))}

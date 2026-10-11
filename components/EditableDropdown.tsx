@@ -184,7 +184,7 @@ export function EditableDropdown({
                                                 }}
                                             >
                                                 <FontAwesome name="plus" size={14} color={colors.primary} />
-                                                <Text style={[styles.createNewText, { color: colors.primary }]}>
+                                                <Text style={[styles.createNewText, { color: colors.primaryText }]}>
                                                     Agregar nuevo...
                                                 </Text>
                                             </TouchableOpacity>

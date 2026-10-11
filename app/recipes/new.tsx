@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     infoBox: { flexDirection: 'row', padding: Spacing.md, borderRadius: BorderRadius.md, gap: Spacing.sm, alignItems: 'center' },
     infoText: { ...Typography.small, flex: 1 },
     bigScanBtn: { flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, borderRadius: BorderRadius.xl, gap: Spacing.md },
-    bigScanBtnText: { color: '#FFF', ...Typography.subtitle },
+    bigScanBtnText: { color: '#FFF', fontSize: 20, fontWeight: '600' },
 
     photoButtonsRow: { flexDirection: 'row', gap: Spacing.md },
     photoBtnSmall: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, borderRadius: BorderRadius.md, borderWidth: 1, gap: 8 },

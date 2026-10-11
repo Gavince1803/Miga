@@ -273,7 +273,7 @@ export default function PremiumScreen() {
                         onPress={handleRestore}
                         disabled={purchasing}
                     >
-                        <Text style={[styles.restoreButtonText, { color: colors.primary }]}>¿Ya la compraste? Restaurar Compras</Text>
+                        <Text style={[styles.restoreButtonText, { color: colors.primaryText }]}>¿Ya la compraste? Restaurar Compras</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -298,7 +298,7 @@ export default function PremiumScreen() {
 
                             <TouchableOpacity style={[styles.contactButton, { borderColor: colors.primary }]} onPress={handleContactSupport}>
                                 <FontAwesome name="whatsapp" size={18} color={colors.primary} />
-                                <Text style={[styles.contactButtonText, { color: colors.primary }]}>Contactar por WhatsApp</Text>
+                                <Text style={[styles.contactButtonText, { color: colors.primaryText }]}>Contactar por WhatsApp</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -326,10 +326,10 @@ export default function PremiumScreen() {
                     </Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}>
                         <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
-                            <Text style={{ fontSize: 13, color: colors.primary, textDecorationLine: 'underline' }}>Términos de Uso (EULA)</Text>
+                            <Text style={{ fontSize: 13, color: colors.primaryText, textDecorationLine: 'underline' }}>Términos de Uso (EULA)</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/privacy/')}>
-                            <Text style={{ fontSize: 13, color: colors.primary, textDecorationLine: 'underline' }}>Política de Privacidad</Text>
+                            <Text style={{ fontSize: 13, color: colors.primaryText, textDecorationLine: 'underline' }}>Política de Privacidad</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

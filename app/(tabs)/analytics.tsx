@@ -38,7 +38,7 @@ export default function AnalyticsScreen() {
             label: item.month,
             frontColor: colors.primary,
             topLabelComponent: () => (
-                <Text style={{ color: colors.primary, fontSize: 9, marginBottom: 2 }}>
+                <Text style={{ color: colors.primaryText, fontSize: 9, marginBottom: 2 }}>
                     {item.revenue > 0 ? formatCompact(item.revenue, currency) : ''}
                 </Text>
             ),
@@ -243,7 +243,7 @@ export default function AnalyticsScreen() {
                         data.topClients.map((client, index) => (
                             <View key={client.name} style={[styles.rankRow, index < data.topClients.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
                                 <View style={[styles.clientAvatar, { backgroundColor: colors.secondary + '30' }]}>
-                                    <Text style={[styles.clientInitial, { color: colors.primary }]}>
+                                    <Text style={[styles.clientInitial, { color: colors.primaryText }]}>
                                         {client.name.charAt(0).toUpperCase()}
                                     </Text>
                                 </View>

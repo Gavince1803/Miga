@@ -141,7 +141,7 @@ export default function DynamicListInput({
                 onPress={handleAddItem}
             >
                 <FontAwesome name="plus" size={14} color={colors.primary} />
-                <Text style={[styles.addButtonText, { color: colors.primary }]}>Agregar línea</Text>
+                <Text style={[styles.addButtonText, { color: colors.primaryText }]}>Agregar línea</Text>
             </TouchableOpacity>
         </View>
     );

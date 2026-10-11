@@ -350,7 +350,6 @@ const styles = StyleSheet.create({
     },
     monthTitle: {
         ...Typography.subtitle,
-        fontWeight: '700',
     },
     weekdayRow: {
         flexDirection: 'row',

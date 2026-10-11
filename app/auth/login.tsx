@@ -132,7 +132,7 @@ export default function LoginScreen() {
                             onPress={() => router.push('/auth/register')}
                         >
                             <Text style={{ color: colors.textSecondary }}>
-                                ¿No tienes cuenta? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Regístrate aquí</Text>
+                                ¿No tienes cuenta? <Text style={{ color: colors.primaryText, fontWeight: 'bold' }}>Regístrate aquí</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>

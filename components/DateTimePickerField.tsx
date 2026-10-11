@@ -98,7 +98,7 @@ export function DateTimePickerField({
                         <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
                             <View style={[styles.header, { borderBottomColor: colors.border }]}>
                                 <TouchableOpacity onPress={() => setShowPicker(false)}>
-                                    <Text style={[styles.doneButton, { color: colors.primary }]}>Listo</Text>
+                                    <Text style={[styles.doneButton, { color: colors.primaryText }]}>Listo</Text>
                                 </TouchableOpacity>
                             </View>
                             <DateTimePicker

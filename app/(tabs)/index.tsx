@@ -379,7 +379,7 @@ export default function HomeScreen() {
           </Text>
           <Link href="/orders" asChild>
             <TouchableOpacity>
-              <Text style={[styles.sectionLink, { color: colors.primary }]}>
+              <Text style={[styles.sectionLink, { color: colors.primaryText }]}>
                 Ver todos
               </Text>
             </TouchableOpacity>
@@ -460,7 +460,6 @@ const styles = StyleSheet.create({
   statValue: {
     ...Typography.subtitle,
     fontSize: 24,
-    fontWeight: '700',
   },
   statValuePlaceholder: {
     marginVertical: 4,

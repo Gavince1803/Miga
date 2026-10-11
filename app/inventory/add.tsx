@@ -143,7 +143,7 @@ export default function AddItemScreen() {
 
                     {/* Compré... */}
                     <View style={[styles.purchaseCard, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.purchaseTitle, { color: colors.primary }]}>
+                        <Text style={[styles.purchaseTitle, { color: colors.primaryText }]}>
                             💰 Compré...
                         </Text>
 
@@ -258,7 +258,6 @@ const styles = StyleSheet.create({
     headerTitle: {
         ...Typography.title,
         fontSize: 18,
-        fontWeight: '600',
     },
     content: {
         flex: 1,

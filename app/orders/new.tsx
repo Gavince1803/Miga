@@ -602,7 +602,7 @@ export default function NewOrderScreen() {
                                 <View style={styles.priceInput}>
                                     <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                                     <TextInput
-                                        style={[styles.input, styles.priceField, { color: colors.primary }]}
+                                        style={[styles.input, styles.priceField, { color: colors.primaryText }]}
                                         placeholder="0"
                                         placeholderTextColor={colors.textMuted}
                                         testID="order-deposit"
