@@ -1,3 +1,4 @@
+import SocialSignIn from '@/components/SocialSignIn';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -119,6 +120,8 @@ export default function LoginScreen() {
                                 ¿Olvidé mi contraseña?
                             </Text>
                         </TouchableOpacity>
+
+                        <SocialSignIn />
 
                         <View style={styles.divider}>
                             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
