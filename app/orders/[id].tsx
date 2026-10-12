@@ -89,7 +89,7 @@ function DetailRow({
                 <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{label}</Text>
                 <Text style={[
                     styles.detailValue,
-                    { color: highlight ? colors.primary : colors.text }
+                    { color: highlight ? colors.primaryText : colors.text }
                 ]}>
                     {value}
                 </Text>
@@ -487,7 +487,7 @@ export default function OrderDetailScreen() {
                     headerLeft: () => <BackButton />,
                     headerTitleStyle: { fontWeight: 'bold' },
                     headerStyle: { backgroundColor: colors.background },
-                    headerTintColor: colors.tint,
+                    headerTintColor: colors.primaryText,
                     headerShadowVisible: false,
                     headerRight: () => (
                         <TouchableOpacity onPress={handleSharePDF} style={{ padding: 8, marginRight: 4 }}>

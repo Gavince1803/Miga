@@ -166,7 +166,7 @@ export function EditableDropdown({
                                                 <Text style={[
                                                     styles.optionText,
                                                     {
-                                                        color: value === item ? colors.primary : colors.text,
+                                                        color: value === item ? colors.primaryText : colors.text,
                                                         fontWeight: value === item ? '600' : '400'
                                                     }
                                                 ]}>

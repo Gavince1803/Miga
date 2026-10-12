@@ -13,7 +13,7 @@ export default function RecipesLayout() {
                 headerStyle: {
                     backgroundColor: colors.background,
                 },
-                headerTintColor: colors.tint,
+                headerTintColor: colors.primaryText,
                 headerTitleStyle: {
                     fontWeight: 'bold',
                 },

@@ -12,7 +12,7 @@ export default function OrdersLayout() {
                 headerStyle: {
                     backgroundColor: colors.background,
                 },
-                headerTintColor: colors.primary,
+                headerTintColor: colors.primaryText,
                 headerTitleStyle: {
                     color: colors.text,
                     fontWeight: '600',

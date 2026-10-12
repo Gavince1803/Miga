@@ -276,7 +276,7 @@ export default function NewRecipeScreen() {
                         style={[styles.modeButton, mode === 'manual' && { backgroundColor: colors.surface }, mode === 'manual' && styles.shadow]}
                         onPress={() => setMode('manual')}
                     >
-                        <Text style={[styles.modeText, { color: mode === 'manual' ? colors.primary : colors.textSecondary }]}>
+                        <Text style={[styles.modeText, { color: mode === 'manual' ? colors.primaryText : colors.textSecondary }]}>
                             Escribir
                         </Text>
                     </TouchableOpacity>
@@ -284,7 +284,7 @@ export default function NewRecipeScreen() {
                         style={[styles.modeButton, mode === 'scan' && { backgroundColor: colors.surface }, mode === 'scan' && styles.shadow]}
                         onPress={() => setMode('scan')}
                     >
-                        <Text style={[styles.modeText, { color: mode === 'scan' ? colors.primary : colors.textSecondary }]}>
+                        <Text style={[styles.modeText, { color: mode === 'scan' ? colors.primaryText : colors.textSecondary }]}>
                             Solo Foto / Escanear
                         </Text>
                     </TouchableOpacity>

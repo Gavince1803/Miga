@@ -381,7 +381,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                             >
                                                 <Text style={[
                                                     styles.unitOptionText,
-                                                    { color: unit === opt.value ? colors.primary : colors.textSecondary }
+                                                    { color: unit === opt.value ? colors.primaryText : colors.textSecondary }
                                                 ]}>
                                                     {opt.value}
                                                 </Text>

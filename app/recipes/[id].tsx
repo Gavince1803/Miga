@@ -136,7 +136,7 @@ export default function RecipeDetailScreen() {
                 options={{
                     headerTitle: '',
                     headerTransparent: true,
-                    headerTintColor: recipe.imageUrl ? '#FFF' : colors.tint,
+                    headerTintColor: recipe.imageUrl ? '#FFF' : colors.primaryText,
                     headerRight: () => (
                         <View style={{ flexDirection: 'row', gap: 12 }}>
                             <TouchableOpacity
@@ -415,7 +415,7 @@ export default function RecipeDetailScreen() {
                                                     <Text style={[styles.scaledIngOriginal, { color: colors.textMuted }]}>
                                                         {ing.quantity} {ing.unit}
                                                     </Text>
-                                                    <Text style={[styles.scaledIngScaled, { color: multiplier !== 1 ? colors.primary : colors.text }]}>
+                                                    <Text style={[styles.scaledIngScaled, { color: multiplier !== 1 ? colors.primaryText : colors.text }]}>
                                                         {displayScaled}
                                                     </Text>
                                                 </View>

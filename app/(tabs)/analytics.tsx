@@ -212,7 +212,7 @@ export default function AnalyticsScreen() {
                         data.topProducts.map((product, index) => (
                             <View key={product.name} style={[styles.rankRow, index < data.topProducts.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
                                 <View style={[styles.rankBadge, { backgroundColor: index === 0 ? colors.primary + '20' : colors.surfaceSecondary }]}>
-                                    <Text style={[styles.rankNumber, { color: index === 0 ? colors.primary : colors.textSecondary }]}>
+                                    <Text style={[styles.rankNumber, { color: index === 0 ? colors.primaryText : colors.textSecondary }]}>
                                         {index + 1}
                                     </Text>
                                 </View>
