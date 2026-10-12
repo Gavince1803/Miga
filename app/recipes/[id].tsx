@@ -136,7 +136,7 @@ export default function RecipeDetailScreen() {
                 options={{
                     headerTitle: '',
                     headerTransparent: true,
-                    headerTintColor: recipe.imageUrl ? '#FFF' : colors.tint,
+                    headerTintColor: recipe.imageUrl ? '#FFF' : colors.primaryText,
                     headerRight: () => (
                         <View style={{ flexDirection: 'row', gap: 12 }}>
                             <TouchableOpacity
@@ -237,7 +237,7 @@ export default function RecipeDetailScreen() {
                         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                             {recipe.category && (
                                 <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
-                                    <Text style={[styles.badgeText, { color: colors.primary }]}>{recipe.category.toUpperCase()}</Text>
+                                    <Text style={[styles.badgeText, { color: colors.primaryText }]}>{recipe.category.toUpperCase()}</Text>
                                 </View>
                             )}
                             {(recipe.suggestedPrice ?? 0) > 0 && (
@@ -278,7 +278,7 @@ export default function RecipeDetailScreen() {
                             <View style={[styles.linkedIngredientsGrid]}>
                                 {linkedIngredients.map((ing) => (
                                     <View key={ing.id} style={[styles.linkedIngredientChip, { backgroundColor: colors.surfaceSecondary }]}>
-                                        <Text style={[styles.linkedIngredientQty, { color: colors.primary }]}>
+                                        <Text style={[styles.linkedIngredientQty, { color: colors.primaryText }]}>
                                             {ing.quantity} {ing.unit}
                                         </Text>
                                         <Text style={[styles.linkedIngredientName, { color: colors.text }]}>
@@ -339,7 +339,7 @@ export default function RecipeDetailScreen() {
                                     onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)}
                                 >
                                     <FontAwesome name="pencil" size={14} color={colors.primary} />
-                                    <Text style={{ ...Typography.bodyBold, color: colors.primary }}>Editar Receta</Text>
+                                    <Text style={{ ...Typography.bodyBold, color: colors.primaryText }}>Editar Receta</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (() => {
@@ -373,13 +373,13 @@ export default function RecipeDetailScreen() {
                                             <Text style={[styles.scalingInputLabel, { color: colors.textMuted }]}>Necesito para</Text>
                                             <View style={[styles.scalingInputBox, { borderColor: colors.primary, backgroundColor: colors.surface }]}>
                                                 <TextInput
-                                                    style={[styles.scalingInput, { color: colors.primary, fontWeight: '700' }]}
+                                                    style={[styles.scalingInput, { color: colors.primaryText, fontWeight: '700' }]}
                                                     value={targetPortions}
                                                     onChangeText={setTargetPortions}
                                                     keyboardType="numeric"
                                                     selectTextOnFocus
                                                 />
-                                                <Text style={[styles.scalingUnit, { color: colors.primary }]}>porc.</Text>
+                                                <Text style={[styles.scalingUnit, { color: colors.primaryText }]}>porc.</Text>
                                             </View>
                                         </View>
                                     </View>
@@ -388,7 +388,7 @@ export default function RecipeDetailScreen() {
                                     {multiplier !== 1 && (
                                         <View style={[styles.multiplierBadge, { backgroundColor: colors.primary + '15' }]}>
                                             <FontAwesome name="times" size={12} color={colors.primary} />
-                                            <Text style={[styles.multiplierText, { color: colors.primary }]}>
+                                            <Text style={[styles.multiplierText, { color: colors.primaryText }]}>
                                                 {multiplier.toFixed(2)}x
                                             </Text>
                                         </View>
@@ -399,7 +399,7 @@ export default function RecipeDetailScreen() {
                                         <View style={[styles.scaledTableHeader, { backgroundColor: colors.surfaceSecondary }]}>
                                             <Text style={[styles.scaledTableHeaderText, { color: colors.textMuted, flex: 2 }]}>Ingrediente</Text>
                                             <Text style={[styles.scaledTableHeaderText, { color: colors.textMuted, flex: 1, textAlign: 'center' }]}>Original</Text>
-                                            <Text style={[styles.scaledTableHeaderText, { color: colors.primary, flex: 1, textAlign: 'center', fontWeight: '700' }]}>Escalado</Text>
+                                            <Text style={[styles.scaledTableHeaderText, { color: colors.primaryText, flex: 1, textAlign: 'center', fontWeight: '700' }]}>Escalado</Text>
                                         </View>
                                         {linkedIngredients.map((ing) => {
                                             const scaled = ing.quantity * multiplier;
@@ -415,7 +415,7 @@ export default function RecipeDetailScreen() {
                                                     <Text style={[styles.scaledIngOriginal, { color: colors.textMuted }]}>
                                                         {ing.quantity} {ing.unit}
                                                     </Text>
-                                                    <Text style={[styles.scaledIngScaled, { color: multiplier !== 1 ? colors.primary : colors.text }]}>
+                                                    <Text style={[styles.scaledIngScaled, { color: multiplier !== 1 ? colors.primaryText : colors.text }]}>
                                                         {displayScaled}
                                                     </Text>
                                                 </View>
@@ -457,7 +457,7 @@ export default function RecipeDetailScreen() {
                             {recipe.ingredients ? (
                                 recipe.ingredients.split('\n').map((ing, index) => (
                                     <View key={index} style={{ flexDirection: 'row', marginBottom: 8 }}>
-                                        <Text style={{ color: colors.primary, marginRight: 8, fontSize: 16 }}>•</Text>
+                                        <Text style={{ color: colors.primaryText, marginRight: 8, fontSize: 16 }}>•</Text>
                                         <Text style={[styles.bodyText, { color: colors.text }]}>{ing}</Text>
                                     </View>
                                 ))
@@ -478,7 +478,7 @@ export default function RecipeDetailScreen() {
                             recipe.steps.split('\n').map((step, index) => (
                                 <View key={index} style={{ flexDirection: 'row', marginBottom: 12 }}>
                                     <Text style={{
-                                        color: colors.primary,
+                                        color: colors.primaryText,
                                         fontWeight: 'bold',
                                         marginRight: 8,
                                         fontSize: 16,
@@ -593,7 +593,6 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         ...Typography.subtitle,
-        fontWeight: '700',
     },
     paperNote: {
         padding: Spacing.md,

@@ -174,7 +174,7 @@ export default function ScanRecipeScreen() {
                         disabled={processing}
                     >
                         <FontAwesome name="camera" size={20} color={colors.primary} />
-                        <Text style={[styles.buttonText, { color: colors.primary }]}>Cámara</Text>
+                        <Text style={[styles.buttonText, { color: colors.primaryText }]}>Cámara</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -183,7 +183,7 @@ export default function ScanRecipeScreen() {
                         disabled={processing}
                     >
                         <FontAwesome name="image" size={20} color={colors.primary} />
-                        <Text style={[styles.buttonText, { color: colors.primary }]}>Galería</Text>
+                        <Text style={[styles.buttonText, { color: colors.primaryText }]}>Galería</Text>
                     </TouchableOpacity>
                 </View>
 

@@ -195,7 +195,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                 </Text>
                                 <View style={styles.quantityRow}>
                                     <TextInput
-                                        style={[styles.quantityInput, { color: colors.primary, backgroundColor: colors.background, borderColor: colors.border }]}
+                                        style={[styles.quantityInput, { color: colors.primaryText, backgroundColor: colors.background, borderColor: colors.border }]}
                                         value={String(ing.quantity)}
                                         onChangeText={(val) => handleQuantityChange(index, val)}
                                         keyboardType="numeric"
@@ -228,7 +228,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                 onPress={() => setShowModal(true)}
             >
                 <FontAwesome name="plus" size={16} color={colors.primary} />
-                <Text style={[styles.addButtonText, { color: colors.primary }]}>
+                <Text style={[styles.addButtonText, { color: colors.primaryText }]}>
                     Agregar Ingrediente
                 </Text>
             </TouchableOpacity>
@@ -287,7 +287,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
 
                                         {/* Purchase Details Section */}
                                         <View style={{ marginTop: 16, padding: 12, backgroundColor: colors.surfaceSecondary, borderRadius: 8 }}>
-                                            <Text style={[styles.inputLabel, { marginTop: 0, color: colors.primary }]}>
+                                            <Text style={[styles.inputLabel, { marginTop: 0, color: colors.primaryText }]}>
                                                 Datos de Compra (Opcional)
                                             </Text>
                                             <Text style={[styles.sublabel, { fontSize: 11, color: colors.textMuted, marginBottom: 8 }]}>
@@ -381,7 +381,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                             >
                                                 <Text style={[
                                                     styles.unitOptionText,
-                                                    { color: unit === opt.value ? colors.primary : colors.textSecondary }
+                                                    { color: unit === opt.value ? colors.primaryText : colors.textSecondary }
                                                 ]}>
                                                     {opt.value}
                                                 </Text>
@@ -462,7 +462,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                     }}
                                 >
                                     <FontAwesome name="plus-circle" size={20} color={colors.primary} />
-                                    <Text style={[styles.createNewText, { color: colors.primary }]}>
+                                    <Text style={[styles.createNewText, { color: colors.primaryText }]}>
                                         Crear "{searchQuery || 'nuevo ingrediente'}"
                                     </Text>
                                 </TouchableOpacity>

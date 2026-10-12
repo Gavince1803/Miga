@@ -48,7 +48,7 @@ function ClientCard({ client, colors, currencySymbol }: {
                         {client.name}
                     </Text>
                     <View style={[styles.ordersBadge, { backgroundColor: colors.primary + '15' }]}>
-                        <Text style={[styles.ordersBadgeText, { color: colors.primary }]}>
+                        <Text style={[styles.ordersBadgeText, { color: colors.primaryText }]}>
                             {client.totalOrders} ped.
                         </Text>
                     </View>

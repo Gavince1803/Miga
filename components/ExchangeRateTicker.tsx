@@ -34,7 +34,7 @@ export function ExchangeRateTicker() {
         <TouchableOpacity onPress={refreshRates} style={styles.container}>
             <View style={styles.rateColumn}>
                 <View style={styles.rateRow}>
-                    <Text style={[styles.currencyLabel, { color: colors.primary }]}>$</Text>
+                    <Text style={[styles.currencyLabel, { color: colors.primaryText }]}>$</Text>
                     <Text style={[styles.value, { color: colors.text }]}>{bcv.toFixed(2)}</Text>
                     <Text style={[styles.subLabel, { color: colors.textSecondary }]}>BCV</Text>
                 </View>

@@ -98,7 +98,7 @@ export default function ShoppingListScreen() {
                                             : 'Bajo tu mínimo'}
                                     </Text>
                                 </View>
-                                <Text style={[styles.amount, { color: colors.primary }]}>{formatAmount(item.toBuy, item.unit)}</Text>
+                                <Text style={[styles.amount, { color: colors.primaryText }]}>{formatAmount(item.toBuy, item.unit)}</Text>
                             </TouchableOpacity>
                         );
                     }}
@@ -107,7 +107,7 @@ export default function ShoppingListScreen() {
 
             {pending.length > 0 && (
                 <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-                    <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.success }]} onPress={share}>
+                    <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.successStrong }]} onPress={share}>
                         <FontAwesome name="whatsapp" size={20} color="#FFF" />
                         <Text style={styles.shareText}>Compartir por WhatsApp</Text>
                     </TouchableOpacity>

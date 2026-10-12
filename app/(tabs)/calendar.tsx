@@ -194,7 +194,7 @@ export default function CalendarScreen() {
                             <Text style={[
                                 styles.dayText,
                                 {
-                                    color: hasOrders ? '#FFFFFF' : (isToday(day) ? colors.primary : colors.text),
+                                    color: hasOrders ? '#FFFFFF' : (isToday(day) ? colors.primaryText : colors.text),
                                     fontWeight: hasOrders || isToday(day) ? '700' : '400'
                                 },
                             ]}>
@@ -350,7 +350,6 @@ const styles = StyleSheet.create({
     },
     monthTitle: {
         ...Typography.subtitle,
-        fontWeight: '700',
     },
     weekdayRow: {
         flexDirection: 'row',

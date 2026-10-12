@@ -88,8 +88,8 @@ export function CustomAlert({
             case 'success': return { name: 'check-circle', color: colors.success };
             case 'error': return { name: 'times-circle', color: colors.error };
             case 'warning': return { name: 'exclamation-triangle', color: colors.warning };
-            case 'confirmation': return { name: 'question-circle', color: colors.primary };
-            default: return { name: 'info-circle', color: colors.primary };
+            case 'confirmation': return { name: 'question-circle', color: colors.primaryText };
+            default: return { name: 'info-circle', color: colors.primaryText };
         }
     };
 

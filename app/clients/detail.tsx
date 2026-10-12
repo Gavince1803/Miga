@@ -90,7 +90,7 @@ export default function ClientDetailScreen() {
                 {/* Header card */}
                 <View style={[styles.headerCard, { backgroundColor: colors.surface }, Shadows.md]}>
                     <View style={[styles.bigAvatar, { backgroundColor: colors.primary + '20' }]}>
-                        <Text style={[styles.bigAvatarText, { color: colors.primary }]}>
+                        <Text style={[styles.bigAvatarText, { color: colors.primaryText }]}>
                             {name?.charAt(0).toUpperCase()}
                         </Text>
                     </View>
@@ -122,7 +122,7 @@ export default function ClientDetailScreen() {
                             onPress={handleNewOrder}
                         >
                             <FontAwesome name="plus" size={17} color={colors.primary} />
-                            <Text style={[styles.actionText, { color: colors.primary }]}>Nuevo pedido</Text>
+                            <Text style={[styles.actionText, { color: colors.primaryText }]}>Nuevo pedido</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -139,7 +139,7 @@ export default function ClientDetailScreen() {
                                         <FontAwesome name="shopping-bag" size={13} color={colors.primary} />
                                     </View>
                                     <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total pedidos</Text>
-                                    <Text style={[styles.statValue, { color: colors.primary }]}>{stats.totalOrders}</Text>
+                                    <Text style={[styles.statValue, { color: colors.primaryText }]}>{stats.totalOrders}</Text>
                                 </View>
                                 <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                     <View style={[styles.statIcon, { backgroundColor: colors.success + '15' }]}>

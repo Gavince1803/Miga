@@ -96,7 +96,7 @@ export default function FeedbackModal({
                                     onPress={() => setCategory(c.value)}
                                     testID={`feedback-category-${c.value}`}
                                 >
-                                    <Text style={[styles.chipText, { color: selected ? colors.primary : colors.textSecondary }]}>
+                                    <Text style={[styles.chipText, { color: selected ? colors.primaryText : colors.textSecondary }]}>
                                         {c.label}
                                     </Text>
                                 </TouchableOpacity>

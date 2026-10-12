@@ -4,7 +4,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { Colors } from '@/constants/Colors';
+import { Colors, Fonts } from '@/constants/Colors';
 
 import { ExchangeRateTicker } from '@/components/ExchangeRateTicker';
 
@@ -50,8 +50,8 @@ export default function TabLayout() {
         },
         headerTitleStyle: {
           color: colors.text,
-          fontWeight: '600',
-          fontSize: 18,
+          fontFamily: Fonts.serif,
+          fontSize: 20,
         },
         headerTitleAlign: 'left',
         headerShadowVisible: false,

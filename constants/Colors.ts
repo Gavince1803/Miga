@@ -23,10 +23,12 @@ export const Colors = {
     // Accents
     tint: tintColorLight,
     primary: '#D4A574', // Soft Gold
+    primaryText: '#8B5E34', // Soft Gold darkened to be readable as text on cream/white
     secondary: '#E8B4B8', // Warm Rose
 
     // Status colors
     success: '#A8D5BA', // Mint Fresh
+    successStrong: '#3E8E63', // Solid buttons with white text
     warning: '#FFB74D', // Warm Orange
     error: '#E57373', // Urgent Red
 
@@ -56,10 +58,12 @@ export const Colors = {
     // Accents
     tint: tintColorDark,
     primary: '#E8B4B8', // Warm Rose for dark mode
+    primaryText: '#E8B4B8',
     secondary: '#D4A574', // Soft Gold
 
     // Status colors
     success: '#81C784',
+    successStrong: '#388E3C',
     warning: '#FFB74D',
     error: '#EF5350',
 
@@ -87,16 +91,21 @@ export const Spacing = {
   xxl: 48,
 };
 
+// Serif for titles; custom fonts carry their own weight, so don't combine with fontWeight
+export const Fonts = {
+  serif: 'Fraunces_600SemiBold',
+};
+
 // Typography
 export const Typography = {
   title: {
     fontSize: 28,
-    fontWeight: '700' as const,
+    fontFamily: Fonts.serif,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: '600' as const,
+    fontFamily: Fonts.serif,
     letterSpacing: -0.3,
   },
   body: {

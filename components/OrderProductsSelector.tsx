@@ -133,7 +133,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 {product.recipeName && (
                                     <View style={[styles.recipeBadge, { backgroundColor: colors.primary + '15' }]}>
                                         <FontAwesome name="book" size={10} color={colors.primary} />
-                                        <Text style={[styles.recipeBadgeText, { color: colors.primary }]}>
+                                        <Text style={[styles.recipeBadgeText, { color: colors.primaryText }]}>
                                             Con receta
                                         </Text>
                                     </View>
@@ -238,7 +238,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                 onPress={() => setShowModal(true)}
             >
                 <FontAwesome name="plus" size={16} color={colors.primary} />
-                <Text style={[styles.addButtonText, { color: colors.primary }]}>
+                <Text style={[styles.addButtonText, { color: colors.primaryText }]}>
                     Agregar Preparación
                 </Text>
             </TouchableOpacity>
@@ -275,7 +275,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 {selectedRecipe && selectedRecipe.id && (
                                     <View style={[styles.selectedRecipePill, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
                                         <FontAwesome name="book" size={12} color={colors.primary} />
-                                        <Text style={[styles.selectedRecipePillText, { color: colors.primary }]} numberOfLines={1}>
+                                        <Text style={[styles.selectedRecipePillText, { color: colors.primaryText }]} numberOfLines={1}>
                                             {selectedRecipe.title}
                                         </Text>
                                         <FontAwesome name="magic" size={11} color={colors.primary} style={{ marginLeft: 'auto' }} />

@@ -166,7 +166,7 @@ export function EditableDropdown({
                                                 <Text style={[
                                                     styles.optionText,
                                                     {
-                                                        color: value === item ? colors.primary : colors.text,
+                                                        color: value === item ? colors.primaryText : colors.text,
                                                         fontWeight: value === item ? '600' : '400'
                                                     }
                                                 ]}>
@@ -184,7 +184,7 @@ export function EditableDropdown({
                                                 }}
                                             >
                                                 <FontAwesome name="plus" size={14} color={colors.primary} />
-                                                <Text style={[styles.createNewText, { color: colors.primary }]}>
+                                                <Text style={[styles.createNewText, { color: colors.primaryText }]}>
                                                     Agregar nuevo...
                                                 </Text>
                                             </TouchableOpacity>

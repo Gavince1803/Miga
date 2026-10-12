@@ -203,7 +203,7 @@ export default function RegisterScreen() {
                             onPress={() => router.push('/auth/login')}
                         >
                             <Text style={{ color: colors.textSecondary }}>
-                                ¿Ya tienes cuenta? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Inicia Sesión</Text>
+                                ¿Ya tienes cuenta? <Text style={{ color: colors.primaryText, fontWeight: 'bold' }}>Inicia Sesión</Text>
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -247,7 +247,7 @@ export default function RegisterScreen() {
                                     <Text style={[
                                         styles.currencyLabel,
                                         { color: colors.text },
-                                        currency === key && { color: colors.primary, fontWeight: 'bold' }
+                                        currency === key && { color: colors.primaryText, fontWeight: 'bold' }
                                     ]}>
                                         {val.flag} {val.label}
                                     </Text>

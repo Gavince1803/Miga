@@ -131,7 +131,7 @@ export default function AgendaScreen() {
                                             onPress={() => router.push(`/orders/${order.id}` as any)}
                                         >
                                             <FontAwesome name="eye" size={12} color={colors.primary} />
-                                            <Text style={[styles.actionText, { color: colors.primary }]}>Ver detalle</Text>
+                                            <Text style={[styles.actionText, { color: colors.primaryText }]}>Ver detalle</Text>
                                         </TouchableOpacity>
                                         {phone ? (
                                             <TouchableOpacity
