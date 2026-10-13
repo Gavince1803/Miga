@@ -4,6 +4,7 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useAlert } from '@/context/AlertContext';
 import { CURRENCIES, Currency, useSettings } from '@/context/SettingsContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { revokeAppleSignIn } from '@/lib/appleAuth';
 import { cancelAllNotifications, requestNotificationPermissions } from '@/lib/notifications';
 import { deleteUserImages } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
@@ -415,6 +416,8 @@ export default function SettingsScreen() {
                                     style: 'destructive',
                                     onPress: async () => {
                                         try {
+                                            // Cancelling Apple's confirmation cancels the deletion
+                                            if (!await revokeAppleSignIn()) return;
                                             await deleteUserImages();
                                             const { error } = await supabase.rpc('delete_user_account');
                                             if (error) throw error;
