@@ -57,7 +57,7 @@ function ChipSelector({ options, selected, onSelect, colors }: { options: readon
                     style={[
                         styles.chip,
                         {
-                            backgroundColor: selected === option ? colors.primary : colors.surfaceSecondary,
+                            backgroundColor: selected === option ? colors.primaryStrong : colors.surfaceSecondary,
                             borderColor: selected === option ? colors.primary : colors.border,
                         },
                     ]}
@@ -488,7 +488,7 @@ export default function EditOrderScreen() {
                                                     paddingHorizontal: 8,
                                                     paddingVertical: 4,
                                                     borderRadius: 12,
-                                                    backgroundColor: selectedRateType === rate.id ? colors.primary : colors.surfaceSecondary,
+                                                    backgroundColor: selectedRateType === rate.id ? colors.primaryStrong : colors.surfaceSecondary,
                                                     borderWidth: 1,
                                                     borderColor: selectedRateType === rate.id ? colors.primary : colors.border
                                                 }}>
@@ -536,7 +536,7 @@ export default function EditOrderScreen() {
                                     style={[
                                         styles.paymentOption,
                                         {
-                                            backgroundColor: paymentMethod === option.value ? colors.primary : colors.surfaceSecondary,
+                                            backgroundColor: paymentMethod === option.value ? colors.primaryStrong : colors.surfaceSecondary,
                                             borderColor: paymentMethod === option.value ? colors.primary : colors.border,
                                         },
                                     ]}
@@ -557,7 +557,7 @@ export default function EditOrderScreen() {
 
                 {/* Save Button */}
                 <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: colors.primary, opacity: submitting ? 0.7 : 1 }, Shadows.md]}
+                    style={[styles.saveButton, { backgroundColor: colors.primaryStrong, opacity: submitting ? 0.7 : 1 }, Shadows.md]}
                     onPress={handleSave}
                     disabled={submitting}
                 >

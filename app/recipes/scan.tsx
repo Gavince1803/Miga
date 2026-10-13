@@ -190,7 +190,7 @@ export default function ScanRecipeScreen() {
                 {/* Process Button */}
                 {image && (
                     <TouchableOpacity
-                        style={[styles.processButton, { backgroundColor: colors.primary }, Shadows.md]}
+                        style={[styles.processButton, { backgroundColor: colors.primaryStrong }, Shadows.md]}
                         onPress={processImage}
                         disabled={processing}
                     >

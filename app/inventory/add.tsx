@@ -179,7 +179,7 @@ export default function AddItemScreen() {
                                     key={opt.value}
                                     style={[
                                         styles.unitPill,
-                                        { backgroundColor: unit === opt.value ? colors.primary : colors.border }
+                                        { backgroundColor: unit === opt.value ? colors.primaryStrong : colors.border }
                                     ]}
                                     onPress={() => setUnit(opt.value)}
                                 >
@@ -218,7 +218,7 @@ export default function AddItemScreen() {
                 {/* Save Button */}
                 <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                     <TouchableOpacity
-                        style={[styles.saveButton, { backgroundColor: isSubmitting ? colors.border : colors.primary }]}
+                        style={[styles.saveButton, { backgroundColor: isSubmitting ? colors.border : colors.primaryStrong }]}
                         onPress={handleSave}
                         disabled={isSubmitting}
                     >

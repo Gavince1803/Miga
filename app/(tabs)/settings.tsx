@@ -224,7 +224,7 @@ export default function SettingsScreen() {
         >
             {/* Premium Section */}
             <TouchableOpacity
-                style={[styles.premiumBanner, { backgroundColor: isPremium ? colors.success : colors.primary }, Shadows.md]}
+                style={[styles.premiumBanner, { backgroundColor: isPremium ? colors.successStrong : colors.primaryStrong }, Shadows.md]}
                 onPress={() => {
                     if (isNavigating) return;
                     setIsNavigating(true);

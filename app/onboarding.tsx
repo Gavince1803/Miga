@@ -188,7 +188,7 @@ export default function OnboardingScreen() {
                             style={[
                                 styles.primaryButton,
                                 {
-                                    backgroundColor: colors.primary,
+                                    backgroundColor: colors.primaryStrong,
                                     shadowColor: colors.primary,
                                     shadowOffset: { width: 0, height: 4 },
                                     shadowOpacity: 0.35,
@@ -213,7 +213,7 @@ export default function OnboardingScreen() {
                         style={[
                             styles.primaryButton,
                             {
-                                backgroundColor: colors.primary,
+                                backgroundColor: colors.primaryStrong,
                                 shadowColor: colors.primary,
                                 shadowOffset: { width: 0, height: 4 },
                                 shadowOpacity: 0.35,

@@ -810,7 +810,7 @@ export default function InventoryScreen() {
                 )}
                 {archivedItems.length > 0 && (
                     <TouchableOpacity
-                        style={[styles.statChip, { backgroundColor: showArchived ? colors.primary : colors.surface }]}
+                        style={[styles.statChip, { backgroundColor: showArchived ? colors.primaryStrong : colors.surface }]}
                         onPress={() => {
                             setShowArchived(!showArchived);
                         }}
@@ -845,7 +845,7 @@ export default function InventoryScreen() {
                     <FontAwesome name="download" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.importButton, { backgroundColor: colors.primary }]}
+                    style={[styles.importButton, { backgroundColor: colors.primaryStrong }]}
                     onPress={handleImportExcel}
                     accessibilityRole="button"
                     accessibilityLabel="Importar inventario desde Excel"
@@ -918,7 +918,7 @@ export default function InventoryScreen() {
 
             {/* Floating Add Button */}
             <TouchableOpacity
-                style={[styles.fab, { backgroundColor: colors.primary }, Shadows.lg]}
+                style={[styles.fab, { backgroundColor: colors.primaryStrong }, Shadows.lg]}
                 activeOpacity={0.85}
                 onPress={() => router.push('/inventory/add')}
                 accessibilityRole="button"
@@ -1009,7 +1009,7 @@ export default function InventoryScreen() {
                                                         setNewItemUnit(u);
                                                     }}
                                                     style={{
-                                                        backgroundColor: buyingUnit === u ? colors.primary : colors.background,
+                                                        backgroundColor: buyingUnit === u ? colors.primaryStrong : colors.background,
                                                         paddingHorizontal: 14,
                                                         paddingVertical: 10,
                                                         borderRadius: 20,
@@ -1070,7 +1070,7 @@ export default function InventoryScreen() {
                         </ScrollView>
 
                         <TouchableOpacity
-                            style={[styles.addButton, { backgroundColor: colors.primary, flexDirection: 'row', gap: 8, marginTop: 12 }]}
+                            style={[styles.addButton, { backgroundColor: colors.primaryStrong, flexDirection: 'row', gap: 8, marginTop: 12 }]}
                             onPress={handleAddItem}
                         >
                             <FontAwesome name="check" size={18} color="#FFFFFF" />
@@ -1133,7 +1133,7 @@ export default function InventoryScreen() {
                                 {purchaseUnitsFor(purchaseItem.unit).map(u => (
                                     <TouchableOpacity
                                         key={u}
-                                        style={[styles.unitPill, { backgroundColor: purchaseUnit === u ? colors.primary : colors.border }]}
+                                        style={[styles.unitPill, { backgroundColor: purchaseUnit === u ? colors.primaryStrong : colors.border }]}
                                         onPress={() => setPurchaseUnit(u)}
                                         accessibilityRole="button"
                                         accessibilityLabel={`Cantidad en ${u}`}
@@ -1161,7 +1161,7 @@ export default function InventoryScreen() {
                                 <Text style={[styles.addButtonText, { color: colors.text }]}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.editModalButton, { backgroundColor: colors.primary, opacity: isSavingPurchase ? 0.6 : 1 }]}
+                                style={[styles.editModalButton, { backgroundColor: colors.primaryStrong, opacity: isSavingPurchase ? 0.6 : 1 }]}
                                 onPress={handleSavePurchase}
                                 disabled={isSavingPurchase}
                             >
@@ -1206,7 +1206,7 @@ export default function InventoryScreen() {
                                     {UNIT_OPTIONS.map(opt => (
                                         <TouchableOpacity
                                             key={opt.value}
-                                            style={[styles.unitPill, { backgroundColor: editUnit === opt.value ? colors.primary : colors.border }]}
+                                            style={[styles.unitPill, { backgroundColor: editUnit === opt.value ? colors.primaryStrong : colors.border }]}
                                             onPress={() => setEditUnit(opt.value)}
                                         >
                                             <Text style={{ color: editUnit === opt.value ? '#FFF' : colors.text, fontSize: 12 }}>{opt.value}</Text>
@@ -1258,7 +1258,7 @@ export default function InventoryScreen() {
                                 <Text style={[styles.addButtonText, { color: colors.text }]}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.editModalButton, { backgroundColor: colors.primary, opacity: isSavingEdit ? 0.6 : 1 }]}
+                                style={[styles.editModalButton, { backgroundColor: colors.primaryStrong, opacity: isSavingEdit ? 0.6 : 1 }]}
                                 onPress={handleSaveEdit}
                                 disabled={isSavingEdit}
                             >

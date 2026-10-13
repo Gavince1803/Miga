@@ -191,7 +191,7 @@ export default function ClientDetailScreen() {
                                                 #{order.orderNumber}
                                             </Text>
                                             <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                                                <Text style={[styles.statusText, { color: statusColor }]}>
+                                                <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? statusColor }]}>
                                                     {getStatusLabel(order.status)}
                                                 </Text>
                                             </View>

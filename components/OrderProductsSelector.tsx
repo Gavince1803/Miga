@@ -187,13 +187,13 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                         </View>
                         <View style={styles.hintActions}>
                             <TouchableOpacity
-                                style={[styles.hintBtn, { backgroundColor: colors.primary }]}
+                                style={[styles.hintBtn, { backgroundColor: colors.primaryStrong }]}
                                 onPress={() => router.push('/inventory/add' as any)}
                             >
                                 <Text style={styles.hintBtnText}>+ Inventario</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.hintBtn, { backgroundColor: colors.primary }]}
+                                style={[styles.hintBtn, { backgroundColor: colors.primaryStrong }]}
                                 onPress={() => router.push('/recipes/new' as any)}
                             >
                                 <Text style={styles.hintBtnText}>+ Receta</Text>
@@ -214,7 +214,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                             Crea una receta con esos ingredientes para vincularla a este pedido y activar el descuento automático.
                         </Text>
                         <TouchableOpacity
-                            style={[styles.hintBtn, { backgroundColor: colors.primary, alignSelf: 'flex-start', marginTop: Spacing.sm }]}
+                            style={[styles.hintBtn, { backgroundColor: colors.primaryStrong, alignSelf: 'flex-start', marginTop: Spacing.sm }]}
                             onPress={() => router.push('/recipes/new' as any)}
                         >
                             <Text style={styles.hintBtnText}>+ Crear Receta</Text>
@@ -328,7 +328,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
 
                                 <TouchableOpacity
                                     style={[styles.confirmButton, {
-                                        backgroundColor: colors.primary,
+                                        backgroundColor: colors.primaryStrong,
                                         shadowColor: colors.primary,
                                         shadowOffset: { width: 0, height: 4 },
                                         shadowOpacity: 0.3,

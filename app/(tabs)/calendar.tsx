@@ -288,7 +288,7 @@ export default function CalendarScreen() {
 
                     {/* Add Order Button */}
                     <Link href="/orders/new" asChild>
-                        <TouchableOpacity style={[styles.addOrderButton, { backgroundColor: colors.primary }]}>
+                        <TouchableOpacity style={[styles.addOrderButton, { backgroundColor: colors.primaryStrong }]}>
                             <FontAwesome name="plus" size={14} color="#FFF" />
                             <Text style={styles.addOrderButtonText}>Agregar a este día</Text>
                         </TouchableOpacity>

@@ -167,7 +167,7 @@ export default function PremiumScreen() {
                 <Stack.Screen options={{ title: 'Miga Premium' }} />
                 <Confetti active={true} />
                 <ScrollView contentContainerStyle={styles.content}>
-                    <View style={[styles.premiumBadge, { backgroundColor: colors.primary }]}>
+                    <View style={[styles.premiumBadge, { backgroundColor: colors.primaryStrong }]}>
                         <FontAwesome name="star" size={48} color="#FFF" />
                         <Text style={styles.premiumBadgeText}>Premium Activo</Text>
                         {premiumUntil && (
@@ -223,7 +223,7 @@ export default function PremiumScreen() {
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Header with Secret Gesture on the Icon */}
                 <View style={styles.header}>
-                    <TouchableOpacity activeOpacity={0.8} onPress={handleSecretTap} style={[styles.iconContainer, { backgroundColor: colors.primary }]}>
+                    <TouchableOpacity activeOpacity={0.8} onPress={handleSecretTap} style={[styles.iconContainer, { backgroundColor: colors.primaryStrong }]}>
                         <FontAwesome name="star" size={32} color="#FFF" />
                     </TouchableOpacity>
                     <Text style={[styles.title, { color: colors.text }]}>Miga Premium</Text>
@@ -254,7 +254,7 @@ export default function PremiumScreen() {
                     </Text>
 
                     <TouchableOpacity
-                        style={[styles.iapButton, { backgroundColor: colors.primary, opacity: isPresenting ? 0.7 : 1 }]}
+                        style={[styles.iapButton, { backgroundColor: colors.primaryStrong, opacity: isPresenting ? 0.7 : 1 }]}
                         onPress={handlePresentPaywall}
                         disabled={isPresenting}
                     >
@@ -284,7 +284,7 @@ export default function PremiumScreen() {
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Medios Alternativos (Solo Venezuela)</Text>
                             {/* ... (Payment info similar to before) */}
                             <View style={styles.step}>
-                                <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>1</Text></View>
+                                <View style={[styles.stepNumber, { backgroundColor: colors.primaryStrong }]}><Text style={styles.stepNumberText}>1</Text></View>
                                 <Text style={[styles.stepText, { color: colors.textSecondary }]}>Realiza el pago por Pago Móvil o PayPal:</Text>
                             </View>
 
@@ -313,7 +313,7 @@ export default function PremiumScreen() {
                                 autoCapitalize="characters"
                                 autoCorrect={false}
                             />
-                            <TouchableOpacity style={[styles.redeemButton, { backgroundColor: colors.primary }]} onPress={handleRedeemCode} disabled={redeeming}>
+                            <TouchableOpacity style={[styles.redeemButton, { backgroundColor: colors.primaryStrong }]} onPress={handleRedeemCode} disabled={redeeming}>
                                 {redeeming ? <ActivityIndicator color="#FFF" /> : <><FontAwesome name="unlock" size={18} color="#FFF" /><Text style={styles.redeemButtonText}>Activar Código</Text></>}
                             </TouchableOpacity>
                         </View>

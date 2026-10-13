@@ -103,7 +103,7 @@ export default function AnalyticsScreen() {
                         ))}
                     </View>
                     <TouchableOpacity
-                        style={[styles.premiumCTA, { backgroundColor: colors.primary }]}
+                        style={[styles.premiumCTA, { backgroundColor: colors.primaryStrong }]}
                         onPress={() => router.push('/premium')}
                     >
                         <FontAwesome name="star" size={18} color="#FFF" />
@@ -265,7 +265,7 @@ export default function AnalyticsScreen() {
 
                 {/* Busiest Weekday */}
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Día más Ocupado</Text>
-                <View style={[styles.weekdayCard, { backgroundColor: colors.primary }, Shadows.md]}>
+                <View style={[styles.weekdayCard, { backgroundColor: colors.primaryStrong }, Shadows.md]}>
                     <FontAwesome name="calendar-check-o" size={32} color="rgba(255,255,255,0.9)" />
                     <View style={styles.weekdayInfo}>
                         {loading ? (

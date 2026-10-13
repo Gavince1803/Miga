@@ -138,7 +138,7 @@ export function EditableDropdown({
                                             autoFocus
                                         />
                                         <TouchableOpacity
-                                            style={[styles.addButton, { backgroundColor: colors.primary }]}
+                                            style={[styles.addButton, { backgroundColor: colors.primaryStrong }]}
                                             onPress={handleCustomSubmit}
                                         >
                                             <Text style={styles.addButtonText}>Usar</Text>

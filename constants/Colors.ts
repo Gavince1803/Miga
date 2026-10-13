@@ -24,6 +24,7 @@ export const Colors = {
     tint: tintColorLight,
     primary: '#D4A574', // Soft Gold
     primaryText: '#8B5E34', // Soft Gold darkened to be readable as text on cream/white
+    primaryStrong: '#A87A45', // Solid buttons with white text
     secondary: '#E8B4B8', // Warm Rose
 
     // Status colors
@@ -31,6 +32,9 @@ export const Colors = {
     successStrong: '#3E8E63', // Solid buttons with white text
     warning: '#FFB74D', // Warm Orange
     error: '#E57373', // Urgent Red
+
+    // Order status text on its 12% tinted badge (the raw status colors are too light to read)
+    statusText: { pendiente: '#9A5B00', pagado: '#2F7A52', cancelado: '#C62828' } as Record<string, string>,
 
     // Calendar urgency colors
     urgentToday: '#E57373', // Red - today/tomorrow
@@ -59,6 +63,7 @@ export const Colors = {
     tint: tintColorDark,
     primary: '#E8B4B8', // Warm Rose for dark mode
     primaryText: '#E8B4B8',
+    primaryStrong: '#B86B73',
     secondary: '#D4A574', // Soft Gold
 
     // Status colors
@@ -66,6 +71,8 @@ export const Colors = {
     successStrong: '#388E3C',
     warning: '#FFB74D',
     error: '#EF5350',
+
+    statusText: { pendiente: '#FFB74D', pagado: '#A8D5BA', cancelado: '#E57373' } as Record<string, string>,
 
     // Calendar urgency colors
     urgentToday: '#EF5350',
