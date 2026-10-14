@@ -189,7 +189,7 @@ export default function FinancesScreen() {
                         ))}
                     </View>
                     <TouchableOpacity
-                        style={[styles.premiumCTA, { backgroundColor: colors.primary }]}
+                        style={[styles.premiumCTA, { backgroundColor: colors.primaryStrong }]}
                         onPress={() => router.push('/premium')}
                     >
                         <FontAwesome name="star" size={18} color="#FFF" />
@@ -243,7 +243,7 @@ export default function FinancesScreen() {
                                     <FontAwesome name="arrow-up" size={16} color={colors.success} />
                                 </View>
                                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ingresos</Text>
-                                <Text style={[styles.summaryValue, { color: colors.success }]}>
+                                <Text style={[styles.summaryValue, { color: colors.successStrong }]}>
                                     {formatCurrency(summary.totalIncome)}
                                 </Text>
                             </View>
@@ -290,7 +290,7 @@ export default function FinancesScreen() {
                         )}
 
                         {/* Balance Main Card */}
-                        <View style={[styles.balanceCard, { backgroundColor: colors.primary }, Shadows.md]}>
+                        <View style={[styles.balanceCard, { backgroundColor: colors.primaryStrong }, Shadows.md]}>
                             <View>
                                 <Text style={[styles.balanceLabel, { color: 'rgba(255,255,255,0.8)' }]}>Balance Total</Text>
                                 <Text style={[styles.balanceValue, { color: '#FFF' }]}>

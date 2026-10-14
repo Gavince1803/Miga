@@ -101,7 +101,7 @@ export default function ReEngagementBanner({ ordersCount, inventoryCount }: Prop
 
             {/* CTA */}
             <TouchableOpacity
-                style={[styles.cta, { backgroundColor: colors.primary }]}
+                style={[styles.cta, { backgroundColor: colors.primaryStrong }]}
                 onPress={handleCTA}
                 activeOpacity={0.8}
             >

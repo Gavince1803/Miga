@@ -1,6 +1,6 @@
 import SocialSignIn from '@/components/SocialSignIn';
 import { useColorScheme } from '@/components/useColorScheme';
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
+import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { CURRENCIES, Currency } from '@/context/SettingsContext';
 import { supabase } from '@/lib/supabase';
@@ -176,7 +176,7 @@ export default function RegisterScreen() {
                             style={[
                                 styles.button,
                                 {
-                                    backgroundColor: colors.primary,
+                                    backgroundColor: colors.primaryStrong,
                                     shadowColor: colors.primary,
                                     shadowOffset: { width: 0, height: 4 },
                                     shadowOpacity: 0.3,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontFamily: Fonts.serif,
         marginBottom: Spacing.xs,
     },
     subtitle: {

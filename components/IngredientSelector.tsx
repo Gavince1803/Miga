@@ -391,7 +391,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                 </View>
 
                                 <TouchableOpacity
-                                    style={[styles.confirmButton, { backgroundColor: colors.primary }]}
+                                    style={[styles.confirmButton, { backgroundColor: colors.primaryStrong }]}
                                     onPress={handleAddIngredient}
                                     disabled={!quantity || parseDecimal(quantity) <= 0}
                                 >

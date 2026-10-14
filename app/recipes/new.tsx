@@ -337,7 +337,7 @@ export default function NewRecipeScreen() {
                             </Text>
                         </View>
                         {!image && (
-                            <TouchableOpacity style={[styles.bigScanBtn, { backgroundColor: colors.primary }]} onPress={takePhoto}>
+                            <TouchableOpacity style={[styles.bigScanBtn, { backgroundColor: colors.primaryStrong }]} onPress={takePhoto}>
                                 <FontAwesome name="camera" size={24} color="#FFF" />
                                 <Text style={styles.bigScanBtnText}>Tomar Foto Ahora</Text>
                             </TouchableOpacity>
@@ -365,7 +365,7 @@ export default function NewRecipeScreen() {
                                     paddingHorizontal: 14,
                                     paddingVertical: 8,
                                     borderRadius: 20,
-                                    backgroundColor: category === cat.value ? colors.primary : colors.surface,
+                                    backgroundColor: category === cat.value ? colors.primaryStrong : colors.surface,
                                     borderWidth: 1,
                                     borderColor: category === cat.value ? colors.primary : colors.border,
                                 }}
@@ -386,7 +386,7 @@ export default function NewRecipeScreen() {
 
             <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
                 <TouchableOpacity
-                    style={[styles.submitButton, { backgroundColor: colors.primary }]}
+                    style={[styles.submitButton, { backgroundColor: colors.primaryStrong }]}
                     onPress={handleSubmit}
                     disabled={isSubmitting}
                 >

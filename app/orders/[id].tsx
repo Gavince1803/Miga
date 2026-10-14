@@ -510,10 +510,10 @@ export default function OrderDetailScreen() {
                             style={[styles.statusBadge, { backgroundColor: statusOption?.color + '20' }]}
                             onPress={handleStatusChange}
                         >
-                            <Text style={[styles.statusText, { color: statusOption?.color }]}>
+                            <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? statusOption?.color }]}>
                                 {statusOption?.label}
                             </Text>
-                            <FontAwesome name="chevron-down" size={10} color={statusOption?.color} />
+                            <FontAwesome name="chevron-down" size={10} color={colors.statusText[order.status] ?? statusOption?.color} />
                         </TouchableOpacity>
                     </View>
 
@@ -763,7 +763,7 @@ export default function OrderDetailScreen() {
                                         #{order.orderNumber}
                                     </Text>
                                     <View style={[styles.historyStatusBadge, { backgroundColor: statusOption?.color + '20' }]}>
-                                        <Text style={{ ...Typography.small, color: statusOption?.color, fontWeight: '600' }}>
+                                        <Text style={{ ...Typography.small, color: colors.statusText[order.status] ?? statusOption?.color, fontWeight: '600' }}>
                                             {statusOption?.label}
                                         </Text>
                                     </View>
@@ -801,7 +801,7 @@ export default function OrderDetailScreen() {
                                                     #{pastOrder.orderNumber}
                                                 </Text>
                                                 <View style={[styles.historyStatusBadge, { backgroundColor: getStatusColor(pastOrder.status) + '20' }]}>
-                                                    <Text style={{ ...Typography.small, color: getStatusColor(pastOrder.status), fontWeight: '600' }}>
+                                                    <Text style={{ ...Typography.small, color: colors.statusText[pastOrder.status] ?? getStatusColor(pastOrder.status), fontWeight: '600' }}>
                                                         {getStatusLabel(pastOrder.status)}
                                                     </Text>
                                                 </View>

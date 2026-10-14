@@ -172,7 +172,7 @@ export function CustomAlert({
                                         style={[
                                             styles.button,
                                             displayButtons.length > 2 && styles.buttonVertical,
-                                            !isCancel && !isDestructive && { backgroundColor: colors.primary },
+                                            !isCancel && !isDestructive && { backgroundColor: colors.primaryStrong },
                                             isDestructive && { backgroundColor: colors.error + '20' },
                                             isCancel && { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
                                         ]}

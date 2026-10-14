@@ -177,7 +177,7 @@ export default function RecipesScreen() {
                             key={cat.label}
                             style={[
                                 styles.filterChip,
-                                { backgroundColor: selectedCategory === cat.value ? colors.primary : colors.surface },
+                                { backgroundColor: selectedCategory === cat.value ? colors.primaryStrong : colors.surface },
                             ]}
                             onPress={() => setSelectedCategory(cat.value)}
                             activeOpacity={0.7}

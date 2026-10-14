@@ -110,8 +110,8 @@ export default function AgendaScreen() {
                                             </Text>
                                         </View>
                                         <View style={[styles.statusBadge, { backgroundColor: (statusOption?.color || colors.textMuted) + '20' }]}>
-                                            {isDone && <FontAwesome name="check" size={9} color={statusOption?.color} style={{ marginRight: 3 }} />}
-                                            <Text style={[styles.statusText, { color: statusOption?.color || colors.textMuted }]}>
+                                            {isDone && <FontAwesome name="check" size={9} color={colors.statusText[order.status] ?? statusOption?.color} style={{ marginRight: 3 }} />}
+                                            <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? colors.textMuted }]}>
                                                 {statusOption?.label}
                                             </Text>
                                         </View>

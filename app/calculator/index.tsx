@@ -542,7 +542,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         </View>
                     </View>
                     <TouchableOpacity
-                        style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                        style={[styles.saveButton, { backgroundColor: colors.primaryStrong }]}
                         onPress={handleShareQuote}
                         disabled={sharing}
                     >
@@ -674,7 +674,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <Text style={{ color: colors.text }}>Cancelar</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalButton, { backgroundColor: colors.primary }]}
+                                style={[styles.modalButton, { backgroundColor: colors.primaryStrong }]}
                                 onPress={handleAddIngredient}
                             >
                                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Agregar</Text>

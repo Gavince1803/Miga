@@ -29,6 +29,7 @@ function OrderCard({
 }) {
     const statusOption = ORDER_STATUS_OPTIONS.find(s => s.value === order.status);
     const statusColor = statusOption?.color || colors.textMuted;
+    const statusTextColor = colors.statusText[order.status] ?? statusColor;
 
     // Calculate urgency based on delivery date
     const today = new Date();
@@ -76,7 +77,7 @@ function OrderCard({
                         </Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                        <Text style={[styles.statusText, { color: statusColor }]}>
+                        <Text style={[styles.statusText, { color: statusTextColor }]}>
                             {statusOption?.label}
                         </Text>
                     </View>
@@ -181,7 +182,7 @@ export default function OrdersScreen() {
                             style={[
                                 styles.filterChip,
                                 {
-                                    backgroundColor: activeFilter === filter.key ? colors.primary : colors.surface,
+                                    backgroundColor: activeFilter === filter.key ? colors.primaryStrong : colors.surface,
                                     borderColor: activeFilter === filter.key ? colors.primary : colors.border,
                                 },
                                 Shadows.sm

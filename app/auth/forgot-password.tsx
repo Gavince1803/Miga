@@ -1,5 +1,5 @@
 import { useColorScheme } from '@/components/useColorScheme';
-import { BorderRadius, Colors, Shadows, Spacing } from '@/constants/Colors';
+import { BorderRadius, Colors, Fonts, Shadows, Spacing } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -85,7 +85,7 @@ export default function ForgotPasswordScreen() {
                             style={[
                                 styles.button,
                                 {
-                                    backgroundColor: colors.primary,
+                                    backgroundColor: colors.primaryStrong,
                                     shadowColor: colors.primary,
                                     shadowOffset: { width: 0, height: 4 },
                                     shadowOpacity: 0.3,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontFamily: Fonts.serif,
         marginBottom: Spacing.xs,
     },
     subtitle: {

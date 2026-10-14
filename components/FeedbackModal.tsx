@@ -127,7 +127,7 @@ export default function FeedbackModal({
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.sendButton, { backgroundColor: colors.primary, opacity: category ? 1 : 0.5 }]}
+                        style={[styles.sendButton, { backgroundColor: colors.primaryStrong, opacity: category ? 1 : 0.5 }]}
                         onPress={handleSend}
                         disabled={!category || sending}
                         testID="feedback-send"
