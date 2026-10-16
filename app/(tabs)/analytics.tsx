@@ -153,7 +153,7 @@ export default function AnalyticsScreen() {
                         {loading ? (
                             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 4 }} />
                         ) : (
-                            <Text style={[styles.summaryValue, { color: colors.success }]}>
+                            <Text style={[styles.summaryValue, { color: colors.text }]}>
                                 {formatCurrency(data.summary.totalRevenue)}
                             </Text>
                         )}
@@ -167,7 +167,7 @@ export default function AnalyticsScreen() {
                         {loading ? (
                             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 4 }} />
                         ) : (
-                            <Text style={[styles.summaryValue, { color: colors.warning }]}>
+                            <Text style={[styles.summaryValue, { color: colors.text }]}>
                                 {formatCurrency(data.summary.avgTicket)}
                             </Text>
                         )}

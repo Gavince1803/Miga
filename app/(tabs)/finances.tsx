@@ -121,9 +121,9 @@ export default function FinancesScreen() {
         return sortedDays.map(day => ({
             value: daysMap.get(day)?.income || 0,
             label: `${day}`,
-            frontColor: colors.success,
+            frontColor: colors.primary,
             topLabelComponent: () => (
-                <Text numberOfLines={1} style={{ color: colors.success, fontSize: 9, marginBottom: 2, width: 40, textAlign: 'center', alignSelf: 'center' }}>
+                <Text numberOfLines={1} style={{ color: colors.primaryText, fontSize: 9, marginBottom: 2, width: 40, textAlign: 'center', alignSelf: 'center' }}>
                     {formatCompact(daysMap.get(day)?.income || 0, currency)}
                 </Text>
             ),
@@ -328,7 +328,7 @@ export default function FinancesScreen() {
                             </Text>
                         </View>
                         <Text style={[styles.transactionAmount, {
-                            color: item.type === 'income' ? colors.success : colors.error
+                            color: item.type === 'income' ? colors.successStrong : colors.error
                         }]}>
                             {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
                         </Text>
