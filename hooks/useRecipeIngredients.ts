@@ -141,7 +141,8 @@ export function useRecipeIngredients() {
                 .from('inventory_items')
                 .select('id, is_archived')
                 .ilike('name', normalizedName)
-                .single();
+                .limit(1)
+                .maybeSingle();
 
             let inventoryItemId: string;
 
