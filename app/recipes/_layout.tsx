@@ -26,6 +26,12 @@ export default function RecipesLayout() {
                     title: 'Nueva Receta',
                 }}
             />
+            <Stack.Screen
+                name="edit"
+                options={{
+                    title: 'Editar Receta',
+                }}
+            />
         </Stack>
     );
 }
