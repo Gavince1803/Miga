@@ -11,13 +11,10 @@ import { supabase } from '@/lib/supabase';
 import { Order } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { isToday } from 'date-fns';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const formatTime12hr = (time: string) => {
   if (!time) return '';
@@ -27,40 +24,57 @@ const formatTime12hr = (time: string) => {
   return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
-function StatCard({
-  icon,
-  label,
-  value,
-  color,
+// Today at a glance: one calm card instead of four multicolor stat tiles
+function HeroCard({
+  todayCount,
+  stats,
   colors,
+  loading,
   onPress,
-  loading = false,
 }: {
-  icon: string;
-  label: string;
-  value: number | string;
-  color: string;
+  todayCount: number;
+  stats: { label: string; value: string; loading: boolean }[];
   colors: typeof Colors.light;
-  onPress?: () => void;
-  loading?: boolean;
+  loading: boolean;
+  onPress: () => void;
 }) {
+  const dateText = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  const todayLabel = dateText.charAt(0).toUpperCase() + dateText.slice(1);
+
   return (
     <TouchableOpacity
-      style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}
+      style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }, Shadows.md]}
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
+      activeOpacity={0.8}
     >
-      <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
-        <FontAwesome name={icon as any} size={20} color={color} />
+      <View style={styles.heroTop}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.heroDate, { color: colors.primaryText }]}>{todayLabel}</Text>
+          {loading
+            ? <Skeleton width={120} height={40} color={colors.border} style={styles.heroValuePlaceholder} />
+            : <Text style={[styles.heroCount, { color: colors.text }]}>{todayCount}</Text>}
+          <Text style={[styles.heroCountLabel, { color: colors.textSecondary }]}>
+            {todayCount === 1 ? 'pedido para entregar hoy' : 'pedidos para entregar hoy'}
+          </Text>
+        </View>
+        <View style={[styles.heroIcon, { backgroundColor: colors.primary + '20' }]}>
+          <FontAwesome name="birthday-cake" size={22} color={colors.primaryText} />
+        </View>
       </View>
-      {/* Placeholder instead of 0 / $0.00 while data loads, so it doesn't read as real data */}
-      {loading
-        ? <Skeleton width={64} height={24} color={colors.border} style={styles.statValuePlaceholder} />
-        : <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>}
-      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
-      {onPress && (
-        <FontAwesome name="chevron-right" size={9} color={color} style={{ marginTop: 3 }} />
-      )}
+
+      <View style={[styles.heroDivider, { backgroundColor: colors.border }]} />
+
+      <View style={styles.heroStats}>
+        {stats.map((stat) => (
+          <View key={stat.label} style={styles.heroStat}>
+            <Text style={[styles.heroStatLabel, { color: colors.textMuted }]}>{stat.label}</Text>
+            {/* Placeholder instead of $0.00 while data loads, so it doesn't read as real data */}
+            {stat.loading
+              ? <Skeleton width={56} height={18} color={colors.border} style={styles.heroValuePlaceholder} />
+              : <Text style={[styles.heroStatValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{stat.value}</Text>}
+          </View>
+        ))}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -288,53 +302,23 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        <StatCard
-          icon="birthday-cake"
-          label="Para Hoy"
-          loading={ordersLoading}
-          value={todayOrdersCount}
-          color={colors.urgentToday}
-          colors={colors}
-          onPress={() => router.push('/agenda' as any)}
-        />
-        <StatCard
-          icon="money"
-          label="Por cobrar"
-          loading={ordersLoading}
-          value={formatMoney(pendingCollection)}
-          color={colors.warning}
-          colors={colors}
-        />
-        <StatCard
-          icon="line-chart"
-          label="Ingresos"
-          loading={ordersLoading}
-          value={formatMoney(monthlyRevenue)}
-          color={colors.success}
-          colors={colors}
-        />
-        <StatCard
-          icon="shopping-cart"
-          label="Gastos"
-          loading={expensesLoading}
-          value={formatMoney(monthlyExpenses)}
-          color={colors.error} // Red for expenses
-          colors={colors}
-        />
-      </View>
+      <HeroCard
+        todayCount={todayOrdersCount}
+        loading={ordersLoading}
+        colors={colors}
+        onPress={() => router.push('/agenda' as any)}
+        stats={[
+          { label: 'Por cobrar', value: formatMoney(pendingCollection), loading: ordersLoading },
+          { label: 'Ingresos del mes', value: formatMoney(monthlyRevenue), loading: ordersLoading },
+          { label: 'Gastos del mes', value: formatMoney(monthlyExpenses), loading: expensesLoading },
+        ]}
+      />
 
-      {/* Quick Action Button - STRIKING GRADIENT DESIGN */}
+      {/* Quick Action Button */}
       <Link href="/orders/new" asChild>
         <TouchableOpacity style={{ marginBottom: Spacing.md }} activeOpacity={0.8}>
-          <LinearGradient
-            // Gradient adjusted to match Bakery Aesthetic: Gold to Burnt Orange/Sienna
-            colors={['#D4A574', '#D35400']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.newOrderButton}
-          >
+          {/* Styles on an inner View: Link asChild drops array styles on its child */}
+          <View style={[styles.newOrderButton, { backgroundColor: colors.primaryStrong }, Shadows.sm]}>
             <View style={styles.newOrderContent}>
               <View style={styles.iconContainer}>
                 <FontAwesome name="plus" size={24} color="#FFF" />
@@ -345,7 +329,7 @@ export default function HomeScreen() {
               </View>
             </View>
             <FontAwesome name="chevron-right" size={16} color="rgba(255,255,255,0.6)" />
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </Link>
 
@@ -436,43 +420,62 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.title,
   },
-  statsGrid: {
+  heroCard: {
+    borderRadius: BorderRadius.xl,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  heroTop: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.md, // Reduced from lg to bring button closer
+    alignItems: 'flex-start',
   },
-  statCard: {
-    width: (width - Spacing.md * 2 - Spacing.sm) / 2,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.sm,
-    alignItems: 'center',
+  heroDate: {
+    ...Typography.caption,
+    fontWeight: '600',
   },
-  statIconContainer: {
-    width: 44,
-    height: 44,
+  heroCount: {
+    ...Typography.title,
+    fontSize: 44,
+    lineHeight: 52,
+    marginTop: Spacing.xs,
+  },
+  heroCountLabel: {
+    ...Typography.body,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.sm,
   },
-  statValue: {
-    ...Typography.subtitle,
-    fontSize: 24,
+  heroDivider: {
+    height: 1,
+    marginVertical: Spacing.md,
   },
-  statValuePlaceholder: {
-    marginVertical: 4,
+  heroStats: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
-  statLabel: {
+  heroStat: {
+    flex: 1,
+  },
+  heroStatLabel: {
     ...Typography.small,
-    marginTop: 2,
+    marginBottom: 2,
+  },
+  heroStatValue: {
+    ...Typography.subtitle,
+    fontSize: 17,
+  },
+  heroValuePlaceholder: {
+    marginVertical: 4,
   },
   newOrderButton: {
     paddingVertical: 20,
     paddingHorizontal: 24,
     borderRadius: 20,
-    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
