@@ -6,6 +6,7 @@ import { CURRENCIES, Currency, useSettings } from '@/context/SettingsContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { revokeAppleSignIn } from '@/lib/appleAuth';
 import { cancelAllNotifications, requestNotificationPermissions } from '@/lib/notifications';
+import { getManagementURL } from '@/lib/revenuecat';
 import { deleteUserImages } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -225,6 +226,15 @@ export default function SettingsScreen() {
     };
 
     const { isPremium, premiumUntil, loading: subscriptionLoading } = useSubscription();
+
+    const handleManageSubscription = async () => {
+        const url = await getManagementURL();
+        if (url) {
+            Linking.openURL(url);
+        } else {
+            showAlert({ title: 'Gestionar suscripción', message: 'Tu Premium no es una suscripción de Apple o Google, así que no hay nada que cancelar.', type: 'info' });
+        }
+    };
     const { currency, updateCurrency } = useSettings();
 
     return (
@@ -259,6 +269,20 @@ export default function SettingsScreen() {
                 </View>
                 <FontAwesome name="chevron-right" size={16} color="rgba(255,255,255,0.7)" />
             </TouchableOpacity>
+
+            {isPremium && (
+                <View style={styles.section}>
+                    <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
+                        <SettingRow
+                            icon="credit-card"
+                            label="Gestionar suscripción"
+                            value="Cambiar de plan o cancelar"
+                            onPress={handleManageSubscription}
+                            colors={colors}
+                        />
+                    </View>
+                </View>
+            )}
 
             {/* Profile Section */}
             <View style={styles.section}>
@@ -417,7 +441,7 @@ export default function SettingsScreen() {
                         style={[styles.settingRow, { borderBottomWidth: 0 }]}
                         onPress={() => showAlert({
                             title: '¿Eliminar Cuenta?',
-                            message: 'Esta acción es irreversible. Se borrarán todas tus recetas, inventario y datos. ¿Estás seguro?',
+                            message: 'Esta acción es irreversible. Se borrarán todas tus recetas, inventario y datos.\n\nSi pagas Miga Premium, la suscripción no se cancela sola: cancélala en Ajustes → Gestionar suscripción para que no te sigan cobrando.\n\n¿Estás seguro?',
                             type: 'error',
                             buttons: [
                                 { text: 'Cancelar', style: 'cancel' },

@@ -100,3 +100,14 @@ export async function restorePurchases(): Promise<boolean> {
         return false;
     }
 }
+
+// Store page to cancel or change plan; null when Premium came from an activation code
+export async function getManagementURL(): Promise<string | null> {
+    try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        return customerInfo.managementURL;
+    } catch (e) {
+        console.error('Error al obtener el enlace de gestión:', e);
+        return null;
+    }
+}

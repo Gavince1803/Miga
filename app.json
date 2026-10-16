@@ -20,7 +20,12 @@
       "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Miga usa tu cámara para escanear recetas físicas para digitalizarlas y para tomar fotos de tus ingredientes y productos para el inventario."
+        "NSCameraUsageDescription": "Miga usa tu cámara para escanear recetas físicas para digitalizarlas y para tomar fotos de tus ingredientes y productos para el inventario.",
+        "CFBundleDevelopmentRegion": "es",
+        "CFBundleLocalizations": [
+          "es"
+        ],
+        "NSPhotoLibraryUsageDescription": "Miga usa tus fotos para que elijas la imagen de una receta o de un producto."
       }
     },
     "android": {
@@ -48,7 +53,15 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-localization",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Miga usa tus fotos para que elijas la imagen de una receta o de un producto.",
+          "cameraPermission": "Miga usa tu cámara para escanear recetas físicas para digitalizarlas y para tomar fotos de tus ingredientes y productos para el inventario.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
