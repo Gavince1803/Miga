@@ -1,3 +1,4 @@
+import RecipePlaceholder from '@/components/RecipePlaceholder';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -194,20 +195,20 @@ export default function RecipeDetailScreen() {
                                         }
                                     });
                                 }}
-                                style={styles.headerBtn}
+                                style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]}
                                 accessibilityRole="button"
                                 accessibilityLabel="Calcular costos"
                             >
                                 <FontAwesome name="calculator" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
 
-                            <TouchableOpacity onPress={handleShare} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Compartir receta">
+                            <TouchableOpacity onPress={handleShare} style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]} accessibilityRole="button" accessibilityLabel="Compartir receta">
                                 <FontAwesome name="share-alt" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Editar receta">
+                            <TouchableOpacity onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)} style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]} accessibilityRole="button" accessibilityLabel="Editar receta">
                                 <FontAwesome name="pencil" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={handleDelete} style={styles.headerBtn} accessibilityRole="button" accessibilityLabel="Eliminar receta">
+                            <TouchableOpacity onPress={handleDelete} style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]} accessibilityRole="button" accessibilityLabel="Eliminar receta">
                                 <FontAwesome name="trash" size={20} color={recipe.imageUrl ? '#FFF' : colors.error} />
                             </TouchableOpacity>
                         </View>
@@ -221,12 +222,10 @@ export default function RecipeDetailScreen() {
                     {recipe.imageUrl ? (
                         <Image source={{ uri: recipe.imageUrl }} style={styles.heroImage} resizeMode="cover" />
                     ) : (
-                        <View style={[styles.placeholderHero, { backgroundColor: colors.surfaceSecondary }]}>
-                            <FontAwesome name="book" size={64} color={colors.textMuted} />
-                        </View>
+                        <RecipePlaceholder title={recipe.title} colors={colors} size={96} />
                     )}
                     {/* Gradient Overlay for text readability if needed, or just design choice */}
-                    <View style={styles.imageOverlay} />
+                    {recipe.imageUrl && <View style={styles.imageOverlay} />}
                 </View>
 
                 {/* Content Card - "The Paper Page" */}
@@ -519,12 +518,6 @@ const styles = StyleSheet.create({
     heroImage: {
         width: '100%',
         height: '100%',
-    },
-    placeholderHero: {
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     imageOverlay: {
         ...StyleSheet.absoluteFillObject,

@@ -1,3 +1,4 @@
+import RecipePlaceholder from '@/components/RecipePlaceholder';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
@@ -37,8 +38,8 @@ function RecipeCard({
                 {recipe.imageUrl ? (
                     <Image source={{ uri: recipe.imageUrl }} style={styles.cardImage} />
                 ) : (
-                    <View style={[styles.cardPlaceholder, { backgroundColor: colors.surfaceSecondary }]}>
-                        <FontAwesome name="book" size={32} color={colors.textMuted} />
+                    <View style={styles.cardPlaceholder}>
+                        <RecipePlaceholder title={recipe.title} colors={colors} size={56} />
                     </View>
                 )}
 
