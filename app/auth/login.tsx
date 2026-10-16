@@ -2,6 +2,7 @@ import SocialSignIn from '@/components/SocialSignIn';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
@@ -26,7 +27,10 @@ export default function LoginScreen() {
             password,
         });
 
-        if (error) showAlert({ title: 'Error', message: error.message, type: 'error' });
+        if (error) {
+            track('login_failed', { reason: error.code ?? 'unknown' });
+            showAlert({ title: 'Error', message: error.message, type: 'error' });
+        }
         setLoading(false);
     }
 

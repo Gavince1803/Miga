@@ -2,10 +2,11 @@ import Confetti from '@/components/Confetti';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAlert } from '@/context/AlertContext';
 import { FREE_TIER_LIMITS, useSubscription } from '@/hooks/useSubscription';
+import { track } from '@/lib/analytics';
 import { restorePurchases } from '@/lib/revenuecat';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -45,6 +46,9 @@ export default function PremiumScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
+    const { from = 'unknown' } = useLocalSearchParams<{ from?: string }>();
+
+    useEffect(() => { track('paywall_viewed', { from }); }, [from]);
     const { isPremium, premiumUntil, redeemCode, refreshStatus, loading: subLoading } = useSubscription();
     const { showAlert } = useAlert();
 
@@ -79,6 +83,7 @@ export default function PremiumScreen() {
         setIsPresenting(true);
         try {
             const paywallResult = await RevenueCatUI.presentPaywall();
+            track('paywall_result', { result: String(paywallResult), from });
 
             if (paywallResult === PAYWALL_RESULT.PURCHASED || paywallResult === PAYWALL_RESULT.RESTORED) {
                 await refreshStatus(); // Refresh local hook state

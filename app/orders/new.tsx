@@ -16,6 +16,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { track } from '@/lib/analytics';
 import React, { useMemo, useState } from 'react';
 import {
     StyleSheet,
@@ -275,13 +276,14 @@ export default function NewOrderScreen() {
             }).length;
             if (ordersThisMonth >= 10) {
                 haptics.error();
+                track('premium_gate', { from: 'orders_limit' });
                 showAlert({
                     title: 'Límite Mensual Alcanzado',
                     message: 'Alcanzaste los 10 pedidos gratuitos de este mes.\n\nSuscríbete a Premium para pedidos ilimitados.',
                     type: 'warning',
                     buttons: [
                         { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                        { text: 'Ver Premium', onPress: () => router.push({ pathname: '/premium', params: { from: 'orders_limit' } }) }
                     ]
                 });
                 return;

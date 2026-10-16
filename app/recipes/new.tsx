@@ -12,6 +12,7 @@ import { parseRecipeText } from '@/lib/ocr';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { track } from '@/lib/analytics';
 import BackButton from '@/components/BackButton';
 import React from 'react';
 import {
@@ -154,13 +155,14 @@ export default function NewRecipeScreen() {
         // Check Premium Limit
         if (!isPremium && recipes.length >= 5) {
             haptics.error();
+            track('premium_gate', { from: 'recipes_limit' });
             showAlert({
                 title: 'Límite Alcanzado',
                 message: 'Has alcanzado el límite de 5 recetas gratuitas.\n\nSuscríbete a Premium para crear recetas ilimitadas.',
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                    { text: 'Ver Premium', onPress: () => router.push({ pathname: '/premium', params: { from: 'recipes_limit' } }) }
                 ]
             });
             return;

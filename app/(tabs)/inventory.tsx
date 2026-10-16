@@ -9,6 +9,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
+import { track } from '@/lib/analytics';
 import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -646,13 +647,14 @@ export default function InventoryScreen() {
     const handleImportExcel = async () => {
         // Premium gate
         if (!isPremium) {
+            track('premium_gate', { from: 'excel_import' });
             showAlert({
                 title: 'Función Premium',
                 message: 'La importación desde Excel es exclusiva para usuarios Premium.\n\nSuscríbete para gestionar tu inventario de forma avanzada.',
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                    { text: 'Ver Premium', onPress: () => router.push({ pathname: '/premium', params: { from: 'excel_import' } }) }
                 ]
             });
             return;
@@ -734,13 +736,14 @@ export default function InventoryScreen() {
     const handleExportExcel = async () => {
         // Premium gate
         if (!isPremium) {
+            track('premium_gate', { from: 'excel_export' });
             showAlert({
                 title: 'Función Premium',
                 message: 'La exportación a Excel es exclusiva para usuarios Premium.\n\nSuscríbete para exportar y analizar tu inventario.',
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                    { text: 'Ver Premium', onPress: () => router.push({ pathname: '/premium', params: { from: 'excel_export' } }) }
                 ]
             });
             return;

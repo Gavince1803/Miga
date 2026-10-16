@@ -125,7 +125,7 @@ function RootLayoutNav() {
       (response) => {
         const data = response.notification.request.content.data as Record<string, unknown>;
         if (data?.type === 'trial_expiry') {
-          router.push('/premium' as any);
+          router.push({ pathname: '/premium', params: { from: 'trial_notification' } });
         } else if (typeof data?.orderId === 'string') {
           router.push(`/orders/${data.orderId}` as any);
         }
