@@ -9,6 +9,7 @@ import { cancelAllNotifications, requestNotificationPermissions } from '@/lib/no
 import { deleteUserImages } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -95,6 +96,8 @@ function SettingToggle({
     );
 }
 
+const SUPPORT_EMAIL = 'contacto@micita.dev';
+
 export default function SettingsScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
@@ -102,6 +105,13 @@ export default function SettingsScreen() {
     const { showAlert } = useAlert();
     const [isNavigating, setIsNavigating] = useState(false);
     const [feedbackVisible, setFeedbackVisible] = useState(false);
+
+    // Without a mail app openURL fails: show the address so they can copy it
+    const openSupportEmail = (subject: string) => {
+        Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`).catch(() =>
+            showAlert({ title: 'Escríbenos', message: SUPPORT_EMAIL, type: 'info' })
+        );
+    };
 
     const [reminderEnabled, setReminderEnabled] = useState(true);
     const [dailyReminders, setDailyReminders] = useState(true);
@@ -340,7 +350,7 @@ export default function SettingsScreen() {
                     <SettingRow
                         icon="info-circle"
                         label="Versión"
-                        value="1.0.0"
+                        value={Constants.expoConfig?.version ?? ''}
                         colors={colors}
                         showChevron={false}
                     />
@@ -353,14 +363,14 @@ export default function SettingsScreen() {
                     <SettingRow
                         icon="question-circle"
                         label="Ayuda"
-                        onPress={() => { }}
+                        onPress={() => openSupportEmail('Ayuda con Miga')}
                         colors={colors}
                     />
                     <SettingRow
                         icon="envelope"
                         label="Contacto"
-                        value="soporte@miga.app"
-                        onPress={() => { }}
+                        value={SUPPORT_EMAIL}
+                        onPress={() => openSupportEmail('Contacto')}
                         colors={colors}
                     />
                 </View>
