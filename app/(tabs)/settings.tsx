@@ -249,7 +249,7 @@ export default function SettingsScreen() {
                 onPress={() => {
                     if (isNavigating) return;
                     setIsNavigating(true);
-                    router.push('/premium');
+                    router.push({ pathname: '/premium', params: { from: 'settings' } });
                     setTimeout(() => setIsNavigating(false), 1000);
                 }}
             >

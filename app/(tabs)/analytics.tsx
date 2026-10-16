@@ -104,7 +104,7 @@ export default function AnalyticsScreen() {
                     </View>
                     <TouchableOpacity
                         style={[styles.premiumCTA, { backgroundColor: colors.primaryStrong }]}
-                        onPress={() => router.push('/premium')}
+                        onPress={() => router.push({ pathname: '/premium', params: { from: 'analytics' } })}
                     >
                         <FontAwesome name="star" size={18} color="#FFF" />
                         <Text style={styles.premiumCTAText}>Desbloquear con Premium</Text>

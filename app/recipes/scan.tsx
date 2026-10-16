@@ -8,6 +8,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
+import { track } from '@/lib/analytics';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -75,13 +76,14 @@ export default function ScanRecipeScreen() {
 
         // Premium gate: OCR is a Premium-only feature
         if (!isPremium) {
+            track('premium_gate', { from: 'scan' });
             showAlert({
                 title: 'Función Premium',
                 message: 'El escaneo de recetas con IA es exclusivo para usuarios Premium.\n\nSuscríbete para convertir fotos en recetas automáticamente.',
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                    { text: 'Ver Premium', onPress: () => router.push({ pathname: '/premium', params: { from: 'scan' } }) }
                 ]
             });
             return;
@@ -99,6 +101,7 @@ export default function ScanRecipeScreen() {
             }));
 
             const extractedText = await extractTextFromImage(image, simplifiedInventory);
+            track('recipe_scanned', { ok: !!extractedText });
 
             if (!extractedText) {
                 showAlert({

@@ -3,10 +3,11 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { CURRENCIES, Currency } from '@/context/SettingsContext';
+import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +16,8 @@ export default function RegisterScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const { showAlert } = useAlert();
     const router = useRouter();
+
+    useEffect(() => { track('signup_opened'); }, []);
 
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
@@ -63,6 +66,7 @@ export default function RegisterScreen() {
         });
 
         if (error) {
+            track('signup_failed', { reason: error.code ?? 'unknown' });
             showAlert({ title: 'Error', message: error.message, type: 'error' });
         } else {
             showAlert({

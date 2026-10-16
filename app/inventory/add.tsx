@@ -5,6 +5,7 @@ import { useInventory } from '@/hooks/useInventory';
 import { useSubscription } from '@/hooks/useSubscription';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
+import { track } from '@/lib/analytics';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -59,13 +60,14 @@ export default function AddItemScreen() {
 
         // Check Premium Limit (Max 20 inventory items)
         if (!isPremium && inventory.length >= 20) {
+            track('premium_gate', { from: 'inventory_limit' });
             showAlert({
                 title: 'Límite Alcanzado',
                 message: 'Has alcanzado el límite de 20 ingredientes gratuitos.\n\nSuscríbete a Premium para inventario ilimitado y control de costos avanzado.',
                 type: 'warning',
                 buttons: [
                     { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Ver Premium', onPress: () => router.push('/premium') }
+                    { text: 'Ver Premium', onPress: () => router.push({ pathname: '/premium', params: { from: 'inventory_limit' } }) }
                 ]
             });
             return;

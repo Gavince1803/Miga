@@ -3,6 +3,7 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useAlert } from '@/context/AlertContext';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useRecipes } from '@/hooks/useRecipes';
+import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import { CostIngredient, RecipeCostConfig, UNIT_OPTIONS } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -355,6 +356,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                 margins: { top: 0, right: 0, bottom: 0, left: 0 },
             });
             await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: recipeName || 'Cotización' });
+            track('quote_shared');
         } catch (err) {
             console.error('Quote share error:', err);
             showAlert({ title: 'Error', message: 'No se pudo generar la cotización', type: 'error' });
