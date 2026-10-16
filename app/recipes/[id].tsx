@@ -4,8 +4,8 @@ import { useAlert } from '@/context/AlertContext';
 import { RecipeIngredient, useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
@@ -43,15 +43,15 @@ export default function RecipeDetailScreen() {
     const [basePortions, setBasePortions] = useState('12');
     const [targetPortions, setTargetPortions] = useState('12');
 
-    useEffect(() => {
+    // Reload on focus so changes made in Editar show up when coming back
+    useFocusEffect(useCallback(() => {
         if (id) {
             loadRecipe();
         }
-    }, [id]);
+    }, [id]));
 
     const loadRecipe = async () => {
         if (typeof id !== 'string') return;
-        setLoading(true);
         const data = await getRecipeById(id);
         setRecipe(data);
 
