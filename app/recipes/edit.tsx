@@ -1,5 +1,6 @@
 import DynamicListInput from '@/components/DynamicListInput';
 import { IngredientSelector, SelectedIngredient } from '@/components/IngredientSelector';
+import { FieldError } from '@/components/FieldError';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -32,6 +33,7 @@ export default function EditRecipeScreen() {
 
     const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState('');
+    const [titleError, setTitleError] = useState('');
     const [category, setCategory] = useState('');
     const [ingredientsList, setIngredientsList] = useState<string[]>(['']);
     const [linkedIngredients, setLinkedIngredients] = useState<SelectedIngredient[]>([]);
@@ -110,7 +112,7 @@ export default function EditRecipeScreen() {
 
     const handleSubmit = async () => {
         if (!title.trim()) {
-            showAlert({ title: 'Error', message: 'Por favor ingresa un título', type: 'error' });
+            setTitleError('Escribe el nombre de la receta');
             return;
         }
 
@@ -180,10 +182,11 @@ export default function EditRecipeScreen() {
                 <View style={styles.section}>
                     <Text style={[styles.label, { color: colors.textSecondary }]}>Título</Text>
                     <TextInput
-                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: titleError ? colors.statusText.cancelado : colors.border }]}
                         value={title}
-                        onChangeText={setTitle}
+                        onChangeText={(t) => { setTitle(t); setTitleError(''); }}
                     />
+                    <FieldError message={titleError} colors={colors} />
                 </View>
 
                 {/* Photo Section */}
