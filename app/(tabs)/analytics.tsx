@@ -3,7 +3,7 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useSettings } from '@/context/SettingsContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useSubscription } from '@/hooks/useSubscription';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack } from 'expo-router';
 import React, { useMemo } from 'react';
 import {
@@ -81,7 +81,7 @@ export default function AnalyticsScreen() {
                 }} />
                 <View style={styles.premiumGate}>
                     <View style={[styles.premiumIconCircle, { backgroundColor: colors.primary + '15' }]}>
-                        <FontAwesome name="bar-chart" size={48} color={colors.primary} />
+                        <Ionicons name="bar-chart-outline" size={48} color={colors.primary} />
                     </View>
                     <Text style={[styles.premiumTitle, { color: colors.text }]}>
                         Analytics Avanzado
@@ -91,13 +91,13 @@ export default function AnalyticsScreen() {
                     </Text>
                     <View style={styles.premiumFeatures}>
                         {[
-                            { icon: 'bar-chart', text: 'Ingresos de los últimos 6 meses' },
-                            { icon: 'birthday-cake', text: 'Top 5 productos más pedidos' },
-                            { icon: 'users', text: 'Top 3 clientes frecuentes' },
-                            { icon: 'calendar-check-o', text: 'Día con más entregas' },
+                            { icon: 'bar-chart-outline', text: 'Ingresos de los últimos 6 meses' },
+                            { icon: 'restaurant-outline', text: 'Top 5 productos más pedidos' },
+                            { icon: 'people-outline', text: 'Top 3 clientes frecuentes' },
+                            { icon: 'calendar-clear-outline', text: 'Día con más entregas' },
                         ].map((f, i) => (
                             <View key={i} style={styles.premiumFeatureRow}>
-                                <FontAwesome name={f.icon as any} size={16} color={colors.primary} />
+                                <Ionicons name={f.icon as any} size={16} color={colors.primary} />
                                 <Text style={[styles.premiumFeatureText, { color: colors.text }]}>{f.text}</Text>
                             </View>
                         ))}
@@ -106,7 +106,7 @@ export default function AnalyticsScreen() {
                         style={[styles.premiumCTA, { backgroundColor: colors.primaryStrong }]}
                         onPress={() => router.push({ pathname: '/premium', params: { from: 'analytics' } })}
                     >
-                        <FontAwesome name="star" size={18} color="#FFF" />
+                        <Ionicons name="star" size={18} color="#FFF" />
                         <Text style={styles.premiumCTAText}>Desbloquear con Premium</Text>
                     </TouchableOpacity>
                 </View>
@@ -133,7 +133,7 @@ export default function AnalyticsScreen() {
                 <View style={styles.summaryGrid}>
                     <View style={[styles.summaryCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                         <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
-                            <FontAwesome name="shopping-bag" size={15} color={colors.primary} />
+                            <Ionicons name="bag-outline" size={15} color={colors.primary} />
                         </View>
                         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Pedidos</Text>
                         {loading ? (
@@ -147,7 +147,7 @@ export default function AnalyticsScreen() {
 
                     <View style={[styles.summaryCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                         <View style={[styles.iconContainer, { backgroundColor: colors.success + '15' }]}>
-                            <FontAwesome name="money" size={15} color={colors.success} />
+                            <Ionicons name="cash-outline" size={15} color={colors.success} />
                         </View>
                         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ingresos</Text>
                         {loading ? (
@@ -161,7 +161,7 @@ export default function AnalyticsScreen() {
 
                     <View style={[styles.summaryCardFull, { backgroundColor: colors.surface }, Shadows.sm]}>
                         <View style={[styles.iconContainer, { backgroundColor: colors.warning + '20' }]}>
-                            <FontAwesome name="ticket" size={15} color={colors.warning} />
+                            <Ionicons name="ticket-outline" size={15} color={colors.warning} />
                         </View>
                         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ticket Promedio</Text>
                         {loading ? (
@@ -266,7 +266,7 @@ export default function AnalyticsScreen() {
                 {/* Busiest Weekday */}
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Día más Ocupado</Text>
                 <View style={[styles.weekdayCard, { backgroundColor: colors.primaryStrong }, Shadows.md]}>
-                    <FontAwesome name="calendar-check-o" size={32} color="rgba(255,255,255,0.9)" />
+                    <Ionicons name="calendar-clear-outline" size={32} color="rgba(255,255,255,0.9)" />
                     <View style={styles.weekdayInfo}>
                         {loading ? (
                             <ActivityIndicator color="#FFF" />

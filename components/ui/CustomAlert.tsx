@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import {
     Animated,
@@ -85,11 +85,11 @@ export function CustomAlert({
 
     const getIcon = () => {
         switch (type) {
-            case 'success': return { name: 'check-circle', color: colors.success };
-            case 'error': return { name: 'times-circle', color: colors.error };
-            case 'warning': return { name: 'exclamation-triangle', color: colors.warning };
-            case 'confirmation': return { name: 'question-circle', color: colors.primaryText };
-            default: return { name: 'info-circle', color: colors.primaryText };
+            case 'success': return { name: 'checkmark-circle', color: colors.success };
+            case 'error': return { name: 'close-circle', color: colors.error };
+            case 'warning': return { name: 'warning-outline', color: colors.warning };
+            case 'confirmation': return { name: 'help-circle-outline', color: colors.primaryText };
+            default: return { name: 'information-circle-outline', color: colors.primaryText };
         }
     };
 
@@ -132,7 +132,7 @@ export function CustomAlert({
                     >
                         <View style={styles.content}>
                             <View style={[styles.iconContainer, { backgroundColor: iconData.color + '15' }]}>
-                                <FontAwesome name={iconData.name as any} size={24} color={iconData.color} />
+                                <Ionicons name={iconData.name as any} size={24} color={iconData.color} />
                             </View>
 
                             <Text style={[styles.title, { color: colors.text }]}>

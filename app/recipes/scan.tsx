@@ -4,7 +4,7 @@ import { useAlert } from '@/context/AlertContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useSubscription } from '@/hooks/useSubscription';
 import { extractTextFromImage } from '@/lib/ocr';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
@@ -161,7 +161,7 @@ export default function ScanRecipeScreen() {
                         <Image source={{ uri: image }} style={styles.previewImage} resizeMode="contain" />
                     ) : (
                         <View style={styles.placeholder}>
-                            <FontAwesome name="camera" size={48} color={colors.textMuted} />
+                            <Ionicons name="camera-outline" size={48} color={colors.textMuted} />
                             <Text style={[styles.placeholderText, { color: colors.textMuted }]}>
                                 Sin imagen seleccionada
                             </Text>
@@ -176,7 +176,7 @@ export default function ScanRecipeScreen() {
                         onPress={() => pickImage('camera')}
                         disabled={processing}
                     >
-                        <FontAwesome name="camera" size={20} color={colors.primary} />
+                        <Ionicons name="camera-outline" size={20} color={colors.primary} />
                         <Text style={[styles.buttonText, { color: colors.primaryText }]}>Cámara</Text>
                     </TouchableOpacity>
 
@@ -185,7 +185,7 @@ export default function ScanRecipeScreen() {
                         onPress={() => pickImage('library')}
                         disabled={processing}
                     >
-                        <FontAwesome name="image" size={20} color={colors.primary} />
+                        <Ionicons name="image-outline" size={20} color={colors.primary} />
                         <Text style={[styles.buttonText, { color: colors.primaryText }]}>Galería</Text>
                     </TouchableOpacity>
                 </View>
@@ -201,7 +201,7 @@ export default function ScanRecipeScreen() {
                             <ActivityIndicator color="#FFF" />
                         ) : (
                             <>
-                                <FontAwesome name="magic" size={20} color="#FFF" />
+                                <Ionicons name="sparkles-outline" size={20} color="#FFF" />
                                 <Text style={styles.processButtonText}>Procesar Receta</Text>
                             </>
                         )}

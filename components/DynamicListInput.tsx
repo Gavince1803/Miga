@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useRef } from 'react';
 import {
     StyleSheet,
@@ -96,7 +96,7 @@ export default function DynamicListInput({
         <View style={styles.container}>
             {label && (
                 <View style={styles.labelContainer}>
-                    {icon && <FontAwesome name={icon as any} size={14} color={colors.textSecondary} style={{ marginRight: 8 }} />}
+                    {icon && <Ionicons name={icon as any} size={14} color={colors.textSecondary} style={{ marginRight: 8 }} />}
                     <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
                 </View>
             )}
@@ -130,7 +130,7 @@ export default function DynamicListInput({
 
                     {data.length > 1 && (
                         <TouchableOpacity onPress={() => handleRemoveItem(index)} style={styles.removeBtn}>
-                            <FontAwesome name="times" size={16} color={colors.textMuted} />
+                            <Ionicons name="close" size={16} color={colors.textMuted} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -140,7 +140,7 @@ export default function DynamicListInput({
                 style={[styles.addButton, { backgroundColor: colors.surface, borderColor: colors.primary }]}
                 onPress={handleAddItem}
             >
-                <FontAwesome name="plus" size={14} color={colors.primary} />
+                <Ionicons name="add" size={14} color={colors.primary} />
                 <Text style={[styles.addButtonText, { color: colors.primaryText }]}>Agregar línea</Text>
             </TouchableOpacity>
         </View>

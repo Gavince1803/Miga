@@ -4,7 +4,7 @@ import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useSubscription } from '@/hooks/useSubscription';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { track } from '@/lib/analytics';
 import React, { useState } from 'react';
@@ -107,7 +107,7 @@ export default function AddItemScreen() {
                 {/* Header */}
                 <View style={[styles.header, { borderBottomColor: colors.border }]}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <FontAwesome name="arrow-left" size={20} color={colors.text} />
+                        <Ionicons name="arrow-back" size={20} color={colors.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: colors.text }]}>Nuevo Ingrediente</Text>
                     <View style={{ width: 44 }} />
@@ -231,7 +231,7 @@ export default function AddItemScreen() {
                             <ActivityIndicator color="#FFF" size="small" />
                         ) : (
                             <>
-                                <FontAwesome name="check" size={20} color="#FFF" />
+                                <Ionicons name="checkmark" size={20} color="#FFF" />
                                 <Text style={styles.saveButtonText}>Agregar Ingrediente</Text>
                             </>
                         )}

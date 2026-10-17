@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useToast } from '@/context/ToastContext';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -117,8 +117,8 @@ export default function FeedbackModal({
                         onPress={() => setAllowContact(v => !v)}
                         testID="feedback-allow-contact"
                     >
-                        <FontAwesome
-                            name={allowContact ? 'check-square' : 'square-o'}
+                        <Ionicons
+                            name={allowContact ? 'checkbox' : 'square-outline'}
                             size={20}
                             color={allowContact ? colors.primary : colors.textMuted}
                         />

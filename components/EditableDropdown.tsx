@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -103,7 +103,7 @@ export function EditableDropdown({
                 <Text style={[styles.valueText, { color: value ? colors.text : colors.textMuted }]}>
                     {value || 'Seleccionar o escribir...'}
                 </Text>
-                <FontAwesome name="chevron-down" size={12} color={colors.textSecondary} />
+                <Ionicons name="chevron-down" size={12} color={colors.textSecondary} />
             </TouchableOpacity>
 
             <Modal
@@ -119,7 +119,7 @@ export function EditableDropdown({
                                 Seleccionar {label}
                             </Text>
                             <TouchableOpacity onPress={() => setVisible(false)}>
-                                <FontAwesome name="times" size={20} color={colors.textMuted} />
+                                <Ionicons name="close" size={20} color={colors.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -172,7 +172,7 @@ export function EditableDropdown({
                                                 ]}>
                                                     {item}
                                                 </Text>
-                                                {value === item && <FontAwesome name="check" size={14} color={colors.primary} />}
+                                                {value === item && <Ionicons name="checkmark" size={14} color={colors.primary} />}
                                             </TouchableOpacity>
                                         )}
                                         ListHeaderComponent={
@@ -183,7 +183,7 @@ export function EditableDropdown({
                                                     setShowCustomInput(true);
                                                 }}
                                             >
-                                                <FontAwesome name="plus" size={14} color={colors.primary} />
+                                                <Ionicons name="add" size={14} color={colors.primary} />
                                                 <Text style={[styles.createNewText, { color: colors.primaryText }]}>
                                                     Agregar nuevo...
                                                 </Text>

@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -83,7 +83,7 @@ export default function ReEngagementBanner({ ordersCount, inventoryCount }: Prop
         >
             {/* Dismiss button */}
             <TouchableOpacity style={styles.closeButton} onPress={handleDismiss} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                <FontAwesome name="times" size={14} color={colors.textMuted} />
+                <Ionicons name="close" size={14} color={colors.textMuted} />
             </TouchableOpacity>
 
             {/* Icon */}
@@ -105,7 +105,7 @@ export default function ReEngagementBanner({ ordersCount, inventoryCount }: Prop
                 onPress={handleCTA}
                 activeOpacity={0.8}
             >
-                <FontAwesome name="book" size={14} color="#FFF" />
+                <Ionicons name="book-outline" size={14} color="#FFF" />
                 <Text style={styles.ctaText}>Ver Recetario</Text>
             </TouchableOpacity>
         </View>

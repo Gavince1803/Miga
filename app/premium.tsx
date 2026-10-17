@@ -5,7 +5,7 @@ import { useToast } from '@/context/ToastContext';
 import { FREE_TIER_LIMITS, useSubscription } from '@/hooks/useSubscription';
 import { track } from '@/lib/analytics';
 import { restorePurchases } from '@/lib/revenuecat';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -24,12 +24,12 @@ import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../constants/Colors';
 
 const PREMIUM_FEATURES = [
-    { icon: 'plus-circle', label: 'Pedidos ilimitados por mes', free: `Hasta ${FREE_TIER_LIMITS.maxOrders} al mes` },
-    { icon: 'cubes', label: 'Inventario ilimitado', free: `Hasta ${FREE_TIER_LIMITS.maxInventoryItems} items` },
-    { icon: 'book', label: 'Recetas ilimitadas', free: `Hasta ${FREE_TIER_LIMITS.maxRecipes}` },
-    { icon: 'camera', label: 'OCR Escaneo de Recetas', free: 'No disponible' },
-    { icon: 'bar-chart', label: 'Estadísticas avanzadas', free: 'Básicas' },
-    { icon: 'file-excel-o', label: 'Exportar a Excel', free: 'No disponible' },
+    { icon: 'add-circle-outline', label: 'Pedidos ilimitados por mes', free: `Hasta ${FREE_TIER_LIMITS.maxOrders} al mes` },
+    { icon: 'cube-outline', label: 'Inventario ilimitado', free: `Hasta ${FREE_TIER_LIMITS.maxInventoryItems} items` },
+    { icon: 'book-outline', label: 'Recetas ilimitadas', free: `Hasta ${FREE_TIER_LIMITS.maxRecipes}` },
+    { icon: 'camera-outline', label: 'OCR Escaneo de Recetas', free: 'No disponible' },
+    { icon: 'bar-chart-outline', label: 'Estadísticas avanzadas', free: 'Básicas' },
+    { icon: 'document-outline', label: 'Exportar a Excel', free: 'No disponible' },
 ];
 
 const PAYMENT_INFO = {
@@ -175,7 +175,7 @@ export default function PremiumScreen() {
                 <Confetti active={true} />
                 <ScrollView contentContainerStyle={styles.content}>
                     <View style={[styles.premiumBadge, { backgroundColor: colors.primaryStrong }]}>
-                        <FontAwesome name="star" size={48} color="#FFF" />
+                        <Ionicons name="star" size={48} color="#FFF" />
                         <Text style={styles.premiumBadgeText}>Premium Activo</Text>
                         {premiumUntil && (
                             <Text style={styles.premiumUntil}>
@@ -191,9 +191,9 @@ export default function PremiumScreen() {
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Tus beneficios activos:</Text>
                         {PREMIUM_FEATURES.map((feature, index) => (
                             <View key={index} style={styles.featureRow}>
-                                <FontAwesome name={feature.icon as any} size={18} color={colors.success} />
+                                <Ionicons name={feature.icon as any} size={18} color={colors.success} />
                                 <Text style={[styles.featureLabel, { color: colors.text }]}>{feature.label}</Text>
-                                <FontAwesome name="check" size={16} color={colors.success} />
+                                <Ionicons name="checkmark" size={16} color={colors.success} />
                             </View>
                         ))}
                     </View>
@@ -207,7 +207,7 @@ export default function PremiumScreen() {
                             >
                                 <View style={styles.iapButtonContent}>
                                     <Text style={[styles.iapButtonTitle, { color: colors.text }]}>Administrar Suscripción de Apple</Text>
-                                    <FontAwesome name="apple" size={20} color={colors.text} />
+                                    <Ionicons name="logo-apple" size={20} color={colors.text} />
                                 </View>
                             </TouchableOpacity>
                         )}
@@ -231,7 +231,7 @@ export default function PremiumScreen() {
                 {/* Header with Secret Gesture on the Icon */}
                 <View style={styles.header}>
                     <TouchableOpacity activeOpacity={0.8} onPress={handleSecretTap} style={[styles.iconContainer, { backgroundColor: colors.primaryStrong }]}>
-                        <FontAwesome name="star" size={32} color="#FFF" />
+                        <Ionicons name="star" size={32} color="#FFF" />
                     </TouchableOpacity>
                     <Text style={[styles.title, { color: colors.text }]}>Miga Premium</Text>
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -244,12 +244,12 @@ export default function PremiumScreen() {
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>¿Qué obtienes?</Text>
                     {PREMIUM_FEATURES.map((feature, index) => (
                         <View key={index} style={[styles.featureRow, { borderBottomColor: colors.border }]}>
-                            <FontAwesome name={feature.icon as any} size={18} color={colors.primary} />
+                            <Ionicons name={feature.icon as any} size={18} color={colors.primary} />
                             <View style={styles.featureText}>
                                 <Text style={[styles.featureLabel, { color: colors.text }]}>{feature.label}</Text>
                                 <Text style={[styles.freeLimit, { color: colors.textMuted }]}>Gratis: {feature.free}</Text>
                             </View>
-                            <FontAwesome name="check-circle" size={20} color={colors.success} />
+                            <Ionicons name="checkmark-circle" size={20} color={colors.success} />
                         </View>
                     ))}
                 </View>
@@ -270,7 +270,7 @@ export default function PremiumScreen() {
                             {isPresenting ? (
                                 <ActivityIndicator color="#FFF" size="small" />
                             ) : (
-                                <FontAwesome name="chevron-right" size={16} color="#FFF" />
+                                <Ionicons name="chevron-forward" size={16} color="#FFF" />
                             )}
                         </View>
                     </TouchableOpacity>
@@ -304,7 +304,7 @@ export default function PremiumScreen() {
                             </View>
 
                             <TouchableOpacity style={[styles.contactButton, { borderColor: colors.primary }]} onPress={handleContactSupport}>
-                                <FontAwesome name="whatsapp" size={18} color={colors.primary} />
+                                <Ionicons name="logo-whatsapp" size={18} color={colors.primary} />
                                 <Text style={[styles.contactButtonText, { color: colors.primaryText }]}>Contactar por WhatsApp</Text>
                             </TouchableOpacity>
                         </View>
@@ -321,7 +321,7 @@ export default function PremiumScreen() {
                                 autoCorrect={false}
                             />
                             <TouchableOpacity style={[styles.redeemButton, { backgroundColor: colors.primaryStrong }]} onPress={handleRedeemCode} disabled={redeeming}>
-                                {redeeming ? <ActivityIndicator color="#FFF" /> : <><FontAwesome name="unlock" size={18} color="#FFF" /><Text style={styles.redeemButtonText}>Activar Código</Text></>}
+                                {redeeming ? <ActivityIndicator color="#FFF" /> : <><Ionicons name="lock-open-outline" size={18} color="#FFF" /><Text style={styles.redeemButtonText}>Activar Código</Text></>}
                             </TouchableOpacity>
                         </View>
                     </>

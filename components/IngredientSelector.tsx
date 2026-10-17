@@ -4,7 +4,7 @@ import { useAlert } from '@/context/AlertContext';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useInventory } from '@/hooks/useInventory';
 import { InventoryItem, UNIT_OPTIONS } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
 import {
     FlatList,
@@ -215,7 +215,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 style={styles.removeBtn}
                             >
-                                <FontAwesome name="times-circle" size={22} color={colors.error} />
+                                <Ionicons name="close-circle" size={22} color={colors.error} />
                             </TouchableOpacity>
                         </View>
                     ))}
@@ -227,7 +227,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                 style={[styles.addButton, { borderColor: colors.primary }]}
                 onPress={() => setShowModal(true)}
             >
-                <FontAwesome name="plus" size={16} color={colors.primary} />
+                <Ionicons name="add" size={16} color={colors.primary} />
                 <Text style={[styles.addButtonText, { color: colors.primaryText }]}>
                     Agregar Ingrediente
                 </Text>
@@ -257,7 +257,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                 setShowCreateForm(false);
                                 setSearchQuery('');
                             }}>
-                                <FontAwesome name="times" size={24} color={colors.textMuted} />
+                                <Ionicons name="close" size={24} color={colors.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -414,7 +414,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                             <>
                                 {/* Search */}
                                 <View style={[styles.searchBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                                    <FontAwesome name="search" size={16} color={colors.textMuted} />
+                                    <Ionicons name="search" size={16} color={colors.textMuted} />
                                     <TextInput
                                         style={[styles.searchInput, { color: colors.text }]}
                                         placeholder="Buscar en inventario..."
@@ -461,7 +461,7 @@ export function IngredientSelector({ selectedIngredients, onIngredientsChange }:
                                         setShowCreateForm(true);
                                     }}
                                 >
-                                    <FontAwesome name="plus-circle" size={20} color={colors.primary} />
+                                    <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
                                     <Text style={[styles.createNewText, { color: colors.primaryText }]}>
                                         Crear "{searchQuery || 'nuevo ingrediente'}"
                                     </Text>

@@ -2,7 +2,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { ClientSummary, useClients } from '@/hooks/useClients';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, Stack } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -56,7 +57,7 @@ function ClientCard({ client, colors, currencySymbol }: {
                 <View style={styles.cardRow}>
                     {client.phone ? (
                         <Text style={[styles.phone, { color: colors.textSecondary }]} numberOfLines={1}>
-                            <FontAwesome name="phone" size={11} /> {client.phone}
+                            <Ionicons name="call-outline" size={11} /> {client.phone}
                         </Text>
                     ) : (
                         <Text style={[styles.phone, { color: colors.textMuted }]}>Sin teléfono</Text>
@@ -70,7 +71,7 @@ function ClientCard({ client, colors, currencySymbol }: {
                 <View style={styles.cardRow}>
                     {client.favoriteCake ? (
                         <Text style={[styles.meta, { color: colors.textMuted }]} numberOfLines={1}>
-                            <FontAwesome name="birthday-cake" size={11} /> {client.favoriteCake}
+                            <MaterialCommunityIcons name="cake-variant-outline" size={11} /> {client.favoriteCake}
                         </Text>
                     ) : null}
                     <Text style={[styles.meta, { color: colors.textMuted }]}>
@@ -78,7 +79,7 @@ function ClientCard({ client, colors, currencySymbol }: {
                     </Text>
                 </View>
             </View>
-            <FontAwesome name="chevron-right" size={13} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
         </TouchableOpacity>
     );
 }
@@ -113,7 +114,7 @@ export default function ClientsScreen() {
 
             {/* Search bar */}
             <View style={[styles.searchContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-                <FontAwesome name="search" size={15} color={colors.textMuted} />
+                <Ionicons name="search" size={15} color={colors.textMuted} />
                 <TextInput
                     style={[styles.searchInput, { color: colors.text }]}
                     placeholder="Buscar por nombre, teléfono o torta..."
@@ -148,7 +149,7 @@ export default function ClientsScreen() {
                     }
                     ListEmptyComponent={
                         <View style={styles.center}>
-                            <FontAwesome name="users" size={48} color={colors.textMuted} />
+                            <Ionicons name="people-outline" size={48} color={colors.textMuted} />
                             <Text style={[styles.emptyTitle, { color: colors.text }]}>
                                 {search ? 'Sin resultados' : 'Sin clientes aún'}
                             </Text>

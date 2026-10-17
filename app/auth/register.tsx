@@ -6,7 +6,7 @@ import { useAlert } from '@/context/AlertContext';
 import { CURRENCIES, Currency } from '@/context/SettingsContext';
 import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -114,10 +114,10 @@ export default function RegisterScreen() {
                 >
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                            <FontAwesome name="arrow-left" size={20} color={colors.text} />
+                            <Ionicons name="arrow-back" size={20} color={colors.text} />
                         </TouchableOpacity>
                         <View style={styles.logoContainer}>
-                            <FontAwesome name="user-plus" size={32} color={colors.primary} />
+                            <Ionicons name="person-add-outline" size={32} color={colors.primary} />
                         </View>
                         <Text style={[styles.title, { color: colors.text }]}>Crear Cuenta</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
@@ -196,7 +196,7 @@ export default function RegisterScreen() {
                                             {CURRENCIES[currency].flag} {CURRENCIES[currency].label}
                                         </Text>
                                     </View>
-                                    <FontAwesome name="chevron-down" size={14} color={colors.textMuted} />
+                                    <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -255,7 +255,7 @@ export default function RegisterScreen() {
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: colors.text }]}>Selecciona tu moneda</Text>
                             <TouchableOpacity onPress={() => setShowCurrencyModal(false)}>
-                                <FontAwesome name="times" size={20} color={colors.textMuted} />
+                                <Ionicons name="close" size={20} color={colors.textMuted} />
                             </TouchableOpacity>
                         </View>
                         <FlatList
@@ -281,7 +281,7 @@ export default function RegisterScreen() {
                                         {val.flag} {val.label}
                                     </Text>
                                     {currency === key && (
-                                        <FontAwesome name="check" size={16} color={colors.primary} />
+                                        <Ionicons name="checkmark" size={16} color={colors.primary} />
                                     )}
                                 </TouchableOpacity>
                             )}

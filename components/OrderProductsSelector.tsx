@@ -3,7 +3,7 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useHaptics } from '@/hooks/useHaptics';
 import { useInventory } from '@/hooks/useInventory';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -132,7 +132,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 </Text>
                                 {product.recipeName && (
                                     <View style={[styles.recipeBadge, { backgroundColor: colors.primary + '15' }]}>
-                                        <FontAwesome name="book" size={10} color={colors.primary} />
+                                        <Ionicons name="book-outline" size={10} color={colors.primary} />
                                         <Text style={[styles.recipeBadgeText, { color: colors.primaryText }]}>
                                             Con receta
                                         </Text>
@@ -150,18 +150,18 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                         onPress={() => handleQuantityChange(index, String(Math.max(1, product.quantity - 1)))}
                                         style={[styles.qtyBtn, { backgroundColor: colors.surfaceSecondary }]}
                                     >
-                                        <FontAwesome name="minus" size={12} color={colors.text} />
+                                        <Ionicons name="remove" size={12} color={colors.text} />
                                     </TouchableOpacity>
                                     <Text style={[styles.qtyText, { color: colors.text }]}>{product.quantity}</Text>
                                     <TouchableOpacity
                                         onPress={() => handleQuantityChange(index, String(product.quantity + 1))}
                                         style={[styles.qtyBtn, { backgroundColor: colors.surfaceSecondary }]}
                                     >
-                                        <FontAwesome name="plus" size={12} color={colors.text} />
+                                        <Ionicons name="add" size={12} color={colors.text} />
                                     </TouchableOpacity>
                                 </View>
                                 <TouchableOpacity onPress={() => handleRemoveProduct(index)}>
-                                    <FontAwesome name="trash-o" size={18} color={colors.error} />
+                                    <Ionicons name="trash-outline" size={18} color={colors.error} />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -172,7 +172,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
             {/* Contextual hint */}
             {!hasInventory && !hasRecipes && (
                 <View style={[styles.hint, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-                    <FontAwesome name="info-circle" size={16} color={colors.primary} />
+                    <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.hintTitle, { color: colors.text }]}>
                             Activa el descuento automático de inventario
@@ -205,7 +205,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
 
             {hasInventory && !hasRecipes && (
                 <View style={[styles.hint, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-                    <FontAwesome name="check-circle" size={16} color={colors.success} />
+                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
                     <View style={{ flex: 1 }}>
                         <Text style={[styles.hintTitle, { color: colors.text }]}>
                             Ya tienes ingredientes cargados
@@ -225,7 +225,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
 
             {hasRecipes && (
                 <View style={[styles.hintSuccess, { backgroundColor: colors.success + '12' }]}>
-                    <FontAwesome name="magic" size={13} color={colors.success} />
+                    <Ionicons name="sparkles-outline" size={13} color={colors.success} />
                     <Text style={[styles.hintSuccessText, { color: colors.success }]}>
                         Vincula una receta y el inventario se descontará automáticamente al marcar el pedido como pagado.
                     </Text>
@@ -237,7 +237,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                 style={[styles.addButton, { borderColor: colors.primary }]}
                 onPress={() => setShowModal(true)}
             >
-                <FontAwesome name="plus" size={16} color={colors.primary} />
+                <Ionicons name="add" size={16} color={colors.primary} />
                 <Text style={[styles.addButtonText, { color: colors.primaryText }]}>
                     Agregar Preparación
                 </Text>
@@ -265,7 +265,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 {(selectedRecipe || addingWithoutRecipe) ? 'Cantidad y detalles' : '¿Qué vas a preparar?'}
                             </Text>
                             <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}>
-                                <FontAwesome name="times" size={24} color={colors.textMuted} />
+                                <Ionicons name="close" size={24} color={colors.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -274,17 +274,17 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                 {/* Compact recipe badge */}
                                 {selectedRecipe && selectedRecipe.id && (
                                     <View style={[styles.selectedRecipePill, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
-                                        <FontAwesome name="book" size={12} color={colors.primary} />
+                                        <Ionicons name="book-outline" size={12} color={colors.primary} />
                                         <Text style={[styles.selectedRecipePillText, { color: colors.primaryText }]} numberOfLines={1}>
                                             {selectedRecipe.title}
                                         </Text>
-                                        <FontAwesome name="magic" size={11} color={colors.primary} style={{ marginLeft: 'auto' }} />
+                                        <Ionicons name="sparkles-outline" size={11} color={colors.primary} style={{ marginLeft: 'auto' }} />
                                     </View>
                                 )}
 
                                 {addingWithoutRecipe && (
                                     <View style={[styles.selectedRecipePill, { backgroundColor: colors.warning + '15', borderColor: colors.warning + '30' }]}>
-                                        <FontAwesome name="warning" size={12} color={colors.warning} />
+                                        <Ionicons name="warning-outline" size={12} color={colors.warning} />
                                         <Text style={[styles.selectedRecipePillText, { color: colors.warning }]}>
                                             Sin receta · sin descuento automático
                                         </Text>
@@ -337,7 +337,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                     }]}
                                     onPress={handleAddProduct}
                                 >
-                                    <FontAwesome name="check" size={15} color="#fff" style={{ marginRight: Spacing.sm }} />
+                                    <Ionicons name="checkmark" size={15} color="#fff" style={{ marginRight: Spacing.sm }} />
                                     <Text style={styles.confirmButtonText}>Agregar al Pedido</Text>
                                 </TouchableOpacity>
 
@@ -350,7 +350,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                         setProductName('');
                                     }}
                                 >
-                                    <FontAwesome name="arrow-left" size={13} color={colors.textSecondary} />
+                                    <Ionicons name="arrow-back" size={13} color={colors.textSecondary} />
                                     <Text style={[styles.backButtonText, { color: colors.textSecondary }]}>
                                         Volver a buscar
                                     </Text>
@@ -360,7 +360,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                             /* Recipe Selection */
                             <>
                                 <View style={[styles.searchBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                                    <FontAwesome name="search" size={16} color={colors.textMuted} />
+                                    <Ionicons name="search" size={16} color={colors.textMuted} />
                                     <TextInput
                                         style={[styles.searchInput, { color: colors.text }]}
                                         placeholder="Buscar por nombre (ej: Torta de Chocolate)..."
@@ -399,12 +399,12 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                                         </Text>
                                                     )}
                                                 </View>
-                                                <FontAwesome name="chevron-right" size={14} color={colors.textMuted} />
+                                                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
                                             </TouchableOpacity>
                                         )}
                                         ListEmptyComponent={
                                             <View style={styles.emptyState}>
-                                                <FontAwesome name="book" size={32} color={colors.textMuted} />
+                                                <Ionicons name="book-outline" size={32} color={colors.textMuted} />
                                                 <Text style={[styles.emptyText, { color: colors.textMuted, marginTop: Spacing.sm }]}>
                                                     {searchQuery ? 'No se encontraron recetas' : 'No tienes recetas aún'}
                                                 </Text>
@@ -425,7 +425,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                                         setProductName(searchQuery || '');
                                     }}
                                 >
-                                    <FontAwesome name="plus-circle" size={18} color={colors.textSecondary} />
+                                    <Ionicons name="add-circle-outline" size={18} color={colors.textSecondary} />
                                     <Text style={[styles.noRecipeText, { color: colors.textSecondary }]}>
                                         No está en mi recetario (sin descuento automático)
                                     </Text>

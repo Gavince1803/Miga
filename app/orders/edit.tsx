@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
 import { useOrderItems } from '@/hooks/useOrderItems';
 import { OrderStatus, PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -354,7 +354,7 @@ export default function EditOrderScreen() {
                                             },
                                         ]}
                                     >
-                                        <FontAwesome name="user-o" size={13} color={colors.primary} style={{ marginTop: 2 }} />
+                                        <Ionicons name="person-outline" size={13} color={colors.primary} style={{ marginTop: 2 }} />
                                         <View style={{ flex: 1 }}>
                                             <Text style={[styles.suggestionName, { color: colors.text }]}>
                                                 {client.name}
@@ -365,7 +365,7 @@ export default function EditOrderScreen() {
                                                 </Text>
                                             ) : null}
                                         </View>
-                                        <FontAwesome name="chevron-right" size={11} color={colors.textMuted} />
+                                        <Ionicons name="chevron-forward" size={11} color={colors.textMuted} />
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -591,7 +591,7 @@ export default function EditOrderScreen() {
                         <Text style={styles.saveButtonText}>Guardando...</Text>
                     ) : (
                         <>
-                            <FontAwesome name="check" size={20} color="#FFFFFF" />
+                            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
                             <Text style={styles.saveButtonText}>Guardar Cambios</Text>
                         </>
                     )}

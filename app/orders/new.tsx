@@ -16,7 +16,7 @@ import { useDeductionToast } from '@/hooks/useDeductionToast';
 import { useOrders } from '@/hooks/useOrders';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { track } from '@/lib/analytics';
 import React, { useMemo, useRef, useState } from 'react';
@@ -437,7 +437,7 @@ export default function NewOrderScreen() {
                                             },
                                         ]}
                                     >
-                                        <FontAwesome name="user-o" size={13} color={colors.primary} style={{ marginTop: 2 }} />
+                                        <Ionicons name="person-outline" size={13} color={colors.primary} style={{ marginTop: 2 }} />
                                         <View style={{ flex: 1 }}>
                                             <Text style={[styles.suggestionName, { color: colors.text }]}>
                                                 {client.name}
@@ -448,7 +448,7 @@ export default function NewOrderScreen() {
                                                 </Text>
                                             ) : null}
                                         </View>
-                                        <FontAwesome name="chevron-right" size={11} color={colors.textMuted} />
+                                        <Ionicons name="chevron-forward" size={11} color={colors.textMuted} />
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -734,7 +734,7 @@ export default function NewOrderScreen() {
                         <Text style={styles.saveButtonText}>Guardando...</Text>
                     ) : (
                         <>
-                            <FontAwesome name="check" size={20} color="#FFFFFF" />
+                            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
                             <Text style={styles.saveButtonText}>Guardar Pedido</Text>
                         </>
                     )}

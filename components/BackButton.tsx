@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors } from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
@@ -13,7 +13,7 @@ export default function BackButton({ color }: { color?: string }) {
 
     return (
         <TouchableOpacity onPress={() => router.back()} style={[styles.button, { backgroundColor: colors.surface }]}>
-            <FontAwesome name="chevron-left" size={16} color={iconColor} />
+            <Ionicons name="chevron-back" size={16} color={iconColor} />
         </TouchableOpacity>
     );
 }

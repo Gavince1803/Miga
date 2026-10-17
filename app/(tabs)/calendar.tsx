@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { parseLocalDate } from '@/lib/dateUtils';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import {
@@ -142,13 +142,13 @@ export default function CalendarScreen() {
             {/* Month Navigation */}
             <View style={[styles.monthNav, { backgroundColor: colors.surface }]}>
                 <TouchableOpacity onPress={goToPrevMonth} style={styles.navButton}>
-                    <FontAwesome name="chevron-left" size={20} color={colors.text} />
+                    <Ionicons name="chevron-back" size={20} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.monthTitle, { color: colors.text }]}>
                     {MONTHS_ES[currentMonth]} {currentYear}
                 </Text>
                 <TouchableOpacity onPress={goToNextMonth} style={styles.navButton}>
-                    <FontAwesome name="chevron-right" size={20} color={colors.text} />
+                    <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
@@ -259,7 +259,7 @@ export default function CalendarScreen() {
                             style={[styles.closeButton, { backgroundColor: colors.surfaceSecondary }]}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <FontAwesome name="times" size={16} color={colors.textSecondary} />
+                            <Ionicons name="close" size={16} color={colors.textSecondary} />
                         </TouchableOpacity>
                     </View>
 
@@ -289,7 +289,7 @@ export default function CalendarScreen() {
                     {/* Add Order Button */}
                     <Link href="/orders/new" asChild>
                         <TouchableOpacity style={[styles.addOrderButton, { backgroundColor: colors.primaryStrong }]}>
-                            <FontAwesome name="plus" size={14} color="#FFF" />
+                            <Ionicons name="add" size={14} color="#FFF" />
                             <Text style={styles.addOrderButtonText}>Agregar a este día</Text>
                         </TouchableOpacity>
                     </Link>

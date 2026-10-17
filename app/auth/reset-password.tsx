@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -162,7 +162,7 @@ export default function ResetPasswordScreen() {
     if (sessionError) {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.lg }}>
-                <FontAwesome name="exclamation-circle" size={48} color={colors.error} />
+                <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
                 <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold', marginTop: Spacing.lg, textAlign: 'center' }}>
                     Enlace inválido o expirado
                 </Text>
@@ -190,7 +190,7 @@ export default function ResetPasswordScreen() {
                 >
                     <View style={styles.header}>
                         <View style={styles.logoContainer}>
-                            <FontAwesome name="key" size={32} color={colors.primary} />
+                            <Ionicons name="key-outline" size={32} color={colors.primary} />
                         </View>
                         <Text style={[styles.title, { color: colors.text }]}>Nueva Contraseña</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>

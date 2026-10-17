@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useOrders } from '@/hooks/useOrders';
 import { ORDER_STATUS_OPTIONS } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack } from 'expo-router';
 import React from 'react';
 import {
@@ -104,13 +104,13 @@ export default function AgendaScreen() {
                                 >
                                     <View style={styles.cardTop}>
                                         <View style={[styles.timeChip, { backgroundColor: (isDone ? colors.success : colors.urgentToday) + '20' }]}>
-                                            <FontAwesome name="clock-o" size={11} color={isDone ? colors.success : colors.urgentToday} />
+                                            <Ionicons name="time-outline" size={11} color={isDone ? colors.success : colors.urgentToday} />
                                             <Text style={[styles.timeText, { color: isDone ? colors.success : colors.urgentToday }]}>
                                                 {fmt12(order.deliveryTime)}
                                             </Text>
                                         </View>
                                         <View style={[styles.statusBadge, { backgroundColor: (statusOption?.color || colors.textMuted) + '20' }]}>
-                                            {isDone && <FontAwesome name="check" size={9} color={colors.statusText[order.status] ?? statusOption?.color} style={{ marginRight: 3 }} />}
+                                            {isDone && <Ionicons name="checkmark" size={9} color={colors.statusText[order.status] ?? statusOption?.color} style={{ marginRight: 3 }} />}
                                             <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? colors.textMuted }]}>
                                                 {statusOption?.label}
                                             </Text>
@@ -130,7 +130,7 @@ export default function AgendaScreen() {
                                             style={[styles.actionBtn, { backgroundColor: colors.primary + '15' }]}
                                             onPress={() => router.push(`/orders/${order.id}` as any)}
                                         >
-                                            <FontAwesome name="eye" size={12} color={colors.primary} />
+                                            <Ionicons name="eye-outline" size={12} color={colors.primary} />
                                             <Text style={[styles.actionText, { color: colors.primaryText }]}>Ver detalle</Text>
                                         </TouchableOpacity>
                                         {phone ? (
@@ -138,7 +138,7 @@ export default function AgendaScreen() {
                                                 style={[styles.actionBtn, { backgroundColor: colors.success + '15' }]}
                                                 onPress={() => Linking.openURL(`tel:${phone}`)}
                                             >
-                                                <FontAwesome name="phone" size={12} color={colors.success} />
+                                                <Ionicons name="call-outline" size={12} color={colors.success} />
                                                 <Text style={[styles.actionText, { color: colors.success }]}>Llamar</Text>
                                             </TouchableOpacity>
                                         ) : null}
@@ -147,7 +147,7 @@ export default function AgendaScreen() {
                                                 style={[styles.actionBtn, { backgroundColor: '#25D36615' }]}
                                                 onPress={() => Linking.openURL(`whatsapp://send?phone=${phone.replace(/[\s\-\(\)]/g, '')}`).catch(() => { })}
                                             >
-                                                <FontAwesome name="whatsapp" size={12} color="#25D366" />
+                                                <Ionicons name="logo-whatsapp" size={12} color="#25D366" />
                                                 <Text style={[styles.actionText, { color: '#25D366' }]}>WhatsApp</Text>
                                             </TouchableOpacity>
                                         ) : null}

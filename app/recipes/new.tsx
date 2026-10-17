@@ -10,7 +10,7 @@ import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useSubscription } from '@/hooks/useSubscription';
 import { parseRecipeText } from '@/lib/ocr';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { track } from '@/lib/analytics';
@@ -258,17 +258,17 @@ export default function NewRecipeScreen() {
                                 style={[styles.removeImageBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
                                 onPress={() => setImage(null)}
                             >
-                                <FontAwesome name="times" size={12} color="#FFF" />
+                                <Ionicons name="close" size={12} color="#FFF" />
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <View style={styles.photoButtonsRow}>
                             <TouchableOpacity style={[styles.photoBtnSmall, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={takePhoto}>
-                                <FontAwesome name="camera" size={14} color={colors.text} />
+                                <Ionicons name="camera-outline" size={14} color={colors.text} />
                                 <Text style={[styles.photoBtnTextSmall, { color: colors.text }]}>Cámara</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.photoBtnSmall, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
-                                <FontAwesome name="image" size={14} color={colors.text} />
+                                <Ionicons name="image-outline" size={14} color={colors.text} />
                                 <Text style={[styles.photoBtnTextSmall, { color: colors.text }]}>Galería</Text>
                             </TouchableOpacity>
                         </View>
@@ -313,7 +313,7 @@ export default function NewRecipeScreen() {
                         <View style={styles.section}>
                             <DynamicListInput
                                 label="Notas de Ingredientes"
-                                icon="shopping-basket"
+                                icon="basket-outline"
                                 data={ingredientsList}
                                 onUpdate={setIngredientsList}
                                 placeholder="Ej. Opcional: Tips o notas adicionales"
@@ -323,7 +323,7 @@ export default function NewRecipeScreen() {
                         <View style={styles.section}>
                             <DynamicListInput
                                 label="Pasos / Instrucciones"
-                                icon="list-ol"
+                                icon="list-outline"
                                 data={stepsList}
                                 onUpdate={setStepsList}
                                 placeholder="Ej. Mezclar azúcar y manteca..."
@@ -335,7 +335,7 @@ export default function NewRecipeScreen() {
                     <View style={styles.scanContainer}>
                         {/* Streamlined scan view - Encourages photo usage */}
                         <View style={[styles.infoBox, { backgroundColor: colors.surfaceSecondary }]}>
-                            <FontAwesome name="info-circle" size={16} color={colors.primary} />
+                            <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
                             <Text style={[styles.infoText, { color: colors.text }]}>
                                 Toma una foto de tu receta. Se guardará como referencia.
                                 {"\n"}Próximamente podrás convertirla a texto automáticamente.
@@ -343,7 +343,7 @@ export default function NewRecipeScreen() {
                         </View>
                         {!image && (
                             <TouchableOpacity style={[styles.bigScanBtn, { backgroundColor: colors.primaryStrong }]} onPress={takePhoto}>
-                                <FontAwesome name="camera" size={24} color="#FFF" />
+                                <Ionicons name="camera-outline" size={24} color="#FFF" />
                                 <Text style={styles.bigScanBtnText}>Tomar Foto Ahora</Text>
                             </TouchableOpacity>
                         )}
