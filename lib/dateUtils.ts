@@ -17,3 +17,16 @@ export function toLocalDateString(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+// "Hoy", "Mañana", "En 3 días" read faster than a date; beyond a week (or in the past) show "23 oct"
+export function relativeDayLabel(dateStr: string): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = parseLocalDate(dateStr);
+    date.setHours(0, 0, 0, 0);
+    const days = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (days === 0) return 'Hoy';
+    if (days === 1) return 'Mañana';
+    if (days > 1 && days < 7) return `En ${days} días`;
+    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+}
