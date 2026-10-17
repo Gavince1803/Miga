@@ -9,7 +9,8 @@ import { useOrders } from '@/hooks/useOrders';
 import { parseLocalDate } from '@/lib/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { isToday } from 'date-fns';
 import { Link, router } from 'expo-router';
 import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
@@ -58,7 +59,7 @@ function HeroCard({
           </Text>
         </View>
         <View style={[styles.heroIcon, { backgroundColor: colors.primary + '20' }]}>
-          <FontAwesome name="birthday-cake" size={22} color={colors.primaryText} />
+          <MaterialCommunityIcons name="cake-variant-outline" size={24} color={colors.primaryText} />
         </View>
       </View>
 
@@ -137,7 +138,7 @@ function UpcomingOrderCard({
           {order.description}
         </Text>
         <Text style={[styles.orderTime, { color: colors.textMuted }]}>
-          <FontAwesome name="clock-o" size={12} /> {formatTime12hr(order.deliveryTime)}
+          <Ionicons name="time-outline" size={12} /> {formatTime12hr(order.deliveryTime)}
         </Text>
       </TouchableOpacity>
     </Link>
@@ -321,14 +322,14 @@ export default function HomeScreen() {
           <View style={[styles.newOrderButton, { backgroundColor: colors.primaryStrong }, Shadows.sm]}>
             <View style={styles.newOrderContent}>
               <View style={styles.iconContainer}>
-                <FontAwesome name="plus" size={24} color="#FFF" />
+                <Ionicons name="add" size={28} color="#FFF" />
               </View>
               <View>
                 <Text style={styles.newOrderTitle}>Nuevo Pedido</Text>
                 <Text style={styles.newOrderSubtitle}>Registrar una nueva orden</Text>
               </View>
             </View>
-            <FontAwesome name="chevron-right" size={16} color="rgba(255,255,255,0.6)" />
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
           </View>
         </TouchableOpacity>
       </Link>
@@ -342,14 +343,14 @@ export default function HomeScreen() {
       >
         <View style={styles.newOrderContent}>
           <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
-            <FontAwesome name="calculator" size={22} color={colors.primary} />
+            <Ionicons name="calculator-outline" size={22} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.quoteTitle, { color: colors.text }]}>Cotizar un pastel</Text>
             <Text style={[styles.quoteSubtitle, { color: colors.textSecondary }]}>Calcula tu precio y envíalo por WhatsApp</Text>
           </View>
         </View>
-        <FontAwesome name="chevron-right" size={16} color={colors.textMuted} />
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </TouchableOpacity>
 
       {/* Re-engagement Banner */}
@@ -383,7 +384,7 @@ export default function HomeScreen() {
           ))
         ) : upcomingOrders.length === 0 ? (
           <View style={[styles.emptyUpcoming, { backgroundColor: colors.surface }]}>
-            <FontAwesome name="calendar-check-o" size={32} color={colors.textMuted} />
+            <Ionicons name="calendar-clear-outline" size={32} color={colors.textMuted} />
             <Text style={[styles.emptyUpcomingTitle, { color: colors.text }]}>Todo al día</Text>
             <Text style={[styles.emptyUpcomingText, { color: colors.textSecondary }]}>
               No tienes pedidos próximos pendientes
