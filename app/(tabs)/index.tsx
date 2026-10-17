@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
-import { parseLocalDate } from '@/lib/dateUtils';
+import { parseLocalDate, relativeDayLabel } from '@/lib/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -27,13 +27,15 @@ const formatTime12hr = (time: string) => {
 
 // Today at a glance: one calm card instead of four multicolor stat tiles
 function HeroCard({
-  todayCount,
+  todayOrders,
   stats,
   colors,
   loading,
   onPress,
+  formatMoney,
 }: {
-  todayCount: number;
+  todayOrders: Order[];
+  formatMoney: (amount: number) => string;
   stats: { label: string; value: string; loading: boolean }[];
   colors: typeof Colors.light;
   loading: boolean;
@@ -41,6 +43,8 @@ function HeroCard({
 }) {
   const dateText = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   const todayLabel = dateText.charAt(0).toUpperCase() + dateText.slice(1);
+  const todayCount = todayOrders.length;
+  const shownToday = [...todayOrders].sort((a, b) => a.deliveryTime.localeCompare(b.deliveryTime)).slice(0, 3);
 
   return (
     <TouchableOpacity
@@ -62,6 +66,31 @@ function HeroCard({
           <MaterialCommunityIcons name="cake-variant-outline" size={24} color={colors.primaryText} />
         </View>
       </View>
+
+      {/* Which orders, not just how many: time, client and what's still owed */}
+      {!loading && shownToday.map((order) => {
+        const balance = order.totalPrice - (order.depositAmount || 0);
+        const isPaid = order.status === 'pagado' || order.paymentStatus === 'pagado' || balance <= 0;
+        return (
+          <TouchableOpacity
+            key={order.id}
+            style={[styles.heroOrderRow, { backgroundColor: colors.surfaceSecondary }]}
+            onPress={() => router.push(`/orders/${order.id}` as any)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.heroOrderTime, { color: colors.primaryText }]}>{formatTime12hr(order.deliveryTime)}</Text>
+            <Text style={[styles.heroOrderName, { color: colors.text }]} numberOfLines={1}>{order.clientName}</Text>
+            <Text style={[styles.heroOrderBalance, { color: colors.statusText[isPaid ? 'pagado' : 'pendiente'] }]}>
+              {isPaid ? 'Pagado' : `Debe ${formatMoney(balance)}`}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      {!loading && todayCount > shownToday.length && (
+        <Text style={[styles.heroMore, { color: colors.primaryText }]}>
+          +{todayCount - shownToday.length} más en la agenda
+        </Text>
+      )}
 
       <View style={[styles.heroDivider, { backgroundColor: colors.border }]} />
 
@@ -105,9 +134,8 @@ function UpcomingOrderCard({
   colors: typeof Colors.light;
 }) {
   const urgencyColor = getUrgencyColor(order.deliveryDate, colors);
-  const dateObj = parseLocalDate(order.deliveryDate);
-
-  const formattedDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const formattedDate = relativeDayLabel(order.deliveryDate);
+  const balance = order.totalPrice - (order.depositAmount || 0);
 
   return (
     <Link href={`/orders/${order.id}`} asChild>
@@ -129,7 +157,8 @@ function UpcomingOrderCard({
             {order.clientName}
           </Text>
           <View style={[styles.orderDateBadge, { backgroundColor: urgencyColor + '20' }]}>
-            <Text style={[styles.orderDateText, { color: urgencyColor }]}>
+            {/* Yellow/green urgency colors are unreadable as text: keep them for the tint only */}
+            <Text style={[styles.orderDateText, { color: urgencyColor === colors.urgentToday ? urgencyColor : colors.text }]}>
               {formattedDate}
             </Text>
           </View>
@@ -137,9 +166,16 @@ function UpcomingOrderCard({
         <Text style={[styles.orderDescription, { color: colors.textSecondary }]}>
           {order.description}
         </Text>
-        <Text style={[styles.orderTime, { color: colors.textMuted }]}>
-          <Ionicons name="time-outline" size={12} /> {formatTime12hr(order.deliveryTime)}
-        </Text>
+        <View style={styles.orderFooter}>
+          <Text style={[styles.orderTime, { color: colors.textMuted }]}>
+            <Ionicons name="time-outline" size={12} /> {formatTime12hr(order.deliveryTime)}
+          </Text>
+          {balance > 0 && (
+            <Text style={[styles.orderBalance, { color: colors.statusText.pendiente }]}>
+              Debe ${balance.toFixed(2)}
+            </Text>
+          )}
+        </View>
       </TouchableOpacity>
     </Link>
   );
@@ -158,7 +194,7 @@ export default function HomeScreen() {
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   // Calculate stats
-  const todayOrdersCount = orders.filter(o => isToday(parseLocalDate(o.deliveryDate))).length;
+  const todayOrders = orders.filter(o => o.status !== 'cancelado' && isToday(parseLocalDate(o.deliveryDate)));
   // Simplified week calculation (last 7 days + next 7 days or just volume)
   // For now: active orders (pending/process)
   const activeOrdersCount = orders.filter(o => o.status === 'pendiente' || o.status === 'pagado').length; // 'pagado' orders might still be active in terms of production? Users call, sticking to status. Actually user said 'todo arreglado' regarding new statuses.
@@ -196,12 +232,15 @@ export default function HomeScreen() {
     return `${currencySymbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const formatProfit = (amount: number) => (amount < 0 ? '-' : '') + formatMoney(Math.abs(amount));
+
   // Recent/Upcoming - Sort by date and take first 3
   // Show ALL future orders in upcoming list for now if the list is short, or keep top 3 but make it clear
   // To avoid confusion, let's keep top 3 but maybe the label "Ver todos" handles the rest.
   const upcomingOrders = orders
     .filter(o => {
-      const isFuture = parseLocalDate(o.deliveryDate) >= new Date(new Date().setHours(0, 0, 0, 0));
+      // From tomorrow on: today's orders are already listed in the hero card
+      const isFuture = parseLocalDate(o.deliveryDate) >= new Date(new Date().setHours(24, 0, 0, 0));
       const isActive = o.status !== 'cancelado' && o.status !== 'completado';
       const isUnpaid = o.paymentStatus !== 'pagado'; // User request: Paid orders should hide
       return isFuture && isActive && isUnpaid;
@@ -296,22 +335,21 @@ export default function HomeScreen() {
       {/* Welcome Header */}
       <View style={styles.header}>
         <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-          {userName ? `¡Bienvenida, ${userName}! 🧁` : '¡Bienvenida! 🧁'}
-        </Text>
-        <Text style={[styles.title, { color: colors.text }]}>
-          Tu día de hoy
+          {userName ? `¡Hola, ${userName}! 🧁` : '¡Hola! 🧁'}
         </Text>
       </View>
 
       <HeroCard
-        todayCount={todayOrdersCount}
+        todayOrders={todayOrders}
         loading={ordersLoading}
         colors={colors}
+        formatMoney={formatMoney}
         onPress={() => router.push('/agenda' as any)}
         stats={[
           { label: 'Por cobrar', value: formatMoney(pendingCollection), loading: ordersLoading },
           { label: 'Ingresos del mes', value: formatMoney(monthlyRevenue), loading: ordersLoading },
-          { label: 'Gastos del mes', value: formatMoney(monthlyExpenses), loading: expensesLoading },
+          // Profit, not expenses: "how much do I actually make" is the question
+          { label: 'Ganancia del mes', value: formatProfit(monthlyRevenue - monthlyExpenses), loading: ordersLoading || expensesLoading },
         ]}
       />
 
@@ -412,14 +450,10 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
   },
   header: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   greeting: {
     ...Typography.body,
-    marginBottom: Spacing.xs,
-  },
-  title: {
-    ...Typography.title,
   },
   heroCard: {
     borderRadius: BorderRadius.xl,
@@ -450,6 +484,33 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  heroOrderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+  },
+  heroOrderTime: {
+    ...Typography.small,
+    fontWeight: '600',
+    minWidth: 64,
+  },
+  heroOrderName: {
+    ...Typography.bodyBold,
+    flex: 1,
+  },
+  heroOrderBalance: {
+    ...Typography.small,
+    fontWeight: '600',
+  },
+  heroMore: {
+    ...Typography.small,
+    fontWeight: '600',
+    marginTop: Spacing.sm,
   },
   heroDivider: {
     height: 1,
@@ -571,6 +632,15 @@ const styles = StyleSheet.create({
   },
   orderTime: {
     ...Typography.small,
+  },
+  orderFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  orderBalance: {
+    ...Typography.small,
+    fontWeight: '600',
   },
   upcomingPlaceholder: {
     // Same shape as UpcomingOrderCard so the real cards don't jump in

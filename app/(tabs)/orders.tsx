@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
-import { parseLocalDate } from '@/lib/dateUtils';
+import { parseLocalDate, relativeDayLabel } from '@/lib/dateUtils';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link } from 'expo-router';
@@ -41,12 +41,9 @@ function OrderCard({
     else if (daysUntil <= 2) urgencyColor = colors.urgentSoon;
     else if (daysUntil <= 7) urgencyColor = colors.urgentWeek;
 
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return '';
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
-        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    };
+    // What the client still owes is what matters, not the total
+    const balance = order.totalPrice - (order.depositAmount || 0);
+    const isPaid = order.status === 'pagado' || order.paymentStatus === 'pagado' || balance <= 0;
 
     const formatTime12hr = (time: string) => {
         const [hours, minutes] = time.split(':').map(Number);
@@ -71,21 +68,15 @@ function OrderCard({
                 }}
             >
                 <View style={styles.orderCardHeader}>
-                    <View style={styles.orderNumberBadge}>
-                        <Text style={[styles.orderNumber, { color: colors.primaryText }]}>
-                            #{order.orderNumber}
-                        </Text>
-                    </View>
+                    <Text style={[styles.clientName, { color: colors.text }]} numberOfLines={1}>
+                        {order.clientName}
+                    </Text>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
                         <Text style={[styles.statusText, { color: statusTextColor }]}>
                             {statusOption?.label}
                         </Text>
                     </View>
                 </View>
-
-                <Text style={[styles.clientName, { color: colors.text }]}>
-                    {order.clientName}
-                </Text>
 
                 <Text style={[styles.orderDescription, { color: colors.textSecondary }]} numberOfLines={1}>
                     {order.description || `${order.size} - ${order.servings}`}
@@ -95,12 +86,19 @@ function OrderCard({
                     <View style={styles.orderDateRow}>
                         <FontAwesome name="calendar" size={12} color={colors.textMuted} />
                         <Text style={[styles.orderDate, { color: colors.textMuted }]}>
-                            {formatDate(order.deliveryDate)} • {formatTime12hr(order.deliveryTime)}
+                            {order.deliveryDate ? relativeDayLabel(order.deliveryDate) : ''} • {formatTime12hr(order.deliveryTime)} • #{order.orderNumber}
                         </Text>
                     </View>
-                    <Text style={[styles.orderPrice, { color: colors.primaryText }]}>
-                        ${order.totalPrice.toFixed(2)}
-                    </Text>
+                    <View style={styles.orderPriceCol}>
+                        <Text style={[styles.orderPrice, { color: colors.primaryText }]}>
+                            ${order.totalPrice.toFixed(2)}
+                        </Text>
+                        {order.status !== 'cancelado' && (
+                            <Text style={[styles.orderBalance, { color: colors.statusText[isPaid ? 'pagado' : 'pendiente'] }]}>
+                                {isPaid ? 'Pagado' : `Debe $${balance.toFixed(2)}`}
+                            </Text>
+                        )}
+                    </View>
                 </View>
             </TouchableOpacity>
         </Link >
@@ -286,14 +284,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: Spacing.xs,
     },
-    orderNumberBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    orderNumber: {
-        ...Typography.caption,
-        fontWeight: '700',
-    },
     statusBadge: {
         paddingHorizontal: Spacing.sm,
         paddingVertical: 4,
@@ -306,7 +296,8 @@ const styles = StyleSheet.create({
     clientName: {
         fontFamily: Fonts.serif,
         fontSize: 17,
-        marginBottom: 4,
+        flex: 1,
+        marginRight: Spacing.sm,
     },
     orderDescription: {
         ...Typography.body,
@@ -326,9 +317,17 @@ const styles = StyleSheet.create({
     orderDate: {
         ...Typography.small,
     },
+    orderPriceCol: {
+        alignItems: 'flex-end',
+    },
     orderPrice: {
         fontFamily: Fonts.serif,
         fontSize: 17,
+    },
+    orderBalance: {
+        ...Typography.small,
+        fontWeight: '600',
+        marginTop: 2,
     },
     emptyState: {
         alignItems: 'center',
