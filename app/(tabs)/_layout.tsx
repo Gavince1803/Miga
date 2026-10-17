@@ -1,16 +1,19 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import { Link, Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors, Fonts } from '@/constants/Colors';
 
 import { ExchangeRateTicker } from '@/components/ExchangeRateTicker';
 
-// Custom tab bar icon with consistent sizing
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+// Custom tab bar icon with consistent sizing: filled when focused, outline otherwise (iOS convention)
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+  name: IoniconName;
   color: string;
   focused?: boolean;
 }) {
@@ -20,7 +23,7 @@ function TabBarIcon(props: {
       props.focused && styles.activeIconContainer,
       { backgroundColor: props.focused ? props.color + '15' : 'transparent' } // Subtle background tint
     ]}>
-      <FontAwesome size={20} style={{ marginBottom: -2 }} {...props} />
+      <Ionicons size={22} name={(props.focused ? props.name : `${props.name}-outline`) as IoniconName} color={props.color} />
     </View>
   );
 }
@@ -31,6 +34,12 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      // Light tap feedback when switching tabs (iOS only; Android tabs have their own ripple)
+      screenListeners={{
+        tabPress: () => {
+          if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        },
+      }}
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.tabIconDefault,
@@ -79,12 +88,12 @@ export default function TabLayout() {
           tabBarAccessibilityLabel: 'Pedidos',
           headerTitle: 'Mis Pedidos',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="list-alt" color={color} focused={focused} />
+            <TabBarIcon name="receipt" color={color} focused={focused} />
           ),
           headerRight: () => (
             <Link href="/clients" asChild>
               <TouchableOpacity style={{ padding: 8, marginRight: 8 }} accessibilityRole="button" accessibilityLabel="Clientes">
-                <FontAwesome name="users" size={20} color={Colors.light.primary} />
+                <Ionicons name="people-outline" size={22} color={Colors.light.primary} />
               </TouchableOpacity>
             </Link>
           ),
@@ -122,12 +131,12 @@ export default function TabLayout() {
           tabBarAccessibilityLabel: 'Inventario',
           headerTitle: 'Mi Inventario',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="cubes" color={color} focused={focused} />
+            <TabBarIcon name="cube" color={color} focused={focused} />
           ),
           headerRight: () => (
             <Link href="/recipes" asChild>
               <TouchableOpacity style={{ padding: 8, marginRight: 8 }} accessibilityRole="button" accessibilityLabel="Recetario">
-                <FontAwesome name="book" size={20} color={Colors.light.primary} />
+                <Ionicons name="book-outline" size={22} color={Colors.light.primary} />
               </TouchableOpacity>
             </Link>
           ),
@@ -145,12 +154,12 @@ export default function TabLayout() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 15 }}>
               <Link href="/recipes/scan" asChild>
                 <TouchableOpacity style={{ padding: 8 }} accessibilityRole="button" accessibilityLabel="Escanear receta con la cámara">
-                  <FontAwesome name="camera" size={20} color={Colors.light.primary} />
+                  <Ionicons name="camera-outline" size={22} color={Colors.light.primary} />
                 </TouchableOpacity>
               </Link>
               <Link href="/recipes/new" asChild>
                 <TouchableOpacity style={{ padding: 8 }} accessibilityRole="button" accessibilityLabel="Nueva receta">
-                  <FontAwesome name="plus" size={20} color={Colors.light.primary} />
+                  <Ionicons name="add" size={26} color={Colors.light.primary} />
                 </TouchableOpacity>
               </Link>
             </View>
@@ -196,7 +205,7 @@ export default function TabLayout() {
           tabBarAccessibilityLabel: 'Más',
           headerTitle: 'Más',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="ellipsis-h" color={color} focused={focused} />
+            <TabBarIcon name="ellipsis-horizontal" color={color} focused={focused} />
           ),
         }}
       />
