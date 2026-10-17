@@ -28,8 +28,9 @@ export async function buildShoppingList(inventory: InventoryItem[], orders: Orde
     const toKey = (d: Date) =>
         `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+    // Still to be made: not delivered and not cancelled (paid-in-advance orders count too)
     const upcoming = orders.filter(o =>
-        o.status === 'pendiente' &&
+        o.status !== 'cancelado' && !o.deliveredAt &&
         o.deliveryDate >= toKey(today) &&
         o.deliveryDate <= toKey(limit)
     );

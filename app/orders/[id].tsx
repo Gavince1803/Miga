@@ -7,7 +7,7 @@ import { useFeedbackPrompt } from '@/hooks/useFeedbackPrompt';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
-import { Order, ORDER_STATUS_OPTIONS } from '@/types';
+import { DELIVERY_STATE_OPTIONS, DeliveryState, getDeliveryOption, getOrderBalance, Order } from '@/types';
 import * as StoreReview from 'expo-store-review';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -104,7 +104,7 @@ export default function OrderDetailScreen() {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const { id } = useLocalSearchParams();
-    const { updateOrderStatus, getOrdersByClient } = useOrders();
+    const { setDelivered, registerPayment, setCancelled, getOrdersByClient } = useOrders();
     const { showAlert } = useAlert();
     const { showToast } = useToast();
     const haptics = useHaptics();
@@ -151,6 +151,7 @@ export default function OrderDetailScreen() {
                     totalPrice: data.total_price,
                     paymentMethod: data.payment_method,
                     status: data.status,
+                    deliveredAt: data.delivered_at ?? null,
                     createdAt: data.created_at,
                     updatedAt: data.updated_at,
                     // @ts-ignore: handling potential missing fields safely
@@ -192,7 +193,10 @@ export default function OrderDetailScreen() {
         );
     }
 
-    const statusOption = ORDER_STATUS_OPTIONS.find(s => s.value === order.status);
+    // Badge = delivery state; payment is shown in its own section ("Debe $X" / "Registrar pago")
+    const statusOption = getDeliveryOption(order);
+    const statusTextColor = colors.statusText[statusOption.textKey];
+    const { balance, isPaid } = getOrderBalance(order);
 
     const formatDate = (dateStr: string) => {
         // Manual parse to ensure local date without timezone shifts
@@ -209,42 +213,71 @@ export default function OrderDetailScreen() {
     };
 
     const handleStatusChange = () => {
-        const buttons = [
-            ...ORDER_STATUS_OPTIONS.map(option => ({
-                text: option.label,
-                onPress: async () => {
-                    if (!order) return;
-                    const previous = order;
-                    const justPaid = option.value === 'pagado' && order.status !== 'pagado';
-                    // Optimistic: show the new status now, revert if the save fails
-                    setOrder(prev => prev ? { ...prev, status: option.value } : null);
-                    if (!await updateOrderStatus(order.id, option.value)) {
-                        haptics.error();
-                        setOrder(previous);
-                        return;
-                    }
-                    showToast({ message: `Pedido marcado como ${option.label.toLowerCase()}`, variant: 'success' });
-                    // Success moment: once per user, ask for a store review once the toast has been seen.
-                    // Straight to the native dialog, no "¿Te gusta?" first: Google Play forbids gating reviews
-                    if (justPaid && await shouldShowPrompt()) {
-                        setTimeout(async () => {
-                            markPromptShown();
-                            try {
-                                if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
-                            } catch (error) {
-                                console.error('Error requesting store review:', error);
-                            }
-                        }, 1500);
-                    }
-                },
-            })),
-            { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } }
-        ];
+        const changeTo = async (target: DeliveryState) => {
+            if (!order) return;
+            const current = getDeliveryOption(order).value;
+            if (target === current) return;
+            const previous = order;
+            // Optimistic: show the new state now, revert if a save fails
+            setOrder(prev => prev ? {
+                ...prev,
+                status: target === 'cancelado' ? 'cancelado' : prev.status === 'cancelado' ? (prev.paymentStatus === 'pagado' ? 'pagado' : 'pendiente') : prev.status,
+                deliveredAt: target === 'entregado' ? new Date().toISOString() : target === 'por_entregar' ? null : prev.deliveredAt,
+            } : null);
+            let ok = true;
+            if (target === 'cancelado') {
+                ok = await setCancelled(order.id, true);
+            } else {
+                if (current === 'cancelado') ok = await setCancelled(order.id, false);
+                const delivered = !!order.deliveredAt;
+                if (ok && (target === 'entregado') !== delivered) ok = await setDelivered(order.id, target === 'entregado');
+            }
+            if (!ok) {
+                haptics.error();
+                setOrder(previous);
+                return;
+            }
+            const label = DELIVERY_STATE_OPTIONS.find(o => o.value === target)!.label.toLowerCase();
+            showToast({ message: `Pedido marcado como ${label}`, variant: 'success' });
+        };
+
         showAlert({
-            title: 'Cambiar Estado',
-            message: 'Selecciona el nuevo estado del pedido',
-            buttons: buttons
+            title: 'Estado de entrega',
+            message: 'El pago se registra aparte, en la sección Pago',
+            buttons: [
+                ...DELIVERY_STATE_OPTIONS.map(option => ({ text: option.label, onPress: () => changeTo(option.value) })),
+                { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } },
+            ],
         });
+    };
+
+    const handleRegisterPayment = async () => {
+        if (!order) return;
+        const previous = order;
+        setOrder(prev => prev ? {
+            ...prev,
+            paymentStatus: 'pagado',
+            depositAmount: prev.totalPrice || prev.depositAmount,
+            status: prev.status === 'cancelado' ? prev.status : 'pagado',
+        } : null);
+        if (!await registerPayment(order.id)) {
+            haptics.error();
+            setOrder(previous);
+            return;
+        }
+        showToast({ message: 'Pago registrado', variant: 'success' });
+        // Success moment: once per user, ask for a store review once the toast has been seen.
+        // Straight to the native dialog, no "¿Te gusta?" first: Google Play forbids gating reviews
+        if (await shouldShowPrompt()) {
+            setTimeout(async () => {
+                markPromptShown();
+                try {
+                    if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
+                } catch (error) {
+                    console.error('Error requesting store review:', error);
+                }
+            }, 1500);
+        }
     };
 
     const handleCall = () => {
@@ -310,15 +343,9 @@ export default function OrderDetailScreen() {
         )[0][0];
     })();
 
-    const getStatusColor = (status: string) => {
-        const option = ORDER_STATUS_OPTIONS.find(s => s.value === status);
-        return option?.color || colors.textMuted;
-    };
-
-    const getStatusLabel = (status: string) => {
-        const option = ORDER_STATUS_OPTIONS.find(s => s.value === status);
-        return option?.label || status;
-    };
+    const getStatusColor = (o: Order) => getDeliveryOption(o).color;
+    const getStatusLabel = (o: Order) => getDeliveryOption(o).label;
+    const getStatusTextColor = (o: Order) => colors.statusText[getDeliveryOption(o).textKey];
 
     const handleDelete = () => {
         showAlert({
@@ -349,7 +376,8 @@ export default function OrderDetailScreen() {
     const handleSharePDF = async () => {
         if (!order) return;
         try {
-            const statusLabel = ORDER_STATUS_OPTIONS.find(s => s.value === order.status)?.label || order.status;
+            // The PDF goes to the client: payment state is what matters to them
+            const statusLabel = order.status === 'cancelado' ? 'Cancelado' : isPaid ? 'Pagado' : 'Pago pendiente';
             const paymentLabel = order.paymentMethod === 'efectivo' ? 'Efectivo'
                 : order.paymentMethod === 'pago_movil' ? 'Pago Móvil'
                 : order.paymentMethod === 'transferencia' ? 'Transferencia'
@@ -500,13 +528,13 @@ export default function OrderDetailScreen() {
                             </Text>
                         </View>
                         <TouchableOpacity
-                            style={[styles.statusBadge, { backgroundColor: statusOption?.color + '20' }]}
+                            style={[styles.statusBadge, { backgroundColor: statusOption.color + '20' }]}
                             onPress={handleStatusChange}
                         >
-                            <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? statusOption?.color }]}>
-                                {statusOption?.label}
+                            <Text style={[styles.statusText, { color: statusTextColor }]}>
+                                {statusOption.label}
                             </Text>
-                            <Ionicons name="chevron-down" size={10} color={colors.statusText[order.status] ?? statusOption?.color} />
+                            <Ionicons name="chevron-down" size={10} color={statusTextColor} />
                         </TouchableOpacity>
                     </View>
 
@@ -652,6 +680,29 @@ export default function OrderDetailScreen() {
                         <CurrencyConversions amount={order.totalPrice} colors={colors} />
                     )}
 
+                    {order.status !== 'cancelado' && (
+                        <View style={styles.balanceRow}>
+                            <View>
+                                <Text style={[styles.balanceLabel, { color: colors.textSecondary }]}>
+                                    Abonado {currencySymbol}{(order.depositAmount || 0).toFixed(2)}
+                                </Text>
+                                <Text style={[styles.balanceValue, { color: colors.statusText[isPaid ? 'pagado' : 'pendiente'] }]}>
+                                    {isPaid ? 'Pagado' : `Debe ${currencySymbol}${balance.toFixed(2)}`}
+                                </Text>
+                            </View>
+                            {!isPaid && (
+                                <TouchableOpacity
+                                    style={[styles.payButton, { backgroundColor: colors.successStrong }]}
+                                    onPress={handleRegisterPayment}
+                                    accessibilityRole="button"
+                                >
+                                    <Ionicons name="checkmark" size={16} color="#FFF" />
+                                    <Text style={styles.payButtonText}>Registrar pago</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+
                     <View style={{ height: Spacing.sm }} />
                     <DetailRow
                         icon={order.paymentMethod === 'efectivo' ? 'cash-outline' : order.paymentMethod === 'pago_movil' ? 'phone-portrait-outline' : 'business-outline'}
@@ -755,9 +806,9 @@ export default function OrderDetailScreen() {
                                     <Text style={[styles.historyOrderNumber, { color: colors.primaryText }]}>
                                         #{order.orderNumber}
                                     </Text>
-                                    <View style={[styles.historyStatusBadge, { backgroundColor: statusOption?.color + '20' }]}>
-                                        <Text style={{ ...Typography.small, color: colors.statusText[order.status] ?? statusOption?.color, fontWeight: '600' }}>
-                                            {statusOption?.label}
+                                    <View style={[styles.historyStatusBadge, { backgroundColor: statusOption.color + '20' }]}>
+                                        <Text style={{ ...Typography.small, color: statusTextColor, fontWeight: '600' }}>
+                                            {statusOption.label}
                                         </Text>
                                     </View>
                                 </View>
@@ -783,7 +834,7 @@ export default function OrderDetailScreen() {
                                     {clientOrders.map((pastOrder) => (
                                         <TouchableOpacity
                                             key={pastOrder.id}
-                                            style={[styles.historyCard, { backgroundColor: colors.surface, borderLeftColor: getStatusColor(pastOrder.status) }, Shadows.sm]}
+                                            style={[styles.historyCard, { backgroundColor: colors.surface, borderLeftColor: getStatusColor(pastOrder) }, Shadows.sm]}
                                             onPress={() => {
                                                 setClientHistoryVisible(false);
                                                 router.push(`/orders/${pastOrder.id}`);
@@ -793,9 +844,9 @@ export default function OrderDetailScreen() {
                                                 <Text style={[styles.historyOrderNumber, { color: colors.text }]}>
                                                     #{pastOrder.orderNumber}
                                                 </Text>
-                                                <View style={[styles.historyStatusBadge, { backgroundColor: getStatusColor(pastOrder.status) + '20' }]}>
-                                                    <Text style={{ ...Typography.small, color: colors.statusText[pastOrder.status] ?? getStatusColor(pastOrder.status), fontWeight: '600' }}>
-                                                        {getStatusLabel(pastOrder.status)}
+                                                <View style={[styles.historyStatusBadge, { backgroundColor: getStatusColor(pastOrder) + '20' }]}>
+                                                    <Text style={{ ...Typography.small, color: getStatusTextColor(pastOrder), fontWeight: '600' }}>
+                                                        {getStatusLabel(pastOrder)}
                                                     </Text>
                                                 </View>
                                             </View>
@@ -983,6 +1034,32 @@ const styles = StyleSheet.create({
     priceValue: {
         ...Typography.title,
         fontSize: 28,
+    },
+    balanceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
+    },
+    balanceLabel: {
+        ...Typography.small,
+    },
+    balanceValue: {
+        ...Typography.bodyBold,
+        marginTop: 2,
+    },
+    payButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.full,
+    },
+    payButtonText: {
+        color: '#FFF',
+        fontWeight: '700',
+        fontSize: 14,
     },
     deleteButton: {
         flexDirection: 'row',

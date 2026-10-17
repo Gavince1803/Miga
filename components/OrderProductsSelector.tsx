@@ -227,7 +227,7 @@ export function OrderProductsSelector({ products, onProductsChange }: Props) {
                 <View style={[styles.hintSuccess, { backgroundColor: colors.success + '12' }]}>
                     <Ionicons name="sparkles-outline" size={13} color={colors.success} />
                     <Text style={[styles.hintSuccessText, { color: colors.success }]}>
-                        Vincula una receta y el inventario se descontará automáticamente al marcar el pedido como pagado.
+                        Vincula una receta y el inventario se descontará automáticamente al marcar el pedido como entregado.
                     </Text>
                 </View>
             )}

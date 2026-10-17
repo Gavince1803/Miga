@@ -53,6 +53,7 @@ export function useClientDetail(clientName: string) {
                 paymentMethod: item.payment_method,
                 paymentStatus: item.payment_status || 'pendiente',
                 status: item.status,
+                deliveredAt: item.delivered_at ?? null,
                 reminderDays: item.reminder_days || 0,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at,
