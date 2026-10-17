@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/FieldError';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -218,6 +219,15 @@ export default function CostCalculatorScreen() {
     const [newIngUsed, setNewIngUsed] = useState('');
     const [newIngBought, setNewIngBought] = useState('');
     const [newIngPrice, setNewIngPrice] = useState('');
+    // Shown under each field of the modal (an alert over this modal was easy to miss)
+    const [ingErrors, setIngErrors] = useState<{ name?: string; used?: string; bought?: string; price?: string }>({});
+    const clearIngError = (field: keyof typeof ingErrors) => {
+        if (ingErrors[field]) setIngErrors(prev => ({ ...prev, [field]: undefined }));
+    };
+    const closeIngredientModal = () => {
+        setIngErrors({});
+        setIsAddIngredientVisible(false);
+    };
     const [newIngUnit, setNewIngUnit] = useState('g');
     const [isUnitDropdownOpen, setIsUnitDropdownOpen] = useState(false);
 
@@ -270,23 +280,20 @@ export default function CostCalculatorScreen() {
     }, [ingredients, config]);
 
     const handleAddIngredient = () => {
-        if (!newIngName || !newIngUsed || !newIngBought || !newIngPrice) {
-            showAlert({ title: 'Error', message: 'Por favor completa todos los campos del ingrediente', type: 'error' });
-            return;
-        }
-
         const quantityUsed = parseFloat(newIngUsed.replace(',', '.'));
         const quantityBought = parseFloat(newIngBought.replace(',', '.'));
         const priceBought = parseFloat(newIngPrice.replace(',', '.'));
 
-        if (
-            isNaN(quantityUsed) || quantityUsed < 0 ||
-            isNaN(quantityBought) || quantityBought <= 0 ||
-            isNaN(priceBought) || priceBought < 0
-        ) {
-            showAlert({ title: 'Error', message: 'Ingresa valores numéricos válidos (la cantidad comprada debe ser mayor a 0)', type: 'error' });
-            return;
-        }
+        const found: typeof ingErrors = {};
+        if (!newIngName.trim()) found.name = 'Escribe el nombre';
+        if (!newIngUsed) found.used = 'Escribe cuánto usas';
+        else if (isNaN(quantityUsed) || quantityUsed < 0) found.used = 'Número no válido';
+        if (!newIngBought) found.bought = 'Escribe cuánto trae el paquete';
+        else if (isNaN(quantityBought) || quantityBought <= 0) found.bought = 'Debe ser mayor a 0';
+        if (!newIngPrice) found.price = 'Escribe el precio';
+        else if (isNaN(priceBought) || priceBought < 0) found.price = 'Número no válido';
+        setIngErrors(found);
+        if (Object.keys(found).length > 0) return;
 
         const newIngredient: CostIngredient = {
             id: Date.now().toString(),
@@ -304,7 +311,7 @@ export default function CostCalculatorScreen() {
         setNewIngUsed('');
         setNewIngBought('');
         setNewIngPrice('');
-        setIsAddIngredientVisible(false);
+        closeIngredientModal();
     };
 
     const handleSavePrice = async () => {
@@ -648,7 +655,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                 visible={isAddIngredientVisible}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setIsAddIngredientVisible(false)}
+                onRequestClose={closeIngredientModal}
             >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -658,13 +665,15 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         <Text style={[styles.modalTitle, { color: colors.text }]}>Agregar Ingrediente</Text>
 
                         <TextInput
-                            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, marginBottom: 16 }]}
+                            style={[styles.input, { backgroundColor: colors.surface, color: colors.text }, ingErrors.name && { borderWidth: 1, borderColor: colors.statusText.cancelado }]}
                             placeholder="Nombre (ej. Harina)"
                             placeholderTextColor={colors.textMuted}
                             value={newIngName}
-                            onChangeText={setNewIngName}
+                            onChangeText={(t) => { setNewIngName(t); clearIngError('name'); }}
                             autoFocus
                         />
+                        <FieldError message={ingErrors.name} colors={colors} />
+                        <View style={{ height: 16 }} />
 
                         {/* Quantity & Unit Row */}
                         <View style={{ marginBottom: 16 }}>
@@ -672,13 +681,14 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.label, { color: colors.textSecondary }]}>Cantidad Usada</Text>
                                     <TextInput
-                                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+                                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }, ingErrors.used && { borderWidth: 1, borderColor: colors.statusText.cancelado }]}
                                         placeholder="0"
                                         keyboardType="numeric"
                                         placeholderTextColor={colors.textMuted}
                                         value={newIngUsed}
-                                        onChangeText={setNewIngUsed}
+                                        onChangeText={(t) => { setNewIngUsed(t); clearIngError('used'); }}
                                     />
+                                    <FieldError message={ingErrors.used} colors={colors} />
                                 </View>
                                 <View style={{ flex: 1, zIndex: 10 }}>
                                     <Text style={[styles.label, { color: colors.textSecondary }]}>Unidad</Text>
@@ -720,24 +730,26 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.label, { color: colors.textSecondary }]}>Cant. Compra ({newIngUnit})</Text>
                                     <TextInput
-                                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+                                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }, ingErrors.bought && { borderWidth: 1, borderColor: colors.statusText.cancelado }]}
                                         placeholder="0"
                                         keyboardType="numeric"
                                         placeholderTextColor={colors.textMuted}
                                         value={newIngBought}
-                                        onChangeText={setNewIngBought}
+                                        onChangeText={(t) => { setNewIngBought(t); clearIngError('bought'); }}
                                     />
+                                    <FieldError message={ingErrors.bought} colors={colors} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Precio Compra ($)</Text>
+                                    <Text style={[styles.label, { color: colors.textSecondary }]}>Precio Compra ({currencySymbol})</Text>
                                     <TextInput
-                                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }]}
+                                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text }, ingErrors.price && { borderWidth: 1, borderColor: colors.statusText.cancelado }]}
                                         placeholder="0.00"
                                         keyboardType="numeric"
                                         placeholderTextColor={colors.textMuted}
                                         value={newIngPrice}
-                                        onChangeText={setNewIngPrice}
+                                        onChangeText={(t) => { setNewIngPrice(t); clearIngError('price'); }}
                                     />
+                                    <FieldError message={ingErrors.price} colors={colors} />
                                 </View>
                             </View>
                         </View>
@@ -745,7 +757,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
                                 style={[styles.modalButton, { backgroundColor: colors.surface }]}
-                                onPress={() => setIsAddIngredientVisible(false)}
+                                onPress={closeIngredientModal}
                             >
                                 <Text style={{ color: colors.text }}>Cancelar</Text>
                             </TouchableOpacity>

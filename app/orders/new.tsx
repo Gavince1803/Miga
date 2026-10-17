@@ -1,6 +1,7 @@
 import BackButton from '@/components/BackButton';
 import { DateTimePickerField } from '@/components/DateTimePickerField';
 import { EditableDropdown } from '@/components/EditableDropdown';
+import { FieldError } from '@/components/FieldError';
 import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
@@ -18,8 +19,9 @@ import { getPaymentMethodOptions, PaymentMethod, SIZE_OPTIONS } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { track } from '@/lib/analytics';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
+    LayoutChangeEvent,
     StyleSheet,
     Text,
     TextInput,
@@ -56,21 +58,24 @@ function FormSection({
 function FormField({
     label,
     required,
+    error,
     children,
     colors,
 }: {
     label: string;
     required?: boolean;
+    error?: string;
     children: React.ReactNode;
     colors: typeof Colors.light;
 }) {
     return (
         <View style={[styles.field, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
+            <Text style={[styles.fieldLabel, { color: error ? colors.statusText.cancelado : colors.text }]}>
                 {label}
                 {required && <Text style={{ color: colors.error }}> *</Text>}
             </Text>
             {children}
+            <FieldError message={error} colors={colors} />
         </View>
     );
 }
@@ -261,11 +266,27 @@ export default function NewOrderScreen() {
 
     const haptics = useHaptics();
 
+    // Validation errors show under their field; the form scrolls to the section that has it
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const scrollRef = useRef<React.ElementRef<typeof KeyboardAwareScrollView>>(null);
+    const sectionY = useRef<Record<string, number>>({});
+    const clearError = (field: string) => {
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    };
+    const showFieldError = (field: string, message: string, section: string) => {
+        haptics.error();
+        setErrors({ [field]: message });
+        scrollRef.current?.scrollTo({ y: Math.max(0, (sectionY.current[section] ?? 0) - Spacing.md), animated: true });
+    };
+    const trackSection = (section: string) => (e: LayoutChangeEvent) => {
+        sectionY.current[section] = e.nativeEvent.layout.y;
+    };
+
     const handleSave = async () => {
+        setErrors({});
         // Validate required fields
         if (!clientName.trim()) {
-            haptics.error();
-            showAlert({ title: 'Error', message: 'Por favor completa todos los campos marcados con *', type: 'error' });
+            showFieldError('clientName', 'Escribe el nombre de la clienta', 'client');
             return;
         }
 
@@ -295,18 +316,16 @@ export default function NewOrderScreen() {
         // Validate custom inputs
         const finalSize = showCustomSize ? customSize.trim() : size;
         if (!finalSize) {
-            haptics.warning();
-            showAlert({ title: 'Error', message: 'Por favor ingresa el tamaño', type: 'warning' });
+            showFieldError('customSize', 'Escribe la medida', 'product');
             return;
         }
 
         if (total < 0 || deposit < 0) {
-            haptics.error();
-            showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
+            showFieldError('deposit', 'El precio y el abono no pueden ser negativos', 'payment');
             return;
         }
         if (total > 0 && deposit > total) {
-            showAlert({ title: 'Revisa el abono', message: 'El abono no puede ser mayor que el precio total', type: 'error' });
+            showFieldError('deposit', 'El abono no puede ser mayor que el precio total', 'payment');
             return;
         }
 
@@ -370,6 +389,7 @@ export default function NewOrderScreen() {
 
     return (
             <KeyboardAwareScrollView
+                ref={scrollRef}
                 keyboardDismissMode="interactive"
                 bottomOffset={72}
                 style={[styles.container, { backgroundColor: colors.background }]}
@@ -388,8 +408,9 @@ export default function NewOrderScreen() {
 
 
                 {/* Client Information */}
+                <View onLayout={trackSection('client')}>
                 <FormSection title="INFORMACIÓN DEL CLIENTE" colors={colors}>
-                    <FormField label="Nombre del Cliente" required colors={colors}>
+                    <FormField label="Nombre del Cliente" required error={errors.clientName} colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             placeholder="Ej: María García"
@@ -398,6 +419,7 @@ export default function NewOrderScreen() {
                             onChangeText={(text) => {
                                 setClientName(text);
                                 setClientSelected(false);
+                                clearError('clientName');
                             }}
                             autoCapitalize="words"
                         />
@@ -456,6 +478,8 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Delivery Information */}
+                </View>
+
                 <FormSection title="ENTREGA" colors={colors}>
                     <View style={[styles.row, { paddingTop: Spacing.sm }]}>
                         <View style={{ flex: 1, marginRight: Spacing.sm }}>
@@ -484,8 +508,9 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Product Details */}
+                <View onLayout={trackSection('product')}>
                 <FormSection title="DETALLES DEL PRODUCTO" colors={colors}>
-                    <FormField label="Medida / Tamaño" colors={colors}>
+                    <FormField label="Medida / Tamaño" error={errors.customSize} colors={colors}>
                         <ChipSelector
                             options={SIZE_OPTIONS_DISPLAY}
                             selected={size}
@@ -499,7 +524,7 @@ export default function NewOrderScreen() {
                                     placeholder="Escribe la medida personalizada..."
                                     placeholderTextColor={colors.textMuted}
                                     value={customSize}
-                                    onChangeText={setCustomSize}
+                                    onChangeText={(t) => { setCustomSize(t); clearError('customSize'); }}
                                     autoFocus
                                 />
                             </View>
@@ -568,6 +593,8 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Products with Recipes */}
+                </View>
+
                 <FormSection title="¿QUÉ VAS A PREPARAR?" colors={colors}>
                     <View style={{ paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm }}>
                         <OrderProductsSelector
@@ -578,6 +605,7 @@ export default function NewOrderScreen() {
                 </FormSection>
 
                 {/* Payment */}
+                <View onLayout={trackSection('payment')}>
                 <FormSection title="PAGO" colors={colors}>
                     <View style={styles.row}>
                         <View style={{ flex: 1, marginRight: Spacing.sm }}>
@@ -590,14 +618,14 @@ export default function NewOrderScreen() {
                                         placeholderTextColor={colors.textMuted}
                                         testID="order-total-price"
                                         value={totalPrice}
-                                        onChangeText={(t) => setTotalPrice(cleanDecimalInput(t, 2))}
+                                        onChangeText={(t) => { setTotalPrice(cleanDecimalInput(t, 2)); clearError('deposit'); }}
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
                             </FormField>
                         </View>
                         <View style={{ flex: 1, marginLeft: Spacing.sm }}>
-                            <FormField label="Abonado" colors={colors}>
+                            <FormField label="Abonado" error={errors.deposit} colors={colors}>
                                 <View style={styles.priceInput}>
                                     <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                                     <TextInput
@@ -606,7 +634,7 @@ export default function NewOrderScreen() {
                                         placeholderTextColor={colors.textMuted}
                                         testID="order-deposit"
                                         value={depositAmount}
-                                        onChangeText={(t) => setDepositAmount(cleanDecimalInput(t, 2))}
+                                        onChangeText={(t) => { setDepositAmount(cleanDecimalInput(t, 2)); clearError('deposit'); }}
                                         keyboardType="decimal-pad"
                                     />
                                 </View>
@@ -694,6 +722,7 @@ export default function NewOrderScreen() {
                         </View>
                     </FormField>
                 </FormSection>
+                </View>
 
                 {/* Save Button */}
                 <TouchableOpacity

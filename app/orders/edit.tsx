@@ -1,11 +1,13 @@
 import { DateTimePickerField } from '@/components/DateTimePickerField';
 import { EditableDropdown } from '@/components/EditableDropdown';
+import { FieldError } from '@/components/FieldError';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useToast } from '@/context/ToastContext';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useHaptics } from '@/hooks/useHaptics';
 import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
 import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProductsSelector';
@@ -13,9 +15,10 @@ import { useOrderItems } from '@/hooks/useOrderItems';
 import { OrderStatus, PaymentMethod, SIZE_OPTIONS, getPaymentMethodOptions } from '@/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    LayoutChangeEvent,
     StyleSheet,
     Text,
     TextInput,
@@ -36,14 +39,15 @@ function FormSection({ title, children, colors }: { title: string; children: Rea
     );
 }
 
-function FormField({ label, required, children, colors }: { label: string; required?: boolean; children: React.ReactNode; colors: typeof Colors.light }) {
+function FormField({ label, required, error, children, colors }: { label: string; required?: boolean; error?: string; children: React.ReactNode; colors: typeof Colors.light }) {
     return (
         <View style={[styles.field, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
+            <Text style={[styles.fieldLabel, { color: error ? colors.statusText.cancelado : colors.text }]}>
                 {label}
                 {required && <Text style={{ color: colors.error }}> *</Text>}
             </Text>
             {children}
+            <FieldError message={error} colors={colors} />
         </View>
     );
 }
@@ -205,10 +209,28 @@ export default function EditOrderScreen() {
         fetchOrder();
     }, [id]);
 
+    // Validation errors show under their field; the form scrolls to the section that has it
+    const haptics = useHaptics();
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const scrollRef = useRef<React.ElementRef<typeof KeyboardAwareScrollView>>(null);
+    const sectionY = useRef<Record<string, number>>({});
+    const clearError = (field: string) => {
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    };
+    const showFieldError = (field: string, message: string, section: string) => {
+        haptics.error();
+        setErrors({ [field]: message });
+        scrollRef.current?.scrollTo({ y: Math.max(0, (sectionY.current[section] ?? 0) - Spacing.md), animated: true });
+    };
+    const trackSection = (section: string) => (e: LayoutChangeEvent) => {
+        sectionY.current[section] = e.nativeEvent.layout.y;
+    };
+
     const handleSave = async () => {
+        setErrors({});
         // Validate required fields
         if (!clientName.trim()) {
-            showAlert({ title: 'Error', message: 'Por favor completa todos los campos requeridos (*)', type: 'error' });
+            showFieldError('clientName', 'Escribe el nombre de la clienta', 'client');
             return;
         }
 
@@ -216,11 +238,11 @@ export default function EditOrderScreen() {
         const depositVal = parseDecimal(deposit);
 
         if (total < 0 || depositVal < 0) {
-            showAlert({ title: 'Error', message: 'El precio total y el abono no pueden ser negativos', type: 'error' });
+            showFieldError('deposit', 'El precio y el abono no pueden ser negativos', 'payment');
             return;
         }
         if (total > 0 && depositVal > total) {
-            showAlert({ title: 'Revisa el abono', message: 'El abono no puede ser mayor que el precio total', type: 'error' });
+            showFieldError('deposit', 'El abono no puede ser mayor que el precio total', 'payment');
             return;
         }
 
@@ -293,6 +315,7 @@ export default function EditOrderScreen() {
 
     return (
             <KeyboardAwareScrollView
+                ref={scrollRef}
                 keyboardDismissMode="interactive"
                 bottomOffset={72}
                 style={[styles.container, { backgroundColor: colors.background }]}
@@ -305,14 +328,16 @@ export default function EditOrderScreen() {
                 </View>
 
                 {/* Client Information */}
+                <View onLayout={trackSection('client')}>
                 <FormSection title="INFORMACIÓN DEL CLIENTE" colors={colors}>
-                    <FormField label="Nombre del Cliente" required colors={colors}>
+                    <FormField label="Nombre del Cliente" required error={errors.clientName} colors={colors}>
                         <TextInput
                             style={[styles.input, { color: colors.text }]}
                             value={clientName}
                             onChangeText={(text) => {
                                 setClientName(text);
                                 setClientSelected(false);
+                                clearError('clientName');
                             }}
                         />
                         {clientSuggestions.length > 0 && (
@@ -367,6 +392,7 @@ export default function EditOrderScreen() {
                         />
                     </FormField>
                 </FormSection>
+                </View>
 
                 {/* Delivery Information */}
                 <FormSection title="ENTREGA" colors={colors}>
@@ -457,6 +483,7 @@ export default function EditOrderScreen() {
                     </View>
                 </FormSection>
 
+                <View onLayout={trackSection('payment')}>
                 <FormSection title="PAGO" colors={colors}>
                     <FormField label="Precio Total" colors={colors}>
                         <View style={styles.priceInput}>
@@ -465,7 +492,7 @@ export default function EditOrderScreen() {
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
                                 testID="edit-total"
                                 value={totalPrice}
-                                onChangeText={(t) => setTotalPrice(cleanDecimalInput(t, 2))}
+                                onChangeText={(t) => { setTotalPrice(cleanDecimalInput(t, 2)); clearError('deposit'); }}
                                 keyboardType="decimal-pad"
                             />
                         </View>
@@ -510,14 +537,14 @@ export default function EditOrderScreen() {
                         </View>
                     </FormField>
 
-                    <FormField label="Abono" colors={colors}>
+                    <FormField label="Abono" error={errors.deposit} colors={colors}>
                         <View style={styles.priceInput}>
                             <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{currencySymbol}</Text>
                             <TextInput
                                 style={[styles.input, styles.priceField, { color: colors.text }]}
                                 testID="edit-deposit"
                                 value={deposit}
-                                onChangeText={(t) => setDeposit(cleanDecimalInput(t, 2))}
+                                onChangeText={(t) => { setDeposit(cleanDecimalInput(t, 2)); clearError('deposit'); }}
                                 keyboardType="decimal-pad"
                                 placeholder="0.00"
                                 placeholderTextColor={colors.textMuted}
@@ -552,6 +579,7 @@ export default function EditOrderScreen() {
                         </View>
                     </FormField>
                 </FormSection>
+                </View>
 
                 {/* Save Button */}
                 <TouchableOpacity

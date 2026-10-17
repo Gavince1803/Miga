@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/FieldError';
 import SocialSignIn from '@/components/SocialSignIn';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
@@ -27,10 +28,16 @@ export default function RegisterScreen() {
     const [showCurrencyModal, setShowCurrencyModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [businessNameExists, setBusinessNameExists] = useState(false);
+    // Validation and known signup errors show under their field, in Spanish
+    const [errors, setErrors] = useState<{ fullName?: string; email?: string; password?: string }>({});
+    const clearError = (field: keyof typeof errors) => {
+        if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+    };
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleFullNameChange = (text: string) => {
         setFullName(text);
+        clearError('fullName');
         setBusinessNameExists(false);
         if (debounceRef.current) clearTimeout(debounceRef.current);
         if (text.trim().length < 2) return;
@@ -48,8 +55,14 @@ export default function RegisterScreen() {
         if (loading) return;
         setLoading(true);
 
-        if (!email || !password || !fullName) {
-            showAlert({ title: 'Campos requeridos', message: 'Por favor completa al menos Nombre, Correo y Contraseña.', type: 'warning' });
+        const found: typeof errors = {};
+        if (!fullName.trim()) found.fullName = 'Escribe tu nombre o el de tu negocio';
+        if (!email.trim()) found.email = 'Escribe tu correo';
+        else if (!/^\S+@\S+\.\S+$/.test(email.trim())) found.email = 'Revisa el correo: no parece válido';
+        if (!password) found.password = 'Crea una contraseña';
+        else if (password.length < 6) found.password = 'Usa al menos 6 caracteres';
+        setErrors(found);
+        if (Object.keys(found).length > 0) {
             setLoading(false);
             return;
         }
@@ -67,7 +80,16 @@ export default function RegisterScreen() {
 
         if (error) {
             track('signup_failed', { reason: error.code ?? 'unknown' });
-            showAlert({ title: 'Error', message: error.message, type: 'error' });
+            // Supabase messages are in English: map the common ones to the field they belong to
+            if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+                setErrors({ email: 'Ya existe una cuenta con este correo. Inicia sesión.' });
+            } else if (error.code === 'weak_password') {
+                setErrors({ password: 'Esa contraseña es muy débil. Prueba con una más larga.' });
+            } else if (error.code === 'email_address_invalid') {
+                setErrors({ email: 'Revisa el correo: no parece válido' });
+            } else {
+                showAlert({ title: 'No pudimos crear tu cuenta', message: 'Revisa tu conexión e intenta de nuevo en unos minutos.', type: 'error' });
+            }
         } else {
             showAlert({
                 title: 'Registro exitoso',
@@ -108,12 +130,13 @@ export default function RegisterScreen() {
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Nombre o Negocio *</Text>
                             <TextInput
-                                style={[styles.input, { color: colors.text, borderColor: businessNameExists ? colors.warning ?? '#F59E0B' : colors.border }]}
+                                style={[styles.input, { color: colors.text, borderColor: errors.fullName ? colors.statusText.cancelado : businessNameExists ? colors.warning ?? '#F59E0B' : colors.border }]}
                                 onChangeText={handleFullNameChange}
                                 value={fullName}
                                 placeholder="Ej: Marcela Bollería"
                                 placeholderTextColor={colors.textMuted}
                             />
+                            <FieldError message={errors.fullName} colors={colors} />
                             {businessNameExists && (
                                 <Text style={{ color: colors.warning ?? '#F59E0B', fontSize: 12, marginTop: 4 }}>
                                     Ya existe un negocio con este nombre. ¿Ya tienes cuenta?
@@ -136,27 +159,29 @@ export default function RegisterScreen() {
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Correo Electrónico *</Text>
                             <TextInput
-                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                onChangeText={setEmail}
+                                style={[styles.input, { color: colors.text, borderColor: errors.email ? colors.statusText.cancelado : colors.border }]}
+                                onChangeText={(t) => { setEmail(t); clearError('email'); }}
                                 value={email}
                                 placeholder="correo@ejemplo.com"
                                 placeholderTextColor={colors.textMuted}
                                 autoCapitalize="none"
                                 keyboardType="email-address"
                             />
+                            <FieldError message={errors.email} colors={colors} />
                         </View>
 
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: colors.text }]}>Contraseña *</Text>
                             <TextInput
-                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                onChangeText={setPassword}
+                                style={[styles.input, { color: colors.text, borderColor: errors.password ? colors.statusText.cancelado : colors.border }]}
+                                onChangeText={(t) => { setPassword(t); clearError('password'); }}
                                 value={password}
                                 secureTextEntry={true}
-                                placeholder="Ingresa tu contraseña"
+                                placeholder="Mínimo 6 caracteres"
                                 placeholderTextColor={colors.textMuted}
                                 autoCapitalize="none"
                             />
+                            <FieldError message={errors.password} colors={colors} />
                         </View>
 
                         <View style={styles.inputGroup}>

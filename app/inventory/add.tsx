@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/FieldError';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -34,6 +35,7 @@ export default function AddItemScreen() {
     const { isPremium } = useSubscription();
 
     const [name, setName] = useState('');
+    const [nameError, setNameError] = useState('');
     const [category, setCategory] = useState('');
     const [quantity, setQuantity] = useState('');
     const [unit, setUnit] = useState('kg');
@@ -54,7 +56,7 @@ export default function AddItemScreen() {
         if (isSubmitting) return;
 
         if (!name.trim()) {
-            showAlert({ title: 'Error', message: 'El nombre es requerido', type: 'error' });
+            setNameError('Escribe el nombre del ingrediente');
             return;
         }
 
@@ -122,13 +124,14 @@ export default function AddItemScreen() {
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: colors.textSecondary }]}>Nombre *</Text>
                         <TextInput
-                            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+                            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: nameError ? colors.statusText.cancelado : colors.border }]}
                             value={name}
-                            onChangeText={setName}
+                            onChangeText={(t) => { setName(t); setNameError(''); }}
                             placeholder="Ej: Harina de trigo"
                             placeholderTextColor={colors.textMuted}
                             autoFocus
                         />
+                        <FieldError message={nameError} colors={colors} />
                     </View>
 
                     {/* Categoría */}

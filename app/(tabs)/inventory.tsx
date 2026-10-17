@@ -1,3 +1,4 @@
+import { FieldError } from '@/components/FieldError';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -374,6 +375,8 @@ export default function InventoryScreen() {
     const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, registerPurchase, addItem, updateItemDetails, importInventory, exportInventory, archiveItem, unarchiveItem } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
     const { showAlert } = useAlert();
+    const [addNameError, setAddNameError] = useState('');
+    const [editQtyError, setEditQtyError] = useState('');
     const { showToast } = useToast();
     const { isPremium } = useSubscription();
     const [showTutorial, setShowTutorial] = useState(false);
@@ -548,6 +551,7 @@ export default function InventoryScreen() {
         setEditCategory(item.category || '');
         setEditBoughtQty('');
         setEditBoughtPrice('');
+        setEditQtyError('');
         setShowEditModal(true);
     };
 
@@ -556,7 +560,7 @@ export default function InventoryScreen() {
         const newQty = parseFloat(editQuantity.replace(',', '.'));
 
         if (isNaN(newQty) || newQty < 0) {
-            showAlert({ title: 'Error', message: 'Ingresa una cantidad válida', type: 'error' });
+            setEditQtyError('Cantidad no válida');
             return;
         }
 
@@ -622,11 +626,12 @@ export default function InventoryScreen() {
         setBuyingQty('');
         setBuyingPrice('');
         setBuyingUnit('kg');
+        setAddNameError('');
     };
 
     const handleAddItem = async () => {
         if (!newItemName.trim()) {
-            showAlert({ title: 'Error', message: 'El nombre es obligatorio', type: 'error' });
+            setAddNameError('Escribe el nombre del ingrediente');
             return;
         }
 
@@ -960,12 +965,13 @@ export default function InventoryScreen() {
                                 <View style={{ flex: 2 }}>
                                     <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre *</Text>
                                     <TextInput
-                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+                                        style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: addNameError ? colors.statusText.cancelado : colors.border }]}
                                         placeholder="Ej: Harina de trigo"
                                         placeholderTextColor={colors.textMuted}
                                         value={newItemName}
-                                        onChangeText={setNewItemName}
+                                        onChangeText={(t) => { setNewItemName(t); setAddNameError(''); }}
                                     />
+                                    <FieldError message={addNameError} colors={colors} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Categoría</Text>
@@ -1198,12 +1204,13 @@ export default function InventoryScreen() {
                             <View style={{ width: 80 }}>
                                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Cant.</Text>
                                 <TextInput
-                                    style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border, textAlign: 'center', fontWeight: '600' }]}
+                                    style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: editQtyError ? colors.statusText.cancelado : colors.border, textAlign: 'center', fontWeight: '600' }]}
                                     value={editQuantity}
-                                    onChangeText={(t) => setEditQuantity(cleanDecimalInput(t))}
+                                    onChangeText={(t) => { setEditQuantity(cleanDecimalInput(t)); setEditQtyError(''); }}
                                     keyboardType="numeric"
                                     autoFocus={true}
                                 />
+                                <FieldError message={editQtyError} colors={colors} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Unidad</Text>

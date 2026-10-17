@@ -1,5 +1,6 @@
 import DynamicListInput from '@/components/DynamicListInput';
 import { IngredientSelector, SelectedIngredient } from '@/components/IngredientSelector';
+import { FieldError } from '@/components/FieldError';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
@@ -46,6 +47,7 @@ export default function NewRecipeScreen() {
     const [category, setCategory] = React.useState('');
 
     const haptics = useHaptics();
+    const [titleError, setTitleError] = React.useState('');
 
     // Changed to arrays for DynamicListInput
     const [ingredientsList, setIngredientsList] = React.useState<string[]>(['']);
@@ -148,7 +150,7 @@ export default function NewRecipeScreen() {
     const handleSubmit = async () => {
         if (!title.trim()) {
             haptics.error();
-            showAlert({ title: 'Error', message: 'Por favor ingresa un título para la receta.', type: 'error' });
+            setTitleError('Escribe el nombre de la receta');
             return;
         }
 
@@ -233,12 +235,13 @@ export default function NewRecipeScreen() {
                 <View style={styles.section}>
                     <Text style={[styles.label, { color: colors.textSecondary }]}>Título</Text>
                     <TextInput
-                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: titleError ? colors.statusText.cancelado : colors.border }]}
                         placeholder="Ej. Torta de Chocolate"
                         placeholderTextColor={colors.textMuted}
                         value={title}
-                        onChangeText={setTitle}
+                        onChangeText={(t) => { setTitle(t); setTitleError(''); }}
                     />
+                    <FieldError message={titleError} colors={colors} />
                 </View>
 
                 {/* Photo Attachment (Visible in all modes now, but emphasized) */}
