@@ -2,6 +2,7 @@ import FeedbackModal from '@/components/FeedbackModal';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { CURRENCIES, Currency, useSettings } from '@/context/SettingsContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { revokeAppleSignIn } from '@/lib/appleAuth';
@@ -104,6 +105,7 @@ export default function SettingsScreen() {
     const colors = Colors[colorScheme ?? 'light'];
     const router = useRouter();
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
     const [isNavigating, setIsNavigating] = useState(false);
     const [feedbackVisible, setFeedbackVisible] = useState(false);
 
@@ -132,7 +134,7 @@ export default function SettingsScreen() {
     const handleNotificationPermission = async () => {
         if (notificationStatus === 'granted') {
             // Already granted, show info
-            showAlert({ title: '✅ Notificaciones Activas', message: 'Ya tienes los permisos de notificación activados.', type: 'success' });
+            showToast({ message: 'Las notificaciones ya están activadas', variant: 'success' });
             return;
         }
 
@@ -154,7 +156,7 @@ export default function SettingsScreen() {
         const granted = await requestNotificationPermissions();
         if (granted) {
             setNotificationStatus('granted');
-            showAlert({ title: '✅ ¡Listo!', message: 'Ahora recibirás recordatorios de tus pedidos.', type: 'success' });
+            showToast({ message: 'Listo: recibirás recordatorios de tus pedidos', variant: 'success' });
         } else {
             setNotificationStatus('denied');
             showAlert({ title: '❌ Permiso Denegado', message: 'No podrás recibir recordatorios sin activar las notificaciones.', type: 'error' });
@@ -214,7 +216,7 @@ export default function SettingsScreen() {
                     onPress: async () => {
                         try {
                             await updateCurrency(key as Currency);
-                            showAlert({ title: 'Moneda Actualizada', message: `Tu moneda ahora es ${val.label}`, type: 'success' });
+                            showToast({ message: `Tu moneda ahora es ${val.label}`, variant: 'success' });
                         } catch (e) {
                             showAlert({ title: 'Error', message: 'No se pudo cambiar la moneda.', type: 'error' });
                         }
@@ -458,7 +460,7 @@ export default function SettingsScreen() {
                                             await supabase.auth.signOut();
                                             await cancelAllNotifications();
                                             router.replace('/auth/login');
-                                            showAlert({ title: 'Cuenta Eliminada', message: 'Tu cuenta ha sido eliminada correctamente.', type: 'success' });
+                                            showToast({ message: 'Tu cuenta fue eliminada', variant: 'success' });
                                         } catch (error) {
                                             console.error('Error deleting account:', error);
                                             showAlert({ title: 'Error', message: 'No se pudo eliminar la cuenta. Intenta de nuevo.', type: 'error' });

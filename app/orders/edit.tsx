@@ -3,6 +3,7 @@ import { EditableDropdown } from '@/components/EditableDropdown';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useOrders } from '@/hooks/useOrders';
@@ -84,6 +85,7 @@ export default function EditOrderScreen() {
 
     const [selectedRateType, setSelectedRateType] = useState<'bcv' | 'parallel' | 'euro'>('bcv');
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -270,12 +272,8 @@ export default function EditOrderScreen() {
             });
 
             if (updated) {
-                showAlert({
-                    title: 'Éxito',
-                    message: 'Pedido actualizado correctamente',
-                    type: 'success',
-                    buttons: [{ text: 'OK', onPress: () => router.back() }]
-                });
+                showToast({ message: 'Pedido actualizado', variant: 'success' });
+                router.back();
             }
         } catch (error) {
             console.error(error);

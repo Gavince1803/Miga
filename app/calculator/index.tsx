@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { Currency, CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useRecipes } from '@/hooks/useRecipes';
@@ -134,6 +135,7 @@ export default function CostCalculatorScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
     const { currency } = useSettings();
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';
 
@@ -320,7 +322,7 @@ export default function CostCalculatorScreen() {
         );
         setSaving(false);
         if (success) {
-            showAlert({ title: 'Éxito', message: 'Precio guardado en la receta', type: 'success' });
+            showToast({ message: 'Precio guardado en la receta', variant: 'success' });
         }
     };
 

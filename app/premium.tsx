@@ -1,6 +1,7 @@
 import Confetti from '@/components/Confetti';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { FREE_TIER_LIMITS, useSubscription } from '@/hooks/useSubscription';
 import { track } from '@/lib/analytics';
 import { restorePurchases } from '@/lib/revenuecat';
@@ -51,6 +52,7 @@ export default function PremiumScreen() {
     useEffect(() => { track('paywall_viewed', { from }); }, [from]);
     const { isPremium, premiumUntil, redeemCode, refreshStatus, loading: subLoading } = useSubscription();
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
 
     const [purchasing, setPurchasing] = useState(false);
     const [isPresenting, setIsPresenting] = useState(false);
@@ -120,7 +122,7 @@ export default function PremiumScreen() {
 
         if (restored) {
             await refreshStatus();
-            showAlert({ title: 'Compras Restauradas', message: 'Tus compras han sido restauradas con éxito.', type: 'success' });
+            showToast({ message: 'Compras restauradas', variant: 'success' });
         } else {
             showAlert({ title: 'Aviso', message: 'No se encontraron compras anteriores para restaurar.', type: 'info' });
         }

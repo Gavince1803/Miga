@@ -1,6 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { useInventory } from '@/hooks/useInventory';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/lib/supabase';
@@ -373,6 +374,7 @@ export default function InventoryScreen() {
     const { inventory, loading, refreshing, onRefresh, fetchInventory, updateStock, setStock, registerPurchase, addItem, updateItemDetails, importInventory, exportInventory, archiveItem, unarchiveItem } = useInventory();
     const [searchQuery, setSearchQuery] = useState('');
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
     const { isPremium } = useSubscription();
     const [showTutorial, setShowTutorial] = useState(false);
 
@@ -640,7 +642,7 @@ export default function InventoryScreen() {
         if (success) {
             setShowAddModal(false);
             resetAddForm();
-            showAlert({ title: 'Éxito', message: `"${newItemName}" agregado al inventario`, type: 'success' });
+            showToast({ message: `"${newItemName}" agregado al inventario`, variant: 'success' });
         }
     };
 
@@ -720,7 +722,7 @@ export default function InventoryScreen() {
                         onPress: async () => {
                             const result = await importInventory(itemsToImport);
                             if (result) {
-                                showAlert({ title: 'Éxito', message: `Inventario actualizado. Agregados: ${result.added}, Actualizados: ${result.updated}`, type: 'success' });
+                                showToast({ message: `Inventario actualizado: ${result.added} nuevos, ${result.updated} actualizados`, variant: 'success' });
                             }
                         }
                     }
@@ -770,7 +772,7 @@ export default function InventoryScreen() {
                     UTI: 'com.microsoft.excel.xlsx',
                 });
             } else {
-                showAlert({ title: 'Éxito', message: `Se exportaron ${data.length} items.`, type: 'success' });
+                showToast({ message: `Se exportaron ${data.length} items`, variant: 'success' });
             }
         } catch (error) {
             console.error('Export error:', error);
