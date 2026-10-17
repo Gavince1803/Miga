@@ -62,8 +62,10 @@ export interface Order {
     // Notifications
     customReminderDays?: number;
 
-    // Status
+    // Status: kept for older app versions (payment-derived + 'cancelado').
+    // Delivery is deliveredAt; payment is paymentStatus/depositAmount.
     status: OrderStatus;
+    deliveredAt?: string | null;
 
     // Notifications
     reminderDays: number; // 0 means no reminder
@@ -206,7 +208,33 @@ export const getPaymentMethodOptions = (currency: string) => {
     ];
 };
 
-// Order status options
+// Delivery state, independent of payment (orders.delivered_at, migration 032)
+export type DeliveryState = 'por_entregar' | 'entregado' | 'cancelado';
+
+export const DELIVERY_STATE_OPTIONS = [
+    { label: 'Por entregar', value: 'por_entregar' as DeliveryState, color: '#FFB74D', textKey: 'pendiente' },
+    { label: 'Entregado', value: 'entregado' as DeliveryState, color: '#A8D5BA', textKey: 'pagado' },
+    { label: 'Cancelado', value: 'cancelado' as DeliveryState, color: '#E57373', textKey: 'cancelado' },
+] as const;
+
+export function getDeliveryState(order: { status: string; deliveredAt?: string | null }): DeliveryState {
+    if (order.status === 'cancelado') return 'cancelado';
+    return order.deliveredAt ? 'entregado' : 'por_entregar';
+}
+
+export function getDeliveryOption(order: { status: string; deliveredAt?: string | null }) {
+    const state = getDeliveryState(order);
+    return DELIVERY_STATE_OPTIONS.find(o => o.value === state)!;
+}
+
+// What the client still owes. An order with no price counts as paid (nothing to collect).
+export function getOrderBalance(order: { status: string; paymentStatus?: string; totalPrice: number; depositAmount?: number }) {
+    const balance = (order.totalPrice || 0) - (order.depositAmount || 0);
+    const isPaid = order.status === 'pagado' || order.paymentStatus === 'pagado' || balance <= 0;
+    return { balance: isPaid ? 0 : balance, isPaid };
+}
+
+// Legacy order status options (older app versions still read/write these values)
 export const ORDER_STATUS_OPTIONS = [
     { label: 'Pendiente', value: 'pendiente' as OrderStatus, color: '#FFB74D' },
     { label: 'Pagado', value: 'pagado' as OrderStatus, color: '#A8D5BA' },

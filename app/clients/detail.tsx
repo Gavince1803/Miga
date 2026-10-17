@@ -3,7 +3,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useSettings } from '@/context/SettingsContext';
 import { useClientDetail } from '@/hooks/useClientDetail';
-import { Order, ORDER_STATUS_OPTIONS } from '@/types';
+import { getDeliveryOption, Order } from '@/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -35,8 +35,6 @@ export default function ClientDetailScreen() {
         return new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     };
 
-    const getStatusColor = (status: string) => ORDER_STATUS_OPTIONS.find(s => s.value === status)?.color || colors.textMuted;
-    const getStatusLabel = (status: string) => ORDER_STATUS_OPTIONS.find(s => s.value === status)?.label || status;
 
     const lastOrder = orders[0];
     const phone = lastOrder?.clientPhone || '';
@@ -180,7 +178,8 @@ export default function ClientDetailScreen() {
                             </View>
                         ) : (
                             orders.map((order: Order) => {
-                                const statusColor = getStatusColor(order.status);
+                                const statusOption = getDeliveryOption(order);
+                                const statusColor = statusOption.color;
                                 return (
                                     <TouchableOpacity
                                         key={order.id}
@@ -192,8 +191,8 @@ export default function ClientDetailScreen() {
                                                 #{order.orderNumber}
                                             </Text>
                                             <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-                                                <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? statusColor }]}>
-                                                    {getStatusLabel(order.status)}
+                                                <Text style={[styles.statusText, { color: colors.statusText[statusOption.textKey] }]}>
+                                                    {statusOption.label}
                                                 </Text>
                                             </View>
                                         </View>

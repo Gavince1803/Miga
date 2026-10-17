@@ -3,7 +3,7 @@ import { convertValue } from '@/lib/units';
 
 /**
  * Deduct inventory items based on recipes linked to an order's products.
- * Called when order status changes to 'completado'.
+ * Called when the order is marked delivered (useOrders.setDelivered).
  */
 export async function deductInventoryForOrder(orderId: string): Promise<{
     success: boolean;
@@ -21,7 +21,7 @@ export async function deductInventoryForOrder(orderId: string): Promise<{
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('No session');
 
-        // Deduct once per order: toggling pagado -> pendiente -> pagado must not deduct again
+        // Deduct once per order: toggling delivered -> not delivered -> delivered must not deduct again
         const { count: previousDeductions, error: previousError } = await supabase
             .from('inventory_movements')
             .select('id', { count: 'exact', head: true })

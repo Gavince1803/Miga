@@ -69,6 +69,7 @@ function useOrdersState() {
                     paymentMethod: item.payment_method,
                     paymentStatus: item.payment_status || 'pendiente',
                     status: item.status,
+                    deliveredAt: item.delivered_at ?? null,
                     reminderDays: item.reminder_days || 0,
                     createdAt: item.created_at,
                     updatedAt: item.updated_at,
@@ -188,78 +189,106 @@ function useOrdersState() {
         }
     };
 
-    // Optimistic: the list shows the new status right away; on failure we refetch
-    // to roll back. Returns whether the change was saved.
-    const updateOrderStatus = async (id: string, status: string): Promise<boolean> => {
+    const rescheduleReminder = async (data: any) => {
+        await scheduleOrderNotification({
+            id: data.id,
+            clientName: data.client_name,
+            description: data.description,
+            size: data.size,
+            deliveryDate: data.delivery_date,
+            deliveryTime: data.delivery_time,
+        });
+    };
+
+    // Delivery, payment and cancellation are independent (migration 032). Each action is
+    // optimistic: the list shows it right away and refetches to roll back on failure.
+    // Returns whether the change was saved.
+
+    // Delivered = the ingredients were used: that's when inventory is deducted (once per order)
+    const setDelivered = async (id: string, delivered: boolean): Promise<boolean> => {
+        const deliveredAt = delivered ? new Date().toISOString() : null;
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, deliveredAt } : o));
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .update({ delivered_at: deliveredAt })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
+
+            if (delivered) {
+                await cancelOrderNotification(id);
+                notifyDeduction(id, await deductInventoryForOrder(id));
+            } else if (data && data.status !== 'cancelado') {
+                await rescheduleReminder(data);
+            }
+            await fetchOrders();
+            return true;
+        } catch (error) {
+            console.error('Error updating delivery:', error);
+            fetchOrders();
+            showAlert({ title: 'Error', message: 'No se pudo actualizar la entrega', type: 'error' });
+            return false;
+        }
+    };
+
+    // Fully paid: deposit = total. `status` mirrors it for older app versions.
+    const registerPayment = async (id: string): Promise<boolean> => {
         setOrders(prev => prev.map(o => o.id === id
-            ? { ...o, status: status as OrderStatus, ...(status === 'pagado' ? { paymentStatus: 'pagado' as const } : {}) }
+            ? { ...o, paymentStatus: 'pagado' as const, depositAmount: o.totalPrice || o.depositAmount, status: o.status === 'cancelado' ? o.status : 'pagado' as OrderStatus }
             : o));
         try {
-            // If marking as 'pagado', also update the deposit to equal total (payment complete)
-            if (status === 'pagado') {
-                // First get the order to know the total and current status
-                const { data: orderData } = await supabase
-                    .from('orders')
-                    .select('total_price, status')
-                    .eq('id', id)
-                    .single();
+            const { data: orderData, error: readError } = await supabase
+                .from('orders')
+                .select('total_price, status')
+                .eq('id', id)
+                .single();
+            if (readError) throw readError;
 
-                // Already paid: skip to avoid deducting inventory twice for the same order
-                if (orderData?.status === 'pagado') {
-                    await fetchOrders();
-                    return true;
-                }
+            const updates: any = { payment_status: 'pagado' };
+            if (orderData?.status !== 'cancelado') updates.status = 'pagado';
+            if (orderData?.total_price) updates.deposit_amount = orderData.total_price;
 
-                const updates: any = {
-                    status,
-                    payment_status: 'pagado'
-                };
+            const { error } = await supabase.from('orders').update(updates).eq('id', id);
+            if (error) throw error;
+            await fetchOrders();
+            return true;
+        } catch (error) {
+            console.error('Error registering payment:', error);
+            fetchOrders();
+            showAlert({ title: 'Error', message: 'No se pudo registrar el pago', type: 'error' });
+            return false;
+        }
+    };
 
-                // Set deposit to total (fully paid)
-                if (orderData?.total_price) {
-                    updates.deposit_amount = orderData.total_price;
-                }
+    // Cancelling keeps payment and delivery data; un-cancelling restores the payment-derived status
+    const setCancelled = async (id: string, cancelled: boolean): Promise<boolean> => {
+        const current = orders.find(o => o.id === id);
+        const restored: OrderStatus = current?.paymentStatus === 'pagado' ? 'pagado' : 'pendiente';
+        const status: OrderStatus = cancelled ? 'cancelado' : restored;
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+        try {
+            const { data, error } = await supabase
+                .from('orders')
+                .update({ status })
+                .eq('id', id)
+                .select()
+                .single();
+            if (error) throw error;
 
-                const { error } = await supabase
-                    .from('orders')
-                    .update(updates)
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                // Auto-deduct inventory including in updateOrder
-                notifyDeduction(id, await deductInventoryForOrder(id));
-            } else {
-                const { data, error } = await supabase
-                    .from('orders')
-                    .update({ status })
-                    .eq('id', id)
-                    .select()
-                    .single();
-
-                if (error) throw error;
-
-                // A cancelled order shouldn't keep reminding; un-cancelling restores them
-                if (status === 'cancelado') {
-                    await cancelOrderNotification(id);
-                } else if (data) {
-                    await scheduleOrderNotification({
-                        id: data.id,
-                        clientName: data.client_name,
-                        description: data.description,
-                        size: data.size,
-                        deliveryDate: data.delivery_date,
-                        deliveryTime: data.delivery_time,
-                    });
-                }
+            // A cancelled order shouldn't keep reminding; un-cancelling restores them
+            if (cancelled) {
+                await cancelOrderNotification(id);
+            } else if (data && !data.delivered_at) {
+                await rescheduleReminder(data);
             }
-
             await fetchOrders();
             return true;
         } catch (error) {
             console.error('Error updating order:', error);
             fetchOrders();
-            showAlert({ title: 'Error', message: 'No se pudo actualizar el estado', type: 'error' });
+            showAlert({ title: 'Error', message: 'No se pudo actualizar el pedido', type: 'error' });
             return false;
         }
     };
@@ -306,12 +335,10 @@ function useOrdersState() {
 
             if (error) throw error;
 
-            if (updates.payment_status === 'pagado' || updates.status === 'pagado') {
-                notifyDeduction(id, await deductInventoryForOrder(id));
-            }
+            // Inventory is deducted on delivery now (setDelivered), not on payment
 
-            // Update Notification Schedule
-            if (data) {
+            // Update Notification Schedule (delivered orders don't need reminders)
+            if (data && !data.delivered_at) {
                 // Correctly map for notification function
                 await scheduleOrderNotification({
                     id: data.id,
@@ -431,6 +458,7 @@ function useOrdersState() {
                 paymentMethod: item.payment_method,
                 paymentStatus: item.payment_status || 'pendiente',
                 status: item.status,
+                deliveredAt: item.delivered_at ?? null,
                 reminderDays: item.reminder_days || 0,
                 createdAt: item.created_at,
                 updatedAt: item.updated_at,
@@ -448,7 +476,9 @@ function useOrdersState() {
         refreshing,
         onRefresh,
         createOrder,
-        updateOrderStatus,
+        setDelivered,
+        registerPayment,
+        setCancelled,
         updateOrder,
         deleteOrder,
         getDictionaryOptions,

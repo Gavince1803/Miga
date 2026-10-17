@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { parseLocalDate, relativeDayLabel } from '@/lib/dateUtils';
-import { Order, ORDER_STATUS_OPTIONS } from '@/types';
+import { getDeliveryOption, getOrderBalance, Order } from '@/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
@@ -18,7 +18,7 @@ import {
 import { useOrders } from '@/hooks/useOrders';
 import { useRefreshOnFocus } from '@/hooks/useRefreshOnFocus';
 
-type FilterType = 'todos' | 'pendiente' | 'pagado' | 'cancelado';
+type FilterType = 'todos' | 'por_entregar' | 'por_cobrar' | 'cancelado';
 
 function OrderCard({
     order,
@@ -27,9 +27,10 @@ function OrderCard({
     order: Order;
     colors: typeof Colors.light;
 }) {
-    const statusOption = ORDER_STATUS_OPTIONS.find(s => s.value === order.status);
-    const statusColor = statusOption?.color || colors.textMuted;
-    const statusTextColor = colors.statusText[order.status] ?? statusColor;
+    // Badge = delivery state; the amount column shows payment ("Debe $X" / "Pagado")
+    const statusOption = getDeliveryOption(order);
+    const statusColor = statusOption.color;
+    const statusTextColor = colors.statusText[statusOption.textKey];
 
     // Calculate urgency based on delivery date
     const today = new Date();
@@ -40,10 +41,11 @@ function OrderCard({
     if (daysUntil <= 0) urgencyColor = colors.urgentToday;
     else if (daysUntil <= 2) urgencyColor = colors.urgentSoon;
     else if (daysUntil <= 7) urgencyColor = colors.urgentWeek;
+    // Delivered or cancelled orders aren't urgent anymore
+    if (statusOption.value !== 'por_entregar') urgencyColor = colors.border;
 
     // What the client still owes is what matters, not the total
-    const balance = order.totalPrice - (order.depositAmount || 0);
-    const isPaid = order.status === 'pagado' || order.paymentStatus === 'pagado' || balance <= 0;
+    const { balance, isPaid } = getOrderBalance(order);
 
     const formatTime12hr = (time: string) => {
         const [hours, minutes] = time.split(':').map(Number);
@@ -73,7 +75,7 @@ function OrderCard({
                     </Text>
                     <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
                         <Text style={[styles.statusText, { color: statusTextColor }]}>
-                            {statusOption?.label}
+                            {statusOption.label}
                         </Text>
                     </View>
                 </View>
@@ -115,8 +117,8 @@ export default function OrdersScreen() {
 
     const filters: { key: FilterType; label: string }[] = [
         { key: 'todos', label: 'Todos' },
-        { key: 'pendiente', label: 'Pendientes' },
-        { key: 'pagado', label: 'Pagados' },
+        { key: 'por_entregar', label: 'Por entregar' },
+        { key: 'por_cobrar', label: 'Por cobrar' },
         { key: 'cancelado', label: 'Cancelados' },
     ];
 
@@ -129,7 +131,10 @@ export default function OrdersScreen() {
             const matchesSearch = order.clientName.toLowerCase().includes(query) ||
                 (order.description ?? '').toLowerCase().includes(query) ||
                 order.orderNumber.toString().includes(searchQuery);
-            const matchesFilter = activeFilter === 'todos' || order.status === activeFilter;
+            const matchesFilter = activeFilter === 'todos'
+                || (activeFilter === 'por_cobrar'
+                    ? order.status !== 'cancelado' && !getOrderBalance(order).isPaid
+                    : getDeliveryOption(order).value === activeFilter);
             return matchesSearch && matchesFilter;
         })
         // Upcoming first (soonest on top), then past ones (most recent first):

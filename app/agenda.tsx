@@ -1,7 +1,7 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useOrders } from '@/hooks/useOrders';
-import { ORDER_STATUS_OPTIONS } from '@/types';
+import { getDeliveryOption } from '@/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack } from 'expo-router';
 import React from 'react';
@@ -38,7 +38,7 @@ export default function AgendaScreen() {
         .filter(o => isOrderToday(o.deliveryDate) && o.status !== 'cancelado')
         .sort((a, b) => (a.deliveryTime || '').localeCompare(b.deliveryTime || ''));
 
-    const done = todayOrders.filter(o => o.status === 'pagado' || o.status === 'completado').length;
+    const done = todayOrders.filter(o => !!o.deliveredAt).length;
     const pending = todayOrders.length - done;
 
     const todayLabel = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -88,8 +88,9 @@ export default function AgendaScreen() {
                         </View>
                     ) : (
                         todayOrders.map(order => {
-                            const statusOption = ORDER_STATUS_OPTIONS.find(s => s.value === order.status);
-                            const isDone = order.status === 'pagado' || order.status === 'completado';
+                            const statusOption = getDeliveryOption(order);
+                            const statusTextColor = colors.statusText[statusOption.textKey];
+                            const isDone = !!order.deliveredAt;
                             const phone = order.clientPhone;
 
                             return (
@@ -109,10 +110,10 @@ export default function AgendaScreen() {
                                                 {fmt12(order.deliveryTime)}
                                             </Text>
                                         </View>
-                                        <View style={[styles.statusBadge, { backgroundColor: (statusOption?.color || colors.textMuted) + '20' }]}>
-                                            {isDone && <Ionicons name="checkmark" size={9} color={colors.statusText[order.status] ?? statusOption?.color} style={{ marginRight: 3 }} />}
-                                            <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? colors.textMuted }]}>
-                                                {statusOption?.label}
+                                        <View style={[styles.statusBadge, { backgroundColor: statusOption.color + '20' }]}>
+                                            {isDone && <Ionicons name="checkmark" size={9} color={statusTextColor} style={{ marginRight: 3 }} />}
+                                            <Text style={[styles.statusText, { color: statusTextColor }]}>
+                                                {statusOption.label}
                                             </Text>
                                         </View>
                                     </View>

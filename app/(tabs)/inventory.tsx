@@ -40,7 +40,7 @@ const TUTORIAL_STEPS = [
     { icon: 'cube-outline', color: '#D4A574', label: 'Agrega tus ingredientes aquí con cantidad y unidad' },
     { icon: 'book-outline', color: '#E8B4B8', label: 'En Recetas, vincula cada receta con sus ingredientes' },
     { icon: 'bag-outline', color: '#A8D5BA', label: 'Al crear un pedido, selecciona las recetas incluidas' },
-    { icon: 'checkmark-circle', color: '#FFB74D', label: 'Al marcar el pedido como Pagado, Miga descuenta el inventario automáticamente ✨' },
+    { icon: 'checkmark-circle', color: '#FFB74D', label: 'Al marcar el pedido como Entregado, Miga descuenta el inventario automáticamente ✨' },
 ] as const;
 
 function InventoryTutorialBanner({

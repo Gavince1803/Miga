@@ -8,7 +8,7 @@ import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
 import { parseLocalDate, relativeDayLabel } from '@/lib/dateUtils';
 import { supabase } from '@/lib/supabase';
-import { Order } from '@/types';
+import { getOrderBalance, Order } from '@/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { isToday } from 'date-fns';
@@ -69,8 +69,7 @@ function HeroCard({
 
       {/* Which orders, not just how many: time, client and what's still owed */}
       {!loading && shownToday.map((order) => {
-        const balance = order.totalPrice - (order.depositAmount || 0);
-        const isPaid = order.status === 'pagado' || order.paymentStatus === 'pagado' || balance <= 0;
+        const { balance, isPaid } = getOrderBalance(order);
         return (
           <TouchableOpacity
             key={order.id}
@@ -176,7 +175,7 @@ function UpcomingOrderCard({
 }) {
   const urgencyColor = getUrgencyColor(order.deliveryDate, colors);
   const formattedDate = relativeDayLabel(order.deliveryDate);
-  const balance = order.totalPrice - (order.depositAmount || 0);
+  const { balance } = getOrderBalance(order);
 
   return (
     <Link href={`/orders/${order.id}`} asChild>
@@ -236,7 +235,8 @@ export default function HomeScreen() {
 
   // Calculate stats
   const isNewUser = !ordersLoading && orders.length === 0;
-  const todayOrders = orders.filter(o => o.status !== 'cancelado' && isToday(parseLocalDate(o.deliveryDate)));
+  // Still to deliver today (delivered ones are done)
+  const todayOrders = orders.filter(o => o.status !== 'cancelado' && !o.deliveredAt && isToday(parseLocalDate(o.deliveryDate)));
   // Simplified week calculation (last 7 days + next 7 days or just volume)
   // For now: active orders (pending/process)
   const activeOrdersCount = orders.filter(o => o.status === 'pendiente' || o.status === 'pagado').length; // 'pagado' orders might still be active in terms of production? Users call, sticking to status. Actually user said 'todo arreglado' regarding new statuses.
@@ -260,9 +260,10 @@ export default function HomeScreen() {
     })
     .reduce((sum, o) => sum + (o.depositAmount || 0), 0);
 
+  // Everything still owed, delivered or not
   const pendingCollection = orders
-    .filter(o => o.status === 'pendiente')
-    .reduce((sum, o) => sum + ((o.totalPrice || 0) - (o.depositAmount || 0)), 0);
+    .filter(o => o.status !== 'cancelado')
+    .reduce((sum, o) => sum + getOrderBalance(o).balance, 0);
 
   // Format currency
   const formatMoney = (amount: number) => {
@@ -283,9 +284,9 @@ export default function HomeScreen() {
     .filter(o => {
       // From tomorrow on: today's orders are already listed in the hero card
       const isFuture = parseLocalDate(o.deliveryDate) >= new Date(new Date().setHours(24, 0, 0, 0));
-      const isActive = o.status !== 'cancelado' && o.status !== 'completado';
-      const isUnpaid = o.paymentStatus !== 'pagado'; // User request: Paid orders should hide
-      return isFuture && isActive && isUnpaid;
+      // Delivered orders hide; paid-in-advance ones still have to be made, so they stay
+      const isActive = o.status !== 'cancelado' && !o.deliveredAt;
+      return isFuture && isActive;
     })
     .slice(0, 3);
 
