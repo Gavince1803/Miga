@@ -5,6 +5,7 @@ import { OrderProductsSelector, SelectedProduct } from '@/components/OrderProduc
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { CURRENCIES, useSettings } from '@/context/SettingsContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useHaptics } from '@/hooks/useHaptics';
@@ -196,6 +197,7 @@ export default function NewOrderScreen() {
     };
     const { setItemsForOrder } = useOrderItems();
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
     const notifyDeduction = useDeductionToast();
     const { isPremium } = useSubscription(); // Import this hook
     const { currency } = useSettings();
@@ -354,13 +356,8 @@ export default function NewOrderScreen() {
                     notifyDeduction(newOrder.id, await deductInventoryForOrder(newOrder.id));
                 }
 
-                haptics.success();
-                showAlert({
-                    title: '¡Pedido Guardado!',
-                    message: 'El pedido se ha creado exitosamente.',
-                    type: 'success',
-                    buttons: [{ text: 'OK', onPress: () => router.back() }]
-                });
+                showToast({ message: 'Pedido guardado', variant: 'success' });
+                router.back();
             }
         } catch (error) {
             console.error(error);

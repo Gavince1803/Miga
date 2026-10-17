@@ -2,6 +2,7 @@ import BackButton from '@/components/BackButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
+import { useToast } from '@/context/ToastContext';
 import { useFeedbackPrompt } from '@/hooks/useFeedbackPrompt';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useOrders } from '@/hooks/useOrders';
@@ -104,6 +105,7 @@ export default function OrderDetailScreen() {
     const { id } = useLocalSearchParams();
     const { updateOrderStatus, getOrdersByClient } = useOrders();
     const { showAlert } = useAlert();
+    const { showToast } = useToast();
     const haptics = useHaptics();
     const { currency } = useSettings();
     const currencySymbol = CURRENCIES[currency]?.symbol || '$';
@@ -220,25 +222,19 @@ export default function OrderDetailScreen() {
                         setOrder(previous);
                         return;
                     }
-                    haptics.success();
-                    // Success moment: once per user, ask for a store review after the alert closes.
+                    showToast({ message: `Pedido marcado como ${option.label.toLowerCase()}`, variant: 'success' });
+                    // Success moment: once per user, ask for a store review once the toast has been seen.
                     // Straight to the native dialog, no "¿Te gusta?" first: Google Play forbids gating reviews
-                    const askReview = justPaid && await shouldShowPrompt();
-                    showAlert({
-                        title: 'Estado Actualizado',
-                        message: `El pedido ahora está: ${option.label}`,
-                        type: 'success',
-                        buttons: askReview ? [{
-                            text: 'OK', onPress: () => setTimeout(async () => {
-                                markPromptShown();
-                                try {
-                                    if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
-                                } catch (error) {
-                                    console.error('Error requesting store review:', error);
-                                }
-                            }, 600)
-                        }] : [],
-                    });
+                    if (justPaid && await shouldShowPrompt()) {
+                        setTimeout(async () => {
+                            markPromptShown();
+                            try {
+                                if (await StoreReview.isAvailableAsync()) await StoreReview.requestReview();
+                            } catch (error) {
+                                console.error('Error requesting store review:', error);
+                            }
+                        }, 1500);
+                    }
                 },
             })),
             { text: 'Cancelar', style: 'cancel' as const, onPress: () => { } }
@@ -338,12 +334,8 @@ export default function OrderDetailScreen() {
                             const { error } = await supabase.from('orders').delete().eq('id', order.id);
                             if (error) throw error;
                             await cancelOrderNotification(order.id);
-                            showAlert({
-                                title: 'Eliminado',
-                                message: 'Pedido eliminado correctamente',
-                                type: 'success',
-                                buttons: [{ text: 'OK', onPress: () => router.back() }]
-                            });
+                            showToast({ message: 'Pedido eliminado', variant: 'success' });
+                            router.back();
                         } catch (error) {
                             showAlert({ title: 'Error', message: 'No se pudo eliminar', type: 'error' });
                         }
