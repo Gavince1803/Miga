@@ -4,7 +4,8 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useSettings } from '@/context/SettingsContext';
 import { useClientDetail } from '@/hooks/useClientDetail';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import {
@@ -106,7 +107,7 @@ export default function ClientDetailScreen() {
                             onPress={handleCall}
                             disabled={!phone}
                         >
-                            <FontAwesome name="phone" size={17} color={phone ? colors.success : colors.textMuted} />
+                            <Ionicons name="call-outline" size={17} color={phone ? colors.success : colors.textMuted} />
                             <Text style={[styles.actionText, { color: phone ? colors.success : colors.textMuted }]}>Llamar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -114,14 +115,14 @@ export default function ClientDetailScreen() {
                             onPress={handleWhatsApp}
                             disabled={!phone}
                         >
-                            <FontAwesome name="whatsapp" size={17} color={phone ? '#25D366' : colors.textMuted} />
+                            <Ionicons name="logo-whatsapp" size={17} color={phone ? '#25D366' : colors.textMuted} />
                             <Text style={[styles.actionText, { color: phone ? '#25D366' : colors.textMuted }]}>WhatsApp</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.actionBtn, { backgroundColor: colors.primary + '15' }]}
                             onPress={handleNewOrder}
                         >
-                            <FontAwesome name="plus" size={17} color={colors.primary} />
+                            <Ionicons name="add" size={17} color={colors.primary} />
                             <Text style={[styles.actionText, { color: colors.primaryText }]}>Nuevo pedido</Text>
                         </TouchableOpacity>
                     </View>
@@ -136,14 +137,14 @@ export default function ClientDetailScreen() {
                             <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
                                 <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                     <View style={[styles.statIcon, { backgroundColor: colors.primary + '15' }]}>
-                                        <FontAwesome name="shopping-bag" size={13} color={colors.primary} />
+                                        <Ionicons name="bag-outline" size={13} color={colors.primary} />
                                     </View>
                                     <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total pedidos</Text>
                                     <Text style={[styles.statValue, { color: colors.primaryText }]}>{stats.totalOrders}</Text>
                                 </View>
                                 <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                     <View style={[styles.statIcon, { backgroundColor: colors.success + '15' }]}>
-                                        <FontAwesome name="money" size={13} color={colors.success} />
+                                        <Ionicons name="cash-outline" size={13} color={colors.success} />
                                     </View>
                                     <Text style={[styles.statLabel, { color: colors.textMuted }]}>Total gastado</Text>
                                     <Text style={[styles.statValue, { color: colors.success }]} numberOfLines={1}>
@@ -154,14 +155,14 @@ export default function ClientDetailScreen() {
                             <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
                                 <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                     <View style={[styles.statIcon, { backgroundColor: colors.success + '15' }]}>
-                                        <FontAwesome name="check-circle" size={13} color={colors.success} />
+                                        <Ionicons name="checkmark-circle" size={13} color={colors.success} />
                                     </View>
                                     <Text style={[styles.statLabel, { color: colors.textMuted }]}>Pag. / Pend.</Text>
                                     <Text style={[styles.statValue, { color: colors.text }]}>{stats.paidCount} / {stats.pendingCount}</Text>
                                 </View>
                                 <View style={[styles.statCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                     <View style={[styles.statIcon, { backgroundColor: colors.secondary + '20' }]}>
-                                        <FontAwesome name="birthday-cake" size={13} color={colors.primary} />
+                                        <MaterialCommunityIcons name="cake-variant-outline" size={13} color={colors.primary} />
                                     </View>
                                     <Text style={[styles.statLabel, { color: colors.textMuted }]}>Torta favorita</Text>
                                     <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1}>{stats.favoriteCake}</Text>

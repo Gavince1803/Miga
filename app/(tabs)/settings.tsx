@@ -10,7 +10,7 @@ import { cancelAllNotifications, requestNotificationPermissions } from '@/lib/no
 import { getManagementURL } from '@/lib/revenuecat';
 import { deleteUserImages } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
@@ -47,7 +47,7 @@ function SettingRow({
             disabled={!onPress}
         >
             <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
-                <FontAwesome name={icon as any} size={16} color={colors.primary} />
+                <Ionicons name={icon as any} size={16} color={colors.primary} />
             </View>
             <View style={styles.settingContent}>
                 <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
@@ -56,7 +56,7 @@ function SettingRow({
                 )}
             </View>
             {showChevron && onPress && (
-                <FontAwesome name="chevron-right" size={14} color={colors.textMuted} />
+                <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
             )}
         </TouchableOpacity>
     );
@@ -80,7 +80,7 @@ function SettingToggle({
     return (
         <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
             <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
-                <FontAwesome name={icon as any} size={16} color={colors.primary} />
+                <Ionicons name={icon as any} size={16} color={colors.primary} />
             </View>
             <View style={styles.settingContent}>
                 <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
@@ -255,7 +255,7 @@ export default function SettingsScreen() {
                     setTimeout(() => setIsNavigating(false), 1000);
                 }}
             >
-                <FontAwesome name="star" size={24} color="#FFF" />
+                <Ionicons name="star" size={24} color="#FFF" />
                 <View style={styles.premiumBannerText}>
                     {/* Don't show "Actualiza" to a premium user while her status is still loading */}
                     <Text style={styles.premiumTitle}>
@@ -269,14 +269,14 @@ export default function SettingsScreen() {
                         </Text>
                     )}
                 </View>
-                <FontAwesome name="chevron-right" size={16} color="rgba(255,255,255,0.7)" />
+                <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
             </TouchableOpacity>
 
             {isPremium && (
                 <View style={styles.section}>
                     <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                         <SettingRow
-                            icon="credit-card"
+                            icon="card-outline"
                             label="Gestionar suscripción"
                             value="Cambiar de plan o cancelar"
                             onPress={handleManageSubscription}
@@ -293,14 +293,14 @@ export default function SettingsScreen() {
                 </Text>
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <SettingRow
-                        icon="building"
+                        icon="storefront-outline"
                         label="Nombre del Negocio"
                         value="Mi Repostería"
                         onPress={handleBusinessName}
                         colors={colors}
                     />
                     <SettingRow
-                        icon="phone"
+                        icon="call-outline"
                         label="Teléfono"
                         value="+58 412 123 4567"
                         onPress={handlePhoneEdit}
@@ -316,7 +316,7 @@ export default function SettingsScreen() {
                 </Text>
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <SettingRow
-                        icon="money"
+                        icon="cash-outline"
                         label="Moneda Principal"
                         value={CURRENCIES[currency]?.label || 'Cargando...'}
                         onPress={handleCurrencyEdit}
@@ -332,7 +332,7 @@ export default function SettingsScreen() {
                 </Text>
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <SettingRow
-                        icon="bell"
+                        icon="notifications-outline"
                         label="Permisos de Notificación"
                         value={notificationStatus === 'granted' ? '✅ Activadas' : notificationStatus === 'denied' ? '❌ Denegadas' : '⚠️ Sin configurar'}
                         onPress={handleNotificationPermission}
@@ -350,7 +350,7 @@ export default function SettingsScreen() {
                 </Text>
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <SettingRow
-                        icon="cloud-download"
+                        icon="cloud-download-outline"
                         label="Exportar Datos"
                         value="Excel, CSV"
                         onPress={handleExportData}
@@ -358,7 +358,7 @@ export default function SettingsScreen() {
                     />
 
                     <SettingRow
-                        icon="book"
+                        icon="book-outline"
                         label="Recetas"
                         value="Gestiona tus recetas"
                         onPress={() => router.push('/recipes')}
@@ -374,26 +374,26 @@ export default function SettingsScreen() {
                 </Text>
                 <View style={[styles.sectionCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <SettingRow
-                        icon="info-circle"
+                        icon="information-circle-outline"
                         label="Versión"
                         value={Constants.expoConfig?.version ?? ''}
                         colors={colors}
                         showChevron={false}
                     />
                     <SettingRow
-                        icon="comment"
+                        icon="chatbubble-outline"
                         label="Enviar sugerencia"
                         onPress={() => setFeedbackVisible(true)}
                         colors={colors}
                     />
                     <SettingRow
-                        icon="question-circle"
+                        icon="help-circle-outline"
                         label="Ayuda"
                         onPress={() => openSupportEmail('Ayuda con Miga')}
                         colors={colors}
                     />
                     <SettingRow
-                        icon="envelope"
+                        icon="mail-outline"
                         label="Contacto"
                         value={SUPPORT_EMAIL}
                         onPress={() => openSupportEmail('Contacto')}
@@ -427,7 +427,7 @@ export default function SettingsScreen() {
                     ]
                 })}
             >
-                <FontAwesome name="sign-out" size={18} color={colors.error} />
+                <Ionicons name="log-out-outline" size={18} color={colors.error} />
                 <Text style={[styles.logoutText, { color: colors.error }]}>
                     Cerrar Sesión
                 </Text>
@@ -471,7 +471,7 @@ export default function SettingsScreen() {
                         })}
                     >
                         <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}>
-                            <FontAwesome name="trash" size={16} color={colors.error} />
+                            <Ionicons name="trash-outline" size={16} color={colors.error} />
                         </View>
                         <View style={styles.settingContent}>
                             <Text style={[styles.settingLabel, { color: colors.error }]}>Eliminar Cuenta</Text>

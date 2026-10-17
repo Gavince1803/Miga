@@ -7,7 +7,7 @@ import { useInventory } from '@/hooks/useInventory';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/lib/supabase';
 import { InventoryItem } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
@@ -37,10 +37,10 @@ import { cleanDecimalInput, parseDecimal } from '@/lib/number';
 const TUTORIAL_KEY = 'miga_inventory_tutorial_seen';
 
 const TUTORIAL_STEPS = [
-    { icon: 'cubes', color: '#D4A574', label: 'Agrega tus ingredientes aquí con cantidad y unidad' },
-    { icon: 'book', color: '#E8B4B8', label: 'En Recetas, vincula cada receta con sus ingredientes' },
-    { icon: 'shopping-bag', color: '#A8D5BA', label: 'Al crear un pedido, selecciona las recetas incluidas' },
-    { icon: 'check-circle', color: '#FFB74D', label: 'Al marcar el pedido como Pagado, Miga descuenta el inventario automáticamente ✨' },
+    { icon: 'cube-outline', color: '#D4A574', label: 'Agrega tus ingredientes aquí con cantidad y unidad' },
+    { icon: 'book-outline', color: '#E8B4B8', label: 'En Recetas, vincula cada receta con sus ingredientes' },
+    { icon: 'bag-outline', color: '#A8D5BA', label: 'Al crear un pedido, selecciona las recetas incluidas' },
+    { icon: 'checkmark-circle', color: '#FFB74D', label: 'Al marcar el pedido como Pagado, Miga descuenta el inventario automáticamente ✨' },
 ] as const;
 
 function InventoryTutorialBanner({
@@ -76,14 +76,14 @@ function InventoryTutorialBanner({
             <View style={tutorialStyles.header}>
                 <View style={tutorialStyles.headerLeft}>
                     <View style={[tutorialStyles.iconBadge, { backgroundColor: colors.primary + '25' }]}>
-                        <FontAwesome name="magic" size={14} color={colors.primary} />
+                        <Ionicons name="sparkles-outline" size={14} color={colors.primary} />
                     </View>
                     <Text style={[tutorialStyles.title, { color: colors.text }]}>
                         Descuento automático de stock
                     </Text>
                 </View>
                 <TouchableOpacity onPress={handleDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <FontAwesome name="times" size={16} color={colors.textMuted} />
+                    <Ionicons name="close" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
             </View>
 
@@ -93,7 +93,7 @@ function InventoryTutorialBanner({
                     <View key={i} style={tutorialStyles.step}>
                         <View style={tutorialStyles.stepLeft}>
                             <View style={[tutorialStyles.stepIconWrap, { backgroundColor: step.color + '22' }]}>
-                                <FontAwesome name={step.icon} size={13} color={step.color} />
+                                <Ionicons name={step.icon} size={13} color={step.color} />
                             </View>
                             {i < TUTORIAL_STEPS.length - 1 && (
                                 <View style={[tutorialStyles.stepLine, { backgroundColor: colors.border }]} />
@@ -264,7 +264,7 @@ function InventoryCard({
 
                 {isLowStock && (
                     <View style={[styles.lowStockBadge, { backgroundColor: colors.error + '20' }]}>
-                        <FontAwesome name="exclamation-triangle" size={12} color={colors.error} />
+                        <Ionicons name="warning-outline" size={12} color={colors.error} />
                         <Text style={[styles.lowStockText, { color: colors.error }]}>
                             Bajo
                         </Text>
@@ -286,7 +286,7 @@ function InventoryCard({
                         <Text style={[styles.unit, { color: colors.textSecondary }]}>
                             {item.unit}
                         </Text>
-                        <FontAwesome name="pencil" size={12} color={colors.textMuted} style={{ marginLeft: 6 }} />
+                        <Ionicons name="pencil-outline" size={12} color={colors.textMuted} style={{ marginLeft: 6 }} />
                     </View>
                     {(item.costPerUnit || 0) > 0 && (
                         <Text style={{ fontSize: 13, color: colors.textMuted, marginTop: 2 }}>
@@ -302,7 +302,7 @@ function InventoryCard({
                     {/* Total Value Display */}
                     {(item.costPerUnit || 0) > 0 && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-                            <FontAwesome name="tag" size={10} color={colors.textMuted} />
+                            <Ionicons name="pricetag-outline" size={10} color={colors.textMuted} />
                             <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                                 Total: ${(item.quantity * (item.costPerUnit || 0)).toFixed(2)}
                             </Text>
@@ -317,7 +317,7 @@ function InventoryCard({
                             accessibilityRole="button"
                             accessibilityLabel={`Restar ${step} ${item.unit} de ${item.name}`}
                         >
-                            <FontAwesome name="minus" size={14} color={colors.error} />
+                            <Ionicons name="remove" size={14} color={colors.error} />
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.quickButton, { backgroundColor: colors.success + '20' }]}
@@ -326,7 +326,7 @@ function InventoryCard({
                             accessibilityRole="button"
                             accessibilityLabel={`Sumar ${step} ${item.unit} a ${item.name}`}
                         >
-                            <FontAwesome name="plus" size={14} color={colors.success} />
+                            <Ionicons name="add" size={14} color={colors.success} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -339,7 +339,7 @@ function InventoryCard({
                 accessibilityRole="button"
                 accessibilityLabel={`Registrar compra de ${item.name}`}
             >
-                <FontAwesome name="shopping-cart" size={13} color={colors.primary} />
+                <Ionicons name="cart-outline" size={13} color={colors.primary} />
                 <Text style={[styles.purchaseButtonText, { color: colors.primaryText }]}>Registrar compra</Text>
             </TouchableOpacity>
 
@@ -790,7 +790,7 @@ export default function InventoryScreen() {
             {/* Header Stats */}
             <View style={styles.statsRow}>
                 <View style={[styles.statChip, { backgroundColor: showArchived ? colors.primary + '20' : colors.surface }]}>
-                    <FontAwesome name="cubes" size={14} color={showArchived ? colors.textMuted : colors.primary} />
+                    <Ionicons name="cube-outline" size={14} color={showArchived ? colors.textMuted : colors.primary} />
                     <Text style={[styles.statText, { color: showArchived ? colors.textMuted : colors.text }]}>
                         {inventory.length} items
                     </Text>
@@ -802,7 +802,7 @@ export default function InventoryScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={`${lowStockCount} bajo stock, ver lista de compras`}
                     >
-                        <FontAwesome name="exclamation-triangle" size={14} color={colors.error} />
+                        <Ionicons name="warning-outline" size={14} color={colors.error} />
                         <Text style={[styles.statText, { color: colors.error }]}>
                             {lowStockCount} bajo stock
                         </Text>
@@ -814,7 +814,7 @@ export default function InventoryScreen() {
                         onPress={() => router.push('/inventory/shopping' as any)}
                         accessibilityRole="button"
                     >
-                        <FontAwesome name="shopping-cart" size={14} color={colors.primary} />
+                        <Ionicons name="cart-outline" size={14} color={colors.primary} />
                         <Text style={[styles.statText, { color: colors.primaryText }]}>Lista de compras</Text>
                     </TouchableOpacity>
                 )}
@@ -826,7 +826,7 @@ export default function InventoryScreen() {
                         }}
                         activeOpacity={0.7}
                     >
-                        <FontAwesome name="archive" size={12} color={showArchived ? '#FFF' : colors.textMuted} />
+                        <Ionicons name="archive-outline" size={12} color={showArchived ? '#FFF' : colors.textMuted} />
                         <Text style={[styles.statText, { color: showArchived ? '#FFF' : colors.textMuted }]}>
                             {archivedItems.length} archivado{archivedItems.length !== 1 ? 's' : ''}
                         </Text>
@@ -837,7 +837,7 @@ export default function InventoryScreen() {
             {/* Search Bar */}
             <View style={styles.searchContainer}>
                 <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <FontAwesome name="search" size={16} color={colors.textMuted} />
+                    <Ionicons name="search" size={16} color={colors.textMuted} />
                     <TextInput
                         style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Buscar ingrediente..."
@@ -852,7 +852,7 @@ export default function InventoryScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Exportar inventario a Excel"
                 >
-                    <FontAwesome name="download" size={18} color="#FFFFFF" />
+                    <Ionicons name="download-outline" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.importButton, { backgroundColor: colors.primaryStrong }]}
@@ -860,7 +860,7 @@ export default function InventoryScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Importar inventario desde Excel"
                 >
-                    <FontAwesome name="file-excel-o" size={18} color="#FFFFFF" />
+                    <Ionicons name="document-outline" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
             </View>
 
@@ -915,7 +915,7 @@ export default function InventoryScreen() {
                         </View>
                     ) : (
                         <View style={styles.emptyState}>
-                            <FontAwesome name={showArchived ? 'archive' : 'inbox'} size={48} color={colors.textMuted} />
+                            <Ionicons name={showArchived ? 'archive-outline' : 'file-tray-outline'} size={48} color={colors.textMuted} />
                             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                                 {showArchived ? 'No hay productos archivados' : 'No hay ingredientes'}
                             </Text>
@@ -934,7 +934,7 @@ export default function InventoryScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Agregar ingrediente"
             >
-                <FontAwesome name="plus" size={24} color="#FFFFFF" />
+                <Ionicons name="add" size={24} color="#FFFFFF" />
             </TouchableOpacity>
 
             {/* Add Item Modal */}
@@ -955,7 +955,7 @@ export default function InventoryScreen() {
                                 Nuevo Ingrediente
                             </Text>
                             <TouchableOpacity onPress={() => { setShowAddModal(false); resetAddForm(); }}>
-                                <FontAwesome name="times" size={24} color={colors.textMuted} />
+                                <Ionicons name="close" size={24} color={colors.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -1084,7 +1084,7 @@ export default function InventoryScreen() {
                             style={[styles.addButton, { backgroundColor: colors.primaryStrong, flexDirection: 'row', gap: 8, marginTop: 12 }]}
                             onPress={handleAddItem}
                         >
-                            <FontAwesome name="check" size={18} color="#FFFFFF" />
+                            <Ionicons name="checkmark" size={18} color="#FFFFFF" />
                             <Text style={styles.addButtonText}>Agregar</Text>
                         </TouchableOpacity>
                     </View>
@@ -1306,7 +1306,7 @@ export default function InventoryScreen() {
                                 }, 300);
                             }}
                         >
-                            <FontAwesome name="archive" size={14} color={colors.error} style={{ marginRight: 8 }} />
+                            <Ionicons name="archive-outline" size={14} color={colors.error} style={{ marginRight: 8 }} />
                             <Text style={{ color: colors.error, fontWeight: '600', fontSize: 14 }}>Archivar Producto</Text>
                         </TouchableOpacity>
                     </View>

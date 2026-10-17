@@ -4,7 +4,7 @@ import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/
 import { useAlert } from '@/context/AlertContext';
 import { RecipeIngredient, useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -199,17 +199,17 @@ export default function RecipeDetailScreen() {
                                 accessibilityRole="button"
                                 accessibilityLabel="Calcular costos"
                             >
-                                <FontAwesome name="calculator" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
+                                <Ionicons name="calculator-outline" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
 
                             <TouchableOpacity onPress={handleShare} style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]} accessibilityRole="button" accessibilityLabel="Compartir receta">
-                                <FontAwesome name="share-alt" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
+                                <Ionicons name="share-outline" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)} style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]} accessibilityRole="button" accessibilityLabel="Editar receta">
-                                <FontAwesome name="pencil" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
+                                <Ionicons name="pencil-outline" size={20} color={recipe.imageUrl ? '#FFF' : colors.primary} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={handleDelete} style={[styles.headerBtn, !recipe.imageUrl && { backgroundColor: colors.surface }]} accessibilityRole="button" accessibilityLabel="Eliminar receta">
-                                <FontAwesome name="trash" size={20} color={recipe.imageUrl ? '#FFF' : colors.error} />
+                                <Ionicons name="trash-outline" size={20} color={recipe.imageUrl ? '#FFF' : colors.error} />
                             </TouchableOpacity>
                         </View>
                     )
@@ -241,7 +241,7 @@ export default function RecipeDetailScreen() {
                             )}
                             {(recipe.suggestedPrice ?? 0) > 0 && (
                                 <View style={[styles.badge, { backgroundColor: colors.success + '20' }]}>
-                                    <FontAwesome name="tag" size={10} color={colors.success} />
+                                    <Ionicons name="pricetag-outline" size={10} color={colors.success} />
                                     <Text style={[styles.badgeText, { color: colors.success, marginLeft: 4 }]}>
                                         Venta: {formatMoney(recipe.suggestedPrice!, currency)}
                                     </Text>
@@ -250,7 +250,7 @@ export default function RecipeDetailScreen() {
 
                             {(recipe.costPerPortion ?? 0) > 0 && (
                                 <View style={[styles.badge, { backgroundColor: colors.warning + '20' }]}>
-                                    <FontAwesome name="pie-chart" size={10} color={colors.warning} />
+                                    <Ionicons name="pie-chart-outline" size={10} color={colors.warning} />
                                     <Text style={[styles.badgeText, { color: colors.warning, marginLeft: 4 }]}>
                                         Costo: {formatMoney(recipe.costPerPortion!, currency)}/ud
                                     </Text>
@@ -260,7 +260,7 @@ export default function RecipeDetailScreen() {
                         <Text style={[styles.title, { color: colors.text }]}>{recipe.title}</Text>
 
                         <View style={styles.metaRow}>
-                            <FontAwesome name="clock-o" size={14} color={colors.textSecondary} />
+                            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
                             <Text style={[styles.metaText, { color: colors.textSecondary }]}>Agregada el {new Date(recipe.createdAt).toLocaleDateString()}</Text>
                         </View>
                     </View>
@@ -271,7 +271,7 @@ export default function RecipeDetailScreen() {
                     {linkedIngredients.length > 0 && (
                         <View style={styles.section}>
                             <View style={styles.sectionHeader}>
-                                <FontAwesome name="cubes" size={18} color={colors.success} />
+                                <Ionicons name="cube-outline" size={18} color={colors.success} />
                                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Ingredientes del Inventario</Text>
                             </View>
                             <View style={[styles.linkedIngredientsGrid]}>
@@ -285,7 +285,7 @@ export default function RecipeDetailScreen() {
                                         </Text>
                                         {ing.inventoryItem?.isArchived && (
                                             <View style={[styles.lowStockWarning, { backgroundColor: colors.warning + '20' }]}>
-                                                <FontAwesome name="archive" size={10} color={colors.warning} />
+                                                <Ionicons name="archive-outline" size={10} color={colors.warning} />
                                                 <Text style={[styles.lowStockText, { color: colors.warning }]}>Archivado</Text>
                                             </View>
                                         )}
@@ -293,7 +293,7 @@ export default function RecipeDetailScreen() {
                                             as missing. Label differs from Inventario's "bajo stock" (below minimum). */}
                                         {ing.inventoryItem && ing.inventoryItem.quantity < (convertValue(ing.quantity, ing.unit, ing.inventoryItem.unit) ?? ing.quantity) && (
                                             <View style={[styles.lowStockWarning, { backgroundColor: colors.error + '20' }]}>
-                                                <FontAwesome name="exclamation-triangle" size={10} color={colors.error} />
+                                                <Ionicons name="warning-outline" size={10} color={colors.error} />
                                                 <Text style={[styles.lowStockText, { color: colors.error }]}>No alcanza</Text>
                                             </View>
                                         )}
@@ -309,9 +309,9 @@ export default function RecipeDetailScreen() {
                             style={styles.sectionHeader}
                             onPress={() => setScalingActive(!scalingActive)}
                         >
-                            <FontAwesome name="balance-scale" size={18} color={colors.primary} />
+                            <Ionicons name="scale-outline" size={18} color={colors.primary} />
                             <Text style={[styles.sectionTitle, { color: colors.text, flex: 1 }]}>Calculadora de Escalado</Text>
-                            <FontAwesome
+                            <Ionicons
                                 name={scalingActive ? 'chevron-up' : 'chevron-down'}
                                 size={14}
                                 color={colors.textMuted}
@@ -320,7 +320,7 @@ export default function RecipeDetailScreen() {
 
                         {scalingActive && (linkedIngredients.length === 0 ? (
                             <View style={{ alignItems: 'center', paddingVertical: Spacing.lg, paddingHorizontal: Spacing.md }}>
-                                <FontAwesome name="cubes" size={36} color={colors.textMuted} />
+                                <Ionicons name="cube-outline" size={36} color={colors.textMuted} />
                                 <Text style={{ ...Typography.body, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.sm }}>
                                     Añade ingredientes del inventario a esta receta para usar la calculadora de escalado.
                                 </Text>
@@ -337,7 +337,7 @@ export default function RecipeDetailScreen() {
                                     }}
                                     onPress={() => router.push(`/recipes/edit?id=${recipe.id}`)}
                                 >
-                                    <FontAwesome name="pencil" size={14} color={colors.primary} />
+                                    <Ionicons name="pencil-outline" size={14} color={colors.primary} />
                                     <Text style={{ ...Typography.bodyBold, color: colors.primaryText }}>Editar Receta</Text>
                                 </TouchableOpacity>
                             </View>
@@ -365,7 +365,7 @@ export default function RecipeDetailScreen() {
                                         </View>
 
                                         <View style={styles.scalingArrow}>
-                                            <FontAwesome name="long-arrow-right" size={20} color={colors.primary} />
+                                            <Ionicons name="arrow-forward" size={20} color={colors.primary} />
                                         </View>
 
                                         <View style={styles.scalingInputColumn}>
@@ -386,7 +386,7 @@ export default function RecipeDetailScreen() {
                                     {/* Multiplier Badge */}
                                     {multiplier !== 1 && (
                                         <View style={[styles.multiplierBadge, { backgroundColor: colors.primary + '15' }]}>
-                                            <FontAwesome name="times" size={12} color={colors.primary} />
+                                            <Ionicons name="close" size={12} color={colors.primary} />
                                             <Text style={[styles.multiplierText, { color: colors.primaryText }]}>
                                                 {multiplier.toFixed(2)}x
                                             </Text>
@@ -430,7 +430,7 @@ export default function RecipeDetailScreen() {
                                         }, 0);
                                         return (
                                             <View style={[styles.scaledCostCard, { backgroundColor: colors.success + '10', borderColor: colors.success + '30' }]}>
-                                                <FontAwesome name="money" size={16} color={colors.success} />
+                                                <Ionicons name="cash-outline" size={16} color={colors.success} />
                                                 <View style={{ flex: 1 }}>
                                                     <Text style={[styles.scaledCostLabel, { color: colors.textMuted }]}>Costo estimado de ingredientes</Text>
                                                     <Text style={[styles.scaledCostValue, { color: colors.success }]}>
@@ -449,7 +449,7 @@ export default function RecipeDetailScreen() {
                     {/* Text-based Ingredients Section */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <FontAwesome name="shopping-basket" size={18} color={colors.primary} />
+                            <Ionicons name="basket-outline" size={18} color={colors.primary} />
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Notas de Ingredientes</Text>
                         </View>
                         <View style={[styles.paperNote, { backgroundColor: colors.surfaceSecondary }]}>
@@ -469,7 +469,7 @@ export default function RecipeDetailScreen() {
                     {/* Steps Section */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <FontAwesome name="list-ol" size={18} color={colors.primary} />
+                            <Ionicons name="list-outline" size={18} color={colors.primary} />
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Preparación</Text>
                         </View>
 

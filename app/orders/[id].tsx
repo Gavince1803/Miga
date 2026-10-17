@@ -9,7 +9,8 @@ import { useOrders } from '@/hooks/useOrders';
 import { supabase } from '@/lib/supabase';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
 import * as StoreReview from 'expo-store-review';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 // STANDBY: foto del pedido — requiere bucket 'order-photos' en Supabase Storage
 // import * as ImageManipulator from 'expo-image-manipulator';
@@ -84,7 +85,7 @@ function DetailRow({
     return (
         <View style={[styles.detailRow, { borderBottomColor: colors.border }]}>
             <View style={[styles.detailIcon, { backgroundColor: colors.primary + '15' }]}>
-                <FontAwesome name={icon as any} size={14} color={colors.primary} />
+                <Ionicons name={icon as any} size={14} color={colors.primary} />
             </View>
             <View style={styles.detailContent}>
                 <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{label}</Text>
@@ -483,7 +484,7 @@ export default function OrderDetailScreen() {
                     headerShadowVisible: false,
                     headerRight: () => (
                         <TouchableOpacity onPress={handleSharePDF} style={{ padding: 8, marginRight: 4 }}>
-                            <FontAwesome name="share-alt" size={20} color={colors.primary} />
+                            <Ionicons name="share-outline" size={20} color={colors.primary} />
                         </TouchableOpacity>
                     ),
                 }}
@@ -505,7 +506,7 @@ export default function OrderDetailScreen() {
                             <Text style={[styles.statusText, { color: colors.statusText[order.status] ?? statusOption?.color }]}>
                                 {statusOption?.label}
                             </Text>
-                            <FontAwesome name="chevron-down" size={10} color={colors.statusText[order.status] ?? statusOption?.color} />
+                            <Ionicons name="chevron-down" size={10} color={colors.statusText[order.status] ?? statusOption?.color} />
                         </TouchableOpacity>
                     </View>
 
@@ -514,7 +515,7 @@ export default function OrderDetailScreen() {
                             {order.clientName}
                         </Text>
                         <View style={[styles.historyHint, { backgroundColor: colors.primary + '15' }]}>
-                            <FontAwesome name="history" size={12} color={colors.primary} />
+                            <Ionicons name="time-outline" size={12} color={colors.primary} />
                             <Text style={[styles.historyHintText, { color: colors.primaryText }]}>Historial</Text>
                         </View>
                     </TouchableOpacity>
@@ -526,21 +527,21 @@ export default function OrderDetailScreen() {
                             onPress={handleCall}
                         >
                             {/* Mint on a 15% mint background was too faint and read as disabled */}
-                            <FontAwesome name="phone" size={18} color={colors.text} />
+                            <Ionicons name="call-outline" size={18} color={colors.text} />
                             <Text style={[styles.quickActionText, { color: colors.text }]}>Llamar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.quickAction, { backgroundColor: '#25D366' + '15' }]}
                             onPress={handleWhatsApp}
                         >
-                            <FontAwesome name="whatsapp" size={18} color="#25D366" />
+                            <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
                             <Text style={[styles.quickActionText, { color: '#25D366' }]}>WhatsApp</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.quickAction, { backgroundColor: colors.primary + '15' }]}
                             onPress={handleEdit}
                         >
-                            <FontAwesome name="edit" size={18} color={colors.primary} />
+                            <Ionicons name="create-outline" size={18} color={colors.primary} />
                             <Text style={[styles.quickActionText, { color: colors.primaryText }]}>Editar</Text>
                         </TouchableOpacity>
                     </View>
@@ -549,31 +550,31 @@ export default function OrderDetailScreen() {
                 {/* Delivery Section */}
                 <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        <FontAwesome name="truck" size={16} /> Entrega
+                        <Ionicons name="car-outline" size={16} /> Entrega
                     </Text>
                     <DetailRow
-                        icon="calendar"
+                        icon="calendar-outline"
                         label="Fecha de entrega"
                         value={formatDate(order.deliveryDate)}
                         colors={colors}
                         highlight
                     />
                     <DetailRow
-                        icon="clock-o"
+                        icon="time-outline"
                         label="Hora"
                         value={new Date(`2000-01-01T${order.deliveryTime}`).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
                         colors={colors}
                     />
                     {order.address && (
                         <DetailRow
-                            icon="map-marker"
+                            icon="location-outline"
                             label="Dirección"
                             value={order.address}
                             colors={colors}
                         />
                     )}
                     <DetailRow
-                        icon="phone"
+                        icon="call-outline"
                         label="Teléfono"
                         value={order.clientPhone}
                         colors={colors}
@@ -583,40 +584,40 @@ export default function OrderDetailScreen() {
                 {/* Product Details Section */}
                 <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        <FontAwesome name="birthday-cake" size={16} /> Detalles del Producto
+                        <MaterialCommunityIcons name="cake-variant-outline" size={16} /> Detalles del Producto
                     </Text>
                     <DetailRow
-                        icon="arrows-alt"
+                        icon="resize-outline"
                         label="Medida"
                         value={order.size || '-'}
                         colors={colors}
                     />
                     <DetailRow
-                        icon="birthday-cake"
+                        icon="restaurant-outline"
                         label="Sabor / Tipo de Base"
                         value={order.cakeType || '-'}
                         colors={colors}
                     />
                     <DetailRow
-                        icon="users"
+                        icon="people-outline"
                         label="Cantidad"
                         value={order.servings ? `${order.servings}` : '-'}
                         colors={colors}
                     />
                     <DetailRow
-                        icon="circle"
+                        icon="ellipse"
                         label="Relleno"
                         value={order.filling || '-'}
                         colors={colors}
                     />
                     <DetailRow
-                        icon="circle-o"
+                        icon="ellipse-outline"
                         label="Cubierta"
                         value={order.cover || '-'}
                         colors={colors}
                     />
                     <DetailRow
-                        icon="gift"
+                        icon="gift-outline"
                         label="Motivo"
                         value={order.occasion || '-'}
                         colors={colors}
@@ -627,7 +628,7 @@ export default function OrderDetailScreen() {
                 {order.description && (
                     <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                            <FontAwesome name="file-text-o" size={16} /> Descripción
+                            <Ionicons name="document-text-outline" size={16} /> Descripción
                         </Text>
                         <Text style={[styles.description, { color: colors.text }]}>
                             {order.description}
@@ -638,7 +639,7 @@ export default function OrderDetailScreen() {
                 {/* Payment Section */}
                 <View style={[styles.section, { backgroundColor: colors.surface }, Shadows.sm]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        <FontAwesome name="credit-card" size={16} /> Pago
+                        <Ionicons name="card-outline" size={16} /> Pago
                     </Text>
                     <View style={styles.priceRow}>
                         <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Total</Text>
@@ -653,7 +654,7 @@ export default function OrderDetailScreen() {
 
                     <View style={{ height: Spacing.sm }} />
                     <DetailRow
-                        icon={order.paymentMethod === 'efectivo' ? 'money' : order.paymentMethod === 'pago_movil' ? 'mobile-phone' : 'bank'}
+                        icon={order.paymentMethod === 'efectivo' ? 'cash-outline' : order.paymentMethod === 'pago_movil' ? 'phone-portrait-outline' : 'business-outline'}
                         label="Forma de pago"
                         value={order.paymentMethod === 'efectivo' ? 'Efectivo' : order.paymentMethod === 'pago_movil' ? 'Pago Móvil' : order.paymentMethod === 'transferencia' ? 'Transferencia' : 'Zelle'}
                         colors={colors}
@@ -667,7 +668,7 @@ export default function OrderDetailScreen() {
                     style={[styles.deleteButton, { backgroundColor: colors.error + '10' }]}
                     onPress={handleDelete}
                 >
-                    <FontAwesome name="trash-o" size={18} color={colors.error} />
+                    <Ionicons name="trash-outline" size={18} color={colors.error} />
                     <Text style={[styles.deleteButtonText, { color: colors.error }]}>
                         Eliminar Pedido
                     </Text>
@@ -697,7 +698,7 @@ export default function OrderDetailScreen() {
                             onPress={() => setClientHistoryVisible(false)}
                             style={[styles.modalClose, { backgroundColor: colors.surface }]}
                         >
-                            <FontAwesome name="times" size={18} color={colors.text} />
+                            <Ionicons name="close" size={18} color={colors.text} />
                         </TouchableOpacity>
                     </View>
 
@@ -712,14 +713,14 @@ export default function OrderDetailScreen() {
                                 <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
                                     <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                         <View style={[styles.clientStatIcon, { backgroundColor: colors.primary + '15' }]}>
-                                            <FontAwesome name="shopping-bag" size={13} color={colors.primary} />
+                                            <Ionicons name="bag-outline" size={13} color={colors.primary} />
                                         </View>
                                         <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Total pedidos</Text>
                                         <Text style={[styles.clientStatValue, { color: colors.primaryText }]}>{allClientOrders.length}</Text>
                                     </View>
                                     <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                         <View style={[styles.clientStatIcon, { backgroundColor: colors.success + '15' }]}>
-                                            <FontAwesome name="money" size={13} color={colors.success} />
+                                            <Ionicons name="cash-outline" size={13} color={colors.success} />
                                         </View>
                                         <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Total gastado</Text>
                                         <Text style={[styles.clientStatValue, { color: colors.success }]} numberOfLines={1}>
@@ -730,14 +731,14 @@ export default function OrderDetailScreen() {
                                 <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
                                     <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                         <View style={[styles.clientStatIcon, { backgroundColor: colors.success + '15' }]}>
-                                            <FontAwesome name="check-circle" size={13} color={colors.success} />
+                                            <Ionicons name="checkmark-circle" size={13} color={colors.success} />
                                         </View>
                                         <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Pag. / Pend.</Text>
                                         <Text style={[styles.clientStatValue, { color: colors.text }]}>{paidCount} / {pendingCount}</Text>
                                     </View>
                                     <View style={[styles.clientStatCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                         <View style={[styles.clientStatIcon, { backgroundColor: colors.secondary + '20' }]}>
-                                            <FontAwesome name="birthday-cake" size={13} color={colors.primary} />
+                                            <MaterialCommunityIcons name="cake-variant-outline" size={13} color={colors.primary} />
                                         </View>
                                         <Text style={[styles.clientStatLabel, { color: colors.textMuted }]}>Torta favorita</Text>
                                         <Text style={[styles.clientStatValue, { color: colors.text }]} numberOfLines={1}>{favoriteCake}</Text>
@@ -828,7 +829,7 @@ export default function OrderDetailScreen() {
                                                 }}
                                                 style={[styles.reorderButton, { backgroundColor: colors.primary + '15' }]}
                                             >
-                                                <FontAwesome name="refresh" size={11} color={colors.primary} />
+                                                <Ionicons name="refresh-outline" size={11} color={colors.primary} />
                                                 <Text style={[styles.reorderButtonText, { color: colors.primaryText }]}>Pedir de nuevo</Text>
                                             </TouchableOpacity>
                                         </TouchableOpacity>
@@ -838,7 +839,7 @@ export default function OrderDetailScreen() {
 
                             {clientOrders.length === 0 && (
                                 <View style={styles.emptyHistory}>
-                                    <FontAwesome name="star-o" size={40} color={colors.textMuted} />
+                                    <Ionicons name="star-outline" size={40} color={colors.textMuted} />
                                     <Text style={[styles.emptyHistoryText, { color: colors.textMuted }]}>
                                         ¡Este es el primer pedido de {order.clientName}!
                                     </Text>

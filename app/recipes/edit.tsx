@@ -6,7 +6,7 @@ import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { useRecipeIngredients } from '@/hooks/useRecipeIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -202,17 +202,17 @@ export default function EditRecipeScreen() {
                                 style={[styles.removeImageBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
                                 onPress={() => setImage(null)}
                             >
-                                <FontAwesome name="times" size={12} color="#FFF" />
+                                <Ionicons name="close" size={12} color="#FFF" />
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <View style={styles.photoButtonsRow}>
                             <TouchableOpacity style={[styles.photoBtnSmall, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={takePhoto}>
-                                <FontAwesome name="camera" size={14} color={colors.text} />
+                                <Ionicons name="camera-outline" size={14} color={colors.text} />
                                 <Text style={[styles.photoBtnTextSmall, { color: colors.text }]}>Cámara</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.photoBtnSmall, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={pickImage}>
-                                <FontAwesome name="image" size={14} color={colors.text} />
+                                <Ionicons name="image-outline" size={14} color={colors.text} />
                                 <Text style={[styles.photoBtnTextSmall, { color: colors.text }]}>Galería</Text>
                             </TouchableOpacity>
                         </View>
@@ -232,7 +232,7 @@ export default function EditRecipeScreen() {
                 <View style={styles.section}>
                     <DynamicListInput
                         label="Notas de Ingredientes"
-                        icon="shopping-basket"
+                        icon="basket-outline"
                         data={ingredientsList.length ? ingredientsList : ['']}
                         onUpdate={setIngredientsList}
                         placeholder="Ej. Tips opcionales..."
@@ -242,7 +242,7 @@ export default function EditRecipeScreen() {
                 <View style={styles.section}>
                     <DynamicListInput
                         label="Pasos / Instrucciones"
-                        icon="list-ol"
+                        icon="list-outline"
                         data={stepsList.length ? stepsList : ['']}
                         onUpdate={setStepsList}
                         placeholder="Ej. Mezclar azúcar y manteca..."

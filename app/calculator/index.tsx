@@ -10,7 +10,7 @@ import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import { CostIngredient, RecipeCostConfig, UNIT_OPTIONS } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Print from 'expo-print';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -63,14 +63,14 @@ function QuoteFeatureBanner({ colors, onDismiss }: { colors: typeof Colors.light
     return (
         <View style={[bannerStyles.banner, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '35' }]}>
             <View style={[bannerStyles.iconBadge, { backgroundColor: colors.primary + '25' }]}>
-                <FontAwesome name="whatsapp" size={14} color={colors.primary} />
+                <Ionicons name="logo-whatsapp" size={14} color={colors.primary} />
             </View>
             <Text style={[bannerStyles.text, { color: colors.text }]}>
                 <Text style={{ fontWeight: '700' }}>Nuevo: </Text>
                 comparte esta cotización por WhatsApp con el botón de abajo
             </Text>
             <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <FontAwesome name="times" size={14} color={colors.textMuted} />
+                <Ionicons name="close" size={14} color={colors.textMuted} />
             </TouchableOpacity>
         </View>
     );
@@ -523,7 +523,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                         </Text>
                                     </View>
                                     <TouchableOpacity onPress={() => handleDeleteIngredient(ing.id)} style={{ padding: 4 }}>
-                                        <FontAwesome name="trash" size={16} color={colors.error} />
+                                        <Ionicons name="trash-outline" size={16} color={colors.error} />
                                     </TouchableOpacity>
                                 </View>
                             ))
@@ -629,7 +629,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                         onPress={handleShareQuote}
                         disabled={sharing}
                     >
-                        <FontAwesome name="share-alt" size={18} color="#FFF" />
+                        <Ionicons name="share-outline" size={18} color="#FFF" />
                         <Text style={styles.saveButtonText}>
                             {sharing ? 'Generando...' : 'Compartir Cotización'}
                         </Text>
@@ -640,7 +640,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                             onPress={handleSavePrice}
                             disabled={saving}
                         >
-                            <FontAwesome name="save" size={18} color="#FFF" />
+                            <Ionicons name="save-outline" size={18} color="#FFF" />
                             <Text style={styles.saveButtonText}>
                                 {saving ? 'Guardando...' : 'Guardar en Receta'}
                             </Text>
@@ -702,7 +702,7 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                                         onPress={() => setIsUnitDropdownOpen(!isUnitDropdownOpen)}
                                     >
                                         <Text style={{ color: colors.text }}>{newIngUnit}</Text>
-                                        <FontAwesome name={isUnitDropdownOpen ? "chevron-up" : "chevron-down"} size={12} color={colors.textMuted} />
+                                        <Ionicons name={isUnitDropdownOpen ? "chevron-up" : "chevron-down"} size={12} color={colors.textMuted} />
                                     </TouchableOpacity>
 
                                     {isUnitDropdownOpen && (

@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -55,10 +55,10 @@ export default function ForgotPasswordScreen() {
                 >
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                            <FontAwesome name="arrow-left" size={20} color={colors.text} />
+                            <Ionicons name="arrow-back" size={20} color={colors.text} />
                         </TouchableOpacity>
                         <View style={styles.logoContainer}>
-                            <FontAwesome name="lock" size={32} color={colors.primary} />
+                            <Ionicons name="lock-closed-outline" size={32} color={colors.primary} />
                         </View>
                         <Text style={[styles.title, { color: colors.text }]}>Recuperar Contraseña</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>

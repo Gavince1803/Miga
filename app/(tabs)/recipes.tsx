@@ -2,7 +2,7 @@ import RecipePlaceholder from '@/components/RecipePlaceholder';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { Recipe, useRecipes } from '@/hooks/useRecipes';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link, useFocusEffect } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -65,7 +65,7 @@ function RecipeCard({
                                 borderRadius: 4,
                                 gap: 4
                             }}>
-                                <FontAwesome name="tag" size={10} color={colors.success} />
+                                <Ionicons name="pricetag-outline" size={10} color={colors.success} />
                                 <Text style={{ fontSize: 10, fontWeight: '700', color: colors.success }}>
                                     Venta: {formatMoney(recipe.suggestedPrice!, currency)}
                                 </Text>
@@ -81,7 +81,7 @@ function RecipeCard({
                                 borderRadius: 4,
                                 gap: 4
                             }}>
-                                <FontAwesome name="pie-chart" size={10} color={colors.warning} />
+                                <Ionicons name="pie-chart-outline" size={10} color={colors.warning} />
                                 <Text style={{ fontSize: 10, fontWeight: '700', color: colors.warning }}>
                                     Costo: {formatMoney(recipe.costPerPortion!, currency)}
                                 </Text>
@@ -154,7 +154,7 @@ export default function RecipesScreen() {
             {/* Search Bar */}
             <View style={styles.searchContainer}>
                 <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <FontAwesome name="search" size={16} color={colors.textMuted} />
+                    <Ionicons name="search" size={16} color={colors.textMuted} />
                     <TextInput
                         style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Buscar receta..."
@@ -205,7 +205,7 @@ export default function RecipesScreen() {
                 onRefresh={onRefresh}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="book" size={48} color={loading ? colors.primary : colors.textMuted} />
+                        <Ionicons name="book-outline" size={48} color={loading ? colors.primary : colors.textMuted} />
                         <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                             {loading ? 'Cargando recetario...' : 'No hay recetas guardadas'}
                         </Text>

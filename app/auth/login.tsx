@@ -4,7 +4,7 @@ import { BorderRadius, Colors, Fonts, Shadows, Spacing } from '@/constants/Color
 import { useAlert } from '@/context/AlertContext';
 import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';

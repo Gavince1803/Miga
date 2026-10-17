@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { Colors, Spacing, Typography } from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
 import {

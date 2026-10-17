@@ -2,7 +2,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Fonts, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { parseLocalDate, relativeDayLabel } from '@/lib/dateUtils';
 import { Order, ORDER_STATUS_OPTIONS } from '@/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -84,7 +84,7 @@ function OrderCard({
 
                 <View style={styles.orderFooter}>
                     <View style={styles.orderDateRow}>
-                        <FontAwesome name="calendar" size={12} color={colors.textMuted} />
+                        <Ionicons name="calendar-outline" size={12} color={colors.textMuted} />
                         <Text style={[styles.orderDate, { color: colors.textMuted }]}>
                             {order.deliveryDate ? relativeDayLabel(order.deliveryDate) : ''} • {formatTime12hr(order.deliveryTime)} • #{order.orderNumber}
                         </Text>
@@ -150,7 +150,7 @@ export default function OrdersScreen() {
             {/* Search Bar */}
             <View style={styles.searchContainer}>
                 <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <FontAwesome name="search" size={16} color={colors.textMuted} />
+                    <Ionicons name="search" size={16} color={colors.textMuted} />
                     <TextInput
                         style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Buscar por cliente o descripción..."
@@ -160,7 +160,7 @@ export default function OrdersScreen() {
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <FontAwesome name="times-circle" size={16} color={colors.textMuted} />
+                            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -208,7 +208,7 @@ export default function OrdersScreen() {
                 onRefresh={onRefresh}
                 ListEmptyComponent={
                     <View style={styles.emptyState}>
-                        <FontAwesome name="inbox" size={48} color={loading ? colors.primary : colors.textMuted} />
+                        <Ionicons name="file-tray-outline" size={48} color={loading ? colors.primary : colors.textMuted} />
                         <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                             {loading ? 'Cargando pedidos...' : 'No hay pedidos que mostrar'}
                         </Text>

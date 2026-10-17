@@ -3,7 +3,7 @@ import { BorderRadius, Colors, Spacing } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
 import { Currency } from '@/context/SettingsContext';
 import { supabase } from '@/lib/supabase';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
 import { User } from '@supabase/supabase-js';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -138,7 +138,7 @@ export default function SocialSignIn() {
                     accessibilityRole="button"
                     accessibilityLabel="Continuar con Google"
                 >
-                    <FontAwesome name="google" size={18} color={colors.text} />
+                    <Ionicons name="logo-google" size={18} color={colors.text} />
                     <Text style={[styles.googleText, { color: colors.text }]}>Continuar con Google</Text>
                 </TouchableOpacity>
             )}

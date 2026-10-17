@@ -1,6 +1,6 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -22,10 +22,10 @@ function MoreRow({
             onPress={onPress}
         >
             <View style={[styles.rowIcon, { backgroundColor: colors.primary + '15' }]}>
-                <FontAwesome name={icon as any} size={16} color={colors.primary} />
+                <Ionicons name={icon as any} size={16} color={colors.primary} />
             </View>
             <Text style={[styles.rowLabel, { color: colors.text }]}>{label}</Text>
-            <FontAwesome name="chevron-right" size={14} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
         </TouchableOpacity>
     );
 }
@@ -42,12 +42,12 @@ export default function MoreScreen() {
             showsVerticalScrollIndicator={false}
         >
             <View style={[styles.card, { backgroundColor: colors.surface }, Shadows.sm]}>
-                <MoreRow icon="calculator" label="Calculadora de costos" colors={colors} onPress={() => router.push('/calculator' as any)} />
-                <MoreRow icon="book" label="Recetario" colors={colors} onPress={() => router.push('/recipes')} />
-                <MoreRow icon="shopping-cart" label="Lista de compras" colors={colors} onPress={() => router.push('/inventory/shopping' as any)} />
-                <MoreRow icon="line-chart" label="Finanzas" colors={colors} onPress={() => router.push('/finances')} />
-                <MoreRow icon="bar-chart" label="Analytics" colors={colors} onPress={() => router.push('/analytics')} />
-                <MoreRow icon="cog" label="Ajustes" colors={colors} onPress={() => router.push('/settings')} />
+                <MoreRow icon="calculator-outline" label="Calculadora de costos" colors={colors} onPress={() => router.push('/calculator' as any)} />
+                <MoreRow icon="book-outline" label="Recetario" colors={colors} onPress={() => router.push('/recipes')} />
+                <MoreRow icon="cart-outline" label="Lista de compras" colors={colors} onPress={() => router.push('/inventory/shopping' as any)} />
+                <MoreRow icon="trending-up-outline" label="Finanzas" colors={colors} onPress={() => router.push('/finances')} />
+                <MoreRow icon="bar-chart-outline" label="Analytics" colors={colors} onPress={() => router.push('/analytics')} />
+                <MoreRow icon="settings-outline" label="Ajustes" colors={colors} onPress={() => router.push('/settings')} />
             </View>
         </ScrollView>
     );

@@ -4,7 +4,7 @@ import { useHaptics } from '@/hooks/useHaptics';
 import { useInventory } from '@/hooks/useInventory';
 import { useOrders } from '@/hooks/useOrders';
 import { buildShoppingList, formatAmount, ShoppingItem, shoppingListText } from '@/lib/shoppingList';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Linking, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -49,7 +49,7 @@ export default function ShoppingListScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Volver">
-                    <FontAwesome name="arrow-left" size={20} color={colors.text} />
+                    <Ionicons name="arrow-back" size={20} color={colors.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Lista de compras</Text>
                 <View style={{ width: 44 }} />
@@ -73,7 +73,7 @@ export default function ShoppingListScreen() {
                     }
                     ListEmptyComponent={
                         <View style={styles.center}>
-                            <FontAwesome name="check-circle" size={48} color={colors.success} />
+                            <Ionicons name="checkmark-circle" size={48} color={colors.success} />
                             <Text style={[styles.emptyText, { color: colors.textMuted }]}>No te falta nada por ahora 🎉</Text>
                         </View>
                     }
@@ -87,7 +87,7 @@ export default function ShoppingListScreen() {
                                 accessibilityState={{ checked: done }}
                                 accessibilityLabel={`${item.name}, comprar ${formatAmount(item.toBuy, item.unit)}`}
                             >
-                                <FontAwesome name={done ? 'check-square' : 'square-o'} size={22} color={colors.primary} />
+                                <Ionicons name={done ? 'checkbox' : 'square-outline'} size={22} color={colors.primary} />
                                 <View style={{ flex: 1 }}>
                                     <Text style={[styles.name, { color: colors.text, textDecorationLine: done ? 'line-through' : 'none' }]}>
                                         {item.name}
@@ -108,7 +108,7 @@ export default function ShoppingListScreen() {
             {pending.length > 0 && (
                 <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
                     <TouchableOpacity style={[styles.shareButton, { backgroundColor: colors.successStrong }]} onPress={share}>
-                        <FontAwesome name="whatsapp" size={20} color="#FFF" />
+                        <Ionicons name="logo-whatsapp" size={20} color="#FFF" />
                         <Text style={styles.shareText}>Compartir por WhatsApp</Text>
                     </TouchableOpacity>
                     <Text style={[styles.hint, { color: colors.textMuted }]}>

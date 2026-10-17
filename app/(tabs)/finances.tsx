@@ -6,7 +6,7 @@ import { useFinances } from '@/hooks/useFinances';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useSubscription } from '@/hooks/useSubscription';
 import { parseLocalDate } from '@/lib/dateUtils';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack } from 'expo-router';
 import React, { useMemo } from 'react';
 import {
@@ -167,7 +167,7 @@ export default function FinancesScreen() {
                 }} />
                 <View style={styles.premiumGate}>
                     <View style={[styles.premiumIconCircle, { backgroundColor: colors.primary + '15' }]}>
-                        <FontAwesome name="line-chart" size={48} color={colors.primary} />
+                        <Ionicons name="trending-up-outline" size={48} color={colors.primary} />
                     </View>
                     <Text style={[styles.premiumTitle, { color: colors.text }]}>
                         Estadísticas Avanzadas
@@ -177,13 +177,13 @@ export default function FinancesScreen() {
                     </Text>
                     <View style={styles.premiumFeatures}>
                         {[
-                            { icon: 'bar-chart', text: 'Gráficos de ingresos diarios' },
-                            { icon: 'pie-chart', text: 'Balance y margen de ganancia' },
-                            { icon: 'history', text: 'Historial de movimientos' },
-                            { icon: 'undo', text: 'Reversión de transacciones' },
+                            { icon: 'bar-chart-outline', text: 'Gráficos de ingresos diarios' },
+                            { icon: 'pie-chart-outline', text: 'Balance y margen de ganancia' },
+                            { icon: 'time-outline', text: 'Historial de movimientos' },
+                            { icon: 'arrow-undo-outline', text: 'Reversión de transacciones' },
                         ].map((f, i) => (
                             <View key={i} style={styles.premiumFeatureRow}>
-                                <FontAwesome name={f.icon as any} size={16} color={colors.primary} />
+                                <Ionicons name={f.icon as any} size={16} color={colors.primary} />
                                 <Text style={[styles.premiumFeatureText, { color: colors.text }]}>{f.text}</Text>
                             </View>
                         ))}
@@ -192,7 +192,7 @@ export default function FinancesScreen() {
                         style={[styles.premiumCTA, { backgroundColor: colors.primaryStrong }]}
                         onPress={() => router.push({ pathname: '/premium', params: { from: 'finances' } })}
                     >
-                        <FontAwesome name="star" size={18} color="#FFF" />
+                        <Ionicons name="star" size={18} color="#FFF" />
                         <Text style={styles.premiumCTAText}>Desbloquear con Premium</Text>
                     </TouchableOpacity>
                 </View>
@@ -209,7 +209,7 @@ export default function FinancesScreen() {
                 headerShadowVisible: false,
                 headerRight: () => (
                     <TouchableOpacity onPress={() => setCurrentDate(new Date())} style={{ marginRight: 15 }}>
-                        <FontAwesome name="calendar-o" size={20} color={colors.primary} />
+                        <Ionicons name="calendar-clear-outline" size={20} color={colors.primary} />
                     </TouchableOpacity>
                 )
             }} />
@@ -226,13 +226,13 @@ export default function FinancesScreen() {
                         {/* Month Selector */}
                         <View style={[styles.monthSelector, { backgroundColor: colors.surface }]}>
                             <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.monthNavBtn}>
-                                <FontAwesome name="chevron-left" size={16} color={colors.textSecondary} />
+                                <Ionicons name="chevron-back" size={16} color={colors.textSecondary} />
                             </TouchableOpacity>
                             <Text style={[styles.monthTitle, { color: colors.text }]}>
                                 {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}
                             </Text>
                             <TouchableOpacity onPress={() => changeMonth(1)} style={styles.monthNavBtn}>
-                                <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
+                                <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
 
@@ -240,7 +240,7 @@ export default function FinancesScreen() {
                         <View style={styles.summaryGrid}>
                             <View style={[styles.summaryCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                 <View style={[styles.iconContainer, { backgroundColor: colors.success + '15' }]}>
-                                    <FontAwesome name="arrow-up" size={16} color={colors.success} />
+                                    <Ionicons name="arrow-up" size={16} color={colors.success} />
                                 </View>
                                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ingresos</Text>
                                 <Text style={[styles.summaryValue, { color: colors.successStrong }]}>
@@ -250,7 +250,7 @@ export default function FinancesScreen() {
 
                             <View style={[styles.summaryCard, { backgroundColor: colors.surface }, Shadows.sm]}>
                                 <View style={[styles.iconContainer, { backgroundColor: colors.error + '15' }]}>
-                                    <FontAwesome name="arrow-down" size={16} color={colors.error} />
+                                    <Ionicons name="arrow-down" size={16} color={colors.error} />
                                 </View>
                                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Gastos</Text>
                                 <Text style={[styles.summaryValue, { color: colors.error }]}>
@@ -315,8 +315,8 @@ export default function FinancesScreen() {
                         <View style={[styles.transactionIcon, {
                             backgroundColor: item.type === 'income' ? colors.success + '15' : colors.error + '15'
                         }]}>
-                            <FontAwesome
-                                name={item.type === 'income' ? 'tag' : 'shopping-cart'}
+                            <Ionicons
+                                name={item.type === 'income' ? 'pricetag-outline' : 'cart-outline'}
                                 size={14}
                                 color={item.type === 'income' ? colors.success : colors.error}
                             />
