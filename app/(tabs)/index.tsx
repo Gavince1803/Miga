@@ -109,6 +109,47 @@ function HeroCard({
   );
 }
 
+// New account: three concrete first steps instead of a hero full of $0.00 and "Todo al día"
+function StartGuide({ hasInventory, colors }: { hasInventory: boolean; colors: typeof Colors.light }) {
+  const steps: { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; subtitle: string; href: string; done?: boolean }[] = [
+    { icon: 'receipt-outline', title: 'Registra tu primer pedido', subtitle: 'Clienta, fecha de entrega y abono', href: '/orders/new' },
+    { icon: 'calculator-outline', title: 'Cotiza una torta', subtitle: 'Calcula tu precio y envíalo por WhatsApp', href: '/calculator' },
+    { icon: 'cube-outline', title: 'Agrega tu inventario', subtitle: 'Miga te avisa cuando algo se esté acabando', href: '/inventory/add', done: hasInventory },
+  ];
+
+  return (
+    <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }, Shadows.md]}>
+      <Text style={[styles.guideTitle, { color: colors.text }]}>Empieza en 3 pasos</Text>
+      <Text style={[styles.heroCountLabel, { color: colors.textSecondary }]}>
+        Con tu primer pedido, Miga te muestra aquí lo que entregas hoy y lo que te deben.
+      </Text>
+      {steps.map((step, i) => (
+        <TouchableOpacity
+          key={step.href}
+          style={[styles.guideStep, i === 0 && { backgroundColor: colors.primaryStrong }, i > 0 && { backgroundColor: colors.surfaceSecondary }]}
+          onPress={() => router.push(step.href as any)}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={step.done ? 'checkmark-circle' : step.icon}
+            size={22}
+            color={i === 0 ? '#FFF' : step.done ? colors.successStrong : colors.primaryText}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.guideStepTitle, { color: i === 0 ? '#FFF' : colors.text }, step.done && styles.guideStepDone]}>
+              {step.title}
+            </Text>
+            <Text style={[styles.guideStepSubtitle, { color: i === 0 ? 'rgba(255,255,255,0.9)' : colors.textSecondary }]}>
+              {step.subtitle}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={i === 0 ? 'rgba(255,255,255,0.7)' : colors.textMuted} />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
 // Helper to determine urgency color
 const getUrgencyColor = (dateStr: string, colors: any) => {
   const today = new Date();
@@ -194,6 +235,7 @@ export default function HomeScreen() {
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || '';
 
   // Calculate stats
+  const isNewUser = !ordersLoading && orders.length === 0;
   const todayOrders = orders.filter(o => o.status !== 'cancelado' && isToday(parseLocalDate(o.deliveryDate)));
   // Simplified week calculation (last 7 days + next 7 days or just volume)
   // For now: active orders (pending/process)
@@ -339,6 +381,9 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      {isNewUser ? (
+        <StartGuide hasInventory={inventory.length > 0} colors={colors} />
+      ) : (<>
       <HeroCard
         todayOrders={todayOrders}
         loading={ordersLoading}
@@ -390,12 +435,13 @@ export default function HomeScreen() {
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </TouchableOpacity>
+      </>)}
 
       {/* Re-engagement Banner */}
       <ReEngagementBanner ordersCount={orders.length} inventoryCount={inventory.length} />
 
       {/* Upcoming Orders Section */}
-      <View style={styles.section}>
+      {!isNewUser && <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Próximos Pedidos
@@ -433,7 +479,7 @@ export default function HomeScreen() {
             <UpcomingOrderCard key={order.id} order={order} colors={colors} />
           ))
         )}
-      </View>
+      </View>}
 
       {/* Bottom padding for tab bar */}
       <View style={{ height: 100 }} />
@@ -511,6 +557,29 @@ const styles = StyleSheet.create({
     ...Typography.small,
     fontWeight: '600',
     marginTop: Spacing.sm,
+  },
+  guideTitle: {
+    ...Typography.title,
+    fontSize: 24,
+    marginBottom: Spacing.xs,
+  },
+  guideStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+  },
+  guideStepTitle: {
+    ...Typography.bodyBold,
+  },
+  guideStepDone: {
+    textDecorationLine: 'line-through',
+  },
+  guideStepSubtitle: {
+    ...Typography.small,
+    marginTop: 2,
   },
   heroDivider: {
     height: 1,

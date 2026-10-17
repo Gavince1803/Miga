@@ -35,7 +35,8 @@ export type EventName =
     | 'paywall_viewed'
     | 'paywall_result'
     | 'quote_shared'
-    | 'recipe_scanned';
+    | 'recipe_scanned'
+    | 'calculator_example';
 
 // Fire and forget: analytics must never block or break the app.
 // user_id is filled by the database from the session (default auth.uid()).

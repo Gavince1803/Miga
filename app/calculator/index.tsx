@@ -1,7 +1,8 @@
 import { useColorScheme } from '@/components/useColorScheme';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/Colors';
 import { useAlert } from '@/context/AlertContext';
-import { CURRENCIES, useSettings } from '@/context/SettingsContext';
+import { Currency, CURRENCIES, useSettings } from '@/context/SettingsContext';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { useRecipes } from '@/hooks/useRecipes';
 import { track } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +31,32 @@ import { KeyboardAwareScrollView, KeyboardToolbar } from 'react-native-keyboard-
 
 const QUOTE_BANNER_KEY = 'miga_quote_share_announced';
 
+// Example cake so a new user sees a real suggested price in one tap (first win).
+// Prices are in USD and scaled to the user's currency below.
+const EXAMPLE_RECIPE_NAME = 'Torta de vainilla (ejemplo)';
+const EXAMPLE_INGREDIENTS: Omit<CostIngredient, 'id'>[] = [
+    { name: 'Harina', quantityUsed: 500, quantityBought: 1000, priceBought: 1.5, unit: 'g' },
+    { name: 'Azúcar', quantityUsed: 300, quantityBought: 1000, priceBought: 1.2, unit: 'g' },
+    { name: 'Mantequilla', quantityUsed: 200, quantityBought: 500, priceBought: 4, unit: 'g' },
+    { name: 'Huevos', quantityUsed: 6, quantityBought: 30, priceBought: 6, unit: 'u' },
+    { name: 'Leche', quantityUsed: 250, quantityBought: 1000, priceBought: 1.3, unit: 'ml' },
+    { name: 'Polvo de hornear', quantityUsed: 10, quantityBought: 100, priceBought: 1, unit: 'g' },
+    { name: 'Queso crema', quantityUsed: 400, quantityBought: 450, priceBought: 5.5, unit: 'g' },
+    { name: 'Crema de leche', quantityUsed: 250, quantityBought: 1000, priceBought: 4, unit: 'ml' },
+];
+// With labor, packaging and utilities the example lands on a believable price (~$34), not a
+// $7 cake that would teach undercharging
+const EXAMPLE_CONFIG = { laborPercentage: 100, utilityCost: 2, packagingCost: 3 };
+// Rough USD → local factors, only so the example looks plausible. VES uses the live BCV rate.
+const EXAMPLE_PRICE_FACTOR: Record<Exclude<Currency, 'VES'>, number> = { USD: 1, MXN: 18, COP: 4000, CLP: 950, ARS: 1400 };
+
+// Two significant digits: 1.5 → 1.5, 27 → 27, 5600 → 5600, 1234 → 1200
+function roundNice(value: number): number {
+    if (value < 10) return Math.round(value * 10) / 10;
+    const step = 10 ** (Math.floor(Math.log10(value)) - 1);
+    return Math.round(value / step) * step;
+}
+
 function QuoteFeatureBanner({ colors, onDismiss }: { colors: typeof Colors.light; onDismiss: () => void }) {
     return (
         <View style={[bannerStyles.banner, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '35' }]}>
@@ -38,7 +65,7 @@ function QuoteFeatureBanner({ colors, onDismiss }: { colors: typeof Colors.light
             </View>
             <Text style={[bannerStyles.text, { color: colors.text }]}>
                 <Text style={{ fontWeight: '700' }}>Nuevo: </Text>
-                compartí esta cotización por WhatsApp con el botón de abajo
+                comparte esta cotización por WhatsApp con el botón de abajo
             </Text>
             <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <FontAwesome name="times" size={14} color={colors.textMuted} />
@@ -154,6 +181,35 @@ export default function CostCalculatorScreen() {
             }
         }
     }, [params.initialIngredients]);
+
+    // Example recipe: from the onboarding (?example=1) or the empty-state button
+    const { bcv, loading: ratesLoading } = useExchangeRates();
+    const exampleRequested = React.useRef(false);
+
+    const loadExample = (from: string) => {
+        const factor = currency === 'VES' ? (bcv || 1) : EXAMPLE_PRICE_FACTOR[currency];
+        setRecipeName(EXAMPLE_RECIPE_NAME);
+        setIngredients(EXAMPLE_INGREDIENTS.map((ing, i) => ({
+            ...ing,
+            id: `example-${i}`,
+            priceBought: roundNice(ing.priceBought * factor),
+        })));
+        setConfig(prev => ({
+            ...prev,
+            laborPercentage: EXAMPLE_CONFIG.laborPercentage,
+            utilityCost: roundNice(EXAMPLE_CONFIG.utilityCost * factor),
+            packagingCost: roundNice(EXAMPLE_CONFIG.packagingCost * factor),
+        }));
+        track('calculator_example', { from });
+    };
+
+    React.useEffect(() => {
+        // Wait for the BCV rate before pricing the example in bolívares
+        if (params.example !== '1' || exampleRequested.current) return;
+        if (currency === 'VES' && ratesLoading) return;
+        exampleRequested.current = true;
+        loadExample('onboarding');
+    }, [params.example, currency, ratesLoading]);
 
     // New Ingredient Form State
     const [newIngName, setNewIngName] = useState('');
@@ -417,11 +473,27 @@ ${recipeImageUrl ? `<img class="photo" src="${recipeImageUrl}" />` : ''}
                             </TouchableOpacity>
                         </View>
 
+                        {ingredients.some(ing => ing.id.startsWith('example-')) && (
+                            <Text style={[styles.exampleHint, { color: colors.textSecondary }]}>
+                                Son precios de ejemplo. Borra estos ingredientes y agrega los tuyos para ver tu precio real.
+                            </Text>
+                        )}
+
                         {ingredients.length === 0 ? (
                             <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                                     No hay ingredientes agregados
                                 </Text>
+                                {!recipeId && (
+                                    <TouchableOpacity
+                                        style={[styles.exampleButton, { borderColor: colors.primary }]}
+                                        onPress={() => loadExample('calculator')}
+                                    >
+                                        <Text style={[styles.exampleButtonText, { color: colors.primaryText }]}>
+                                            Probar con una torta de ejemplo
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         ) : (
                             ingredients.map((ing) => (
@@ -737,6 +809,21 @@ const styles = StyleSheet.create({
     emptyText: {
         ...Typography.body,
         fontStyle: 'italic',
+    },
+    exampleButton: {
+        marginTop: Spacing.md,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.full,
+        borderWidth: 1,
+    },
+    exampleButtonText: {
+        ...Typography.body,
+        fontWeight: '600',
+    },
+    exampleHint: {
+        ...Typography.small,
+        marginBottom: Spacing.sm,
     },
     ingredientRow: {
         flexDirection: 'row',
